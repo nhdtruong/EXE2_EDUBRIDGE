@@ -1,0 +1,91 @@
+@page
+@{
+    Layout = null; // Ẩn layout chung (menu)
+    ViewData["Title"] = "Đăng nhập";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduBridge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 font-sans text-gray-900">
+    <div class="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="p-6 text-center">
+            <div class="flex justify-center mb-4">
+                <div class="size-16 rounded-full bg-gradient-to-br from-blue-600 to-green-600 flex items-center justify-center shadow-md">
+                    <svg class="size-8 text-white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 6 8-4 8 4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M14 22v-4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v4"/><path d="M18 5v17"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/></svg>
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold tracking-tight">EduBridge</h2>
+            <p class="text-sm text-gray-500 mt-1">Nền tảng quản lý giáo dục toàn diện</p>
+        </div>
+
+        <div class="p-6 pt-0">
+            <div class="flex p-1 space-x-1 bg-gray-100 rounded-lg mb-6">
+                <button id="btn-admin" onclick="switchTab('admin')" class="w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all">Chủ trung tâm</button>
+                <button id="btn-teacher" onclick="switchTab('teacher')" class="w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all">Giáo viên</button>
+            </div>
+
+            <form id="form-admin" action="/AdminDashboard" method="GET" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Email Admin</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="email" placeholder="admin@edubridge.com" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Mật khẩu</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" placeholder="••••••••" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
+                    </div>
+                </div>
+                <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">Đăng nhập với tư cách Admin</button>
+            </form>
+
+            <form id="form-teacher" action="/TeacherDashboard" method="GET" class="space-y-4 hidden">
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Email Giáo viên</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <input type="email" placeholder="teacher@edubridge.com" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="text-sm font-medium leading-none">Mật khẩu</label>
+                    <div class="relative">
+                        <svg class="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <input type="password" placeholder="••••••••" required class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent" />
+                    </div>
+                </div>
+                <button type="submit" class="w-full h-10 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md transition-colors">Đăng nhập với tư cách Giáo viên</button>
+            </form>
+
+            <p class="text-xs text-center text-gray-500 mt-6">Demo: Bạn có thể đăng nhập với bất kỳ email/mật khẩu nào</p>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab) {
+            const isAdmin = tab === 'admin';
+            document.getElementById('form-admin').classList.toggle('hidden', !isAdmin);
+            document.getElementById('form-teacher').classList.toggle('hidden', isAdmin);
+            
+            const btnAdmin = document.getElementById('btn-admin');
+            const btnTeacher = document.getElementById('btn-teacher');
+            
+            if(isAdmin) {
+                btnAdmin.className = "w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all";
+                btnTeacher.className = "w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all";
+            } else {
+                btnTeacher.className = "w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all";
+                btnAdmin.className = "w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all";
+            }
+        }
+    </script>
+</body>
+</html>

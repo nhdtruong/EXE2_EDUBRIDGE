@@ -1,0 +1,99 @@
+@page
+@{
+    ViewData["Title"] = "Sổ điểm";
+    Layout = "_TeacherLayout";
+    ViewData["ActivePage"] = "Grades";
+
+    var mockStudents = new[] {
+        new { Id = 1, Name = "Nguyễn Văn Minh", KT1 = 8.5, KT2 = 9.0, Mid = 8.0, Final = (double?)null, Avg = 8.5 },
+        new { Id = 2, Name = "Trần Thị Lan", KT1 = 7.5, KT2 = 8.0, Mid = 7.5, Final = (double?)null, Avg = 7.7 },
+        new { Id = 3, Name = "Lê Hoàng Nam", KT1 = 9.0, KT2 = 9.5, Mid = 9.0, Final = (double?)null, Avg = 9.2 },
+        new { Id = 4, Name = "Phạm Thu Hương", KT1 = 6.5, KT2 = 7.0, Mid = 6.0, Final = (double?)null, Avg = 6.5 }
+    };
+
+    string GetScoreColor(double? score) {
+        if (!score.HasValue) return "score-empty";
+        if (score >= 9) return "score-green";
+        if (score >= 7) return "score-blue";
+        if (score >= 5) return "score-orange";
+        return "score-red";
+    }
+}
+
+<!-- Header -->
+<div class="grades-header-section">
+    <div>
+        <h1 class="grades-main-title">Sổ điểm & Đánh giá</h1>
+        <p class="grades-subtitle">Quản lý điểm số và nhận xét học sinh</p>
+    </div>
+    <div class="grades-buttons">
+        <button class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            Nhập điểm
+        </button>
+        <button class="btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Xuất báo cáo
+        </button>
+    </div>
+</div>
+
+<!-- Main Card -->
+<div class="grades-card">
+    <!-- Card Header with Filter -->
+    <div class="grades-card-header">
+        <h3 class="grades-card-title">Bảng điểm</h3>
+        <div class="grades-filters">
+            <select class="grades-select">
+                <option>Toán 10A</option>
+                <option>Toán 10B</option>
+            </select>
+            <div class="search-wrapper">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" placeholder="Tìm học sinh..." class="search-input-field" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="grades-table-wrapper">
+        <table class="grades-table">
+            <thead>
+                <tr>
+                    <th>Học sinh</th>
+                    <th>KT 1</th>
+                    <th>KT 2</th>
+                    <th>Giữa kỳ</th>
+                    <th>Cuối kỳ</th>
+                    <th>TB</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach(var std in mockStudents)
+                {
+                    <tr>
+                        <td class="student-name">@std.Name</td>
+                        <td class="score-cell"><span class="score-badge @GetScoreColor(std.KT1)">@std.KT1</span></td>
+                        <td class="score-cell"><span class="score-badge @GetScoreColor(std.KT2)">@std.KT2</span></td>
+                        <td class="score-cell"><span class="score-badge @GetScoreColor(std.Mid)">@std.Mid</span></td>
+                        <td class="score-cell">
+                            @if(std.Final.HasValue)
+                            {
+                                <span class="score-badge @GetScoreColor(std.Final)">@std.Final</span>
+                            }
+                            else
+                            {
+                                <span class="score-placeholder">-</span>
+                            }
+                        </td>
+                        <td class="score-cell"><span class="score-badge @GetScoreColor(std.Avg)">@std.Avg</span></td>
+                        <td class="action-cell">
+                            <button class="btn-action">Chỉnh sửa</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,94 @@
+@page
+@{
+    ViewData["Title"] = "Quản lý bài tập";
+    Layout = "_TeacherLayout";
+    ViewData["ActivePage"] = "Assignments";
+
+    var mockHomework = new[] {
+        new { Id = 1, Class = "Toán 10A", Title = "Bài tập về hàm số bậc nhất", Desc = "Làm bài tập 1, 2, 3 trang 45 SGK. Nộp bài trước 18:00 ngày 25/03", Assigned = "20/3/2026", Due = "25/3/2026", Sub = 18, Total = 25, Graded = 12, Pending = 6 },
+        new { Id = 2, Class = "Toán 10B", Title = "Luyện tập phương trình bậc hai", Desc = "Giải các bài tập 5, 6, 7 trang 52 SGK", Assigned = "21/3/2026", Due = "26/3/2026", Sub = 15, Total = 22, Graded = 8, Pending = 7 },
+        new { Id = 3, Class = "Toán 10A", Title = "Bài tập về phương trình", Desc = "Hoàn thành worksheet về phương trình bậc nhất", Assigned = "18/3/2026", Due = "23/3/2026", Sub = 25, Total = 25, Graded = 25, Pending = 0 }
+    };
+}
+
+<!-- Header -->
+<div class="homework-header-section">
+    <div>
+        <h1 class="homework-main-title">Quản lý bài tập</h1>
+        <p class="homework-subtitle">Giao bài tập và chấm điểm</p>
+    </div>
+    <button class="btn-create-homework">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        Giao bài tập mới
+    </button>
+</div>
+
+<!-- Main Card -->
+<div class="homework-main-card">
+    <!-- List Header -->
+    <div class="homework-list-header">
+        <h3 class="list-title">Danh sách bài tập</h3>
+        <div class="search-wrapper">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" placeholder="Tìm kiếm bài tập..." class="search-input-field" />
+        </div>
+    </div>
+
+    <!-- Assignments List -->
+    <div class="assignments-container">
+        @foreach(var hw in mockHomework)
+        {
+            var submitPct = (double)hw.Sub / hw.Total * 100;
+            var gradePct = (double)hw.Graded / hw.Sub * 100;
+
+            <div class="assignment-row">
+                <!-- Left: Info -->
+                <div class="assignment-info">
+                    <div class="assignment-top">
+                        <div>
+                            <h4 class="assignment-name">@hw.Title</h4>
+                            <span class="class-badge">@hw.Class</span>
+                        </div>
+                        <button class="detail-btn">Chi tiết</button>
+                    </div>
+                    <p class="assignment-desc">@hw.Desc</p>
+                    <div class="assignment-dates-row">
+                        <span>Giao: @hw.Assigned</span>
+                        <span>Hạn: @hw.Due</span>
+                    </div>
+                </div>
+
+                <!-- Right: Progress -->
+                <div class="assignment-progress-row">
+                    <!-- Đã nộp -->
+                    <div class="progress-item">
+                        <label class="progress-item-label">Đã nộp</label>
+                        <div class="progress-bar-row">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: @submitPct%;"></div>
+                            </div>
+                            <span class="progress-value">@hw.Sub/@hw.Total</span>
+                        </div>
+                    </div>
+
+                    <!-- Đã chấm -->
+                    <div class="progress-item">
+                        <label class="progress-item-label">Đã chấm</label>
+                        <div class="progress-bar-row">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: @gradePct%;"></div>
+                            </div>
+                            <span class="progress-value">@hw.Graded/@hw.Sub</span>
+                        </div>
+                    </div>
+
+                    <!-- Cần chấm -->
+                    <div class="progress-item">
+                        <label class="progress-item-label">Cần chấm</label>
+                        <span class="pending-count">@hw.Pending bài</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,431 @@
+@page
+@model EduBridge.Pages.AdminStudentsModel
+@{
+    ViewData["Title"] = "Quản lý học sinh";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminStudents";
+}
+
+<div class="space-y-6 pb-20">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Quản lý học sinh</h1>
+            <p class="text-gray-500 mt-1">Quản lý thông tin học sinh và phụ huynh</p>
+        </div>
+        <button onclick="openAddStudentModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Thêm học sinh
+        </button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+            <h3 class="text-base font-bold text-gray-900">Danh sách học sinh</h3>
+            <div class="relative w-64">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+                <input type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors" placeholder="Tìm kiếm học sinh...">
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white border-b border-gray-100 text-sm font-semibold text-gray-900">
+                        <th class="py-4 px-6 font-semibold">Học sinh</th>
+                        <th class="py-4 px-6 font-semibold">Lớp</th>
+                        <th class="py-4 px-6 font-semibold">Phụ huynh</th>
+                        <th class="py-4 px-6 font-semibold">Liên hệ</th>
+                        <th class="py-4 px-6 font-semibold">Trạng thái</th>
+                        <th class="py-4 px-6 font-semibold text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody" class="text-sm divide-y divide-gray-100">
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">VM</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Nguyễn Văn Minh</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">minh.nguyen@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">Toán 10A</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Khối 10</div>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600 font-medium">Nguyễn Văn Hùng</td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div class="flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                0912345678
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang học</span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">TL</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Trần Thị Lan</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">lan.tran@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">Lý 11B</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Khối 11</div>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600 font-medium">Trần Văn Toàn</td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div class="flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                0923456789
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang học</span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">HN</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Lê Hoàng Nam</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">nam.le@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">Hóa 12C</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Khối 12</div>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600 font-medium">Lê Thị Mai</td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div class="flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                0934567890
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang học</span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">TH</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Phạm Thu Hương</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">huong.pham@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">Anh 9D</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Khối 9</div>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600 font-medium">Phạm Văn Long</td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div class="flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                0945678901
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Nghỉ học</span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="py-4 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">MT</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Đỗ Minh Tú</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">tu.do@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <div class="font-medium text-gray-900">Toán 10A</div>
+                            <div class="text-xs text-gray-500 mt-0.5">Khối 10</div>
+                        </td>
+                        <td class="py-4 px-6 text-gray-600 font-medium">Đỗ Văn Kiên</td>
+                        <td class="py-4 px-6 text-gray-600">
+                            <div class="flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                0956789012
+                            </div>
+                        </td>
+                        <td class="py-4 px-6">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang học</span>
+                        </td>
+                        <td class="py-4 px-6 text-right">
+                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            </button>
+                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm học sinh mới -->
+<div id="addStudentModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden transform scale-95 transition-transform duration-300 p-6 space-y-6">
+        <!-- Modal Header -->
+        <div class="flex justify-between items-start">
+            <div>
+                <h3 class="text-xl font-bold text-gray-900">Thêm học sinh mới</h3>
+                <p class="text-sm text-gray-500 mt-1">Nhập thông tin học sinh và phụ huynh</p>
+            </div>
+            <button onclick="closeAddStudentModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <!-- Form fields -->
+        <form id="addStudentForm" onsubmit="submitAddStudent(event)" class="space-y-4">
+            <!-- Họ và tên học sinh -->
+            <div class="space-y-1.5">
+                <label for="studentName" class="block text-sm font-semibold text-gray-700">Họ và tên học sinh</label>
+                <input type="text" id="studentName" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập họ tên đầy đủ">
+            </div>
+
+            <!-- Khối & Lớp -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1.5">
+                    <label for="studentGrade" class="block text-sm font-semibold text-gray-700">Khối</label>
+                    <div class="relative">
+                        <select id="studentGrade" onchange="updateClassOptions()" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200 appearance-none">
+                            <option value="">Chọn khối</option>
+                            <option value="12">Khối 12</option>
+                            <option value="11">Khối 11</option>
+                            <option value="10">Khối 10</option>
+                            <option value="9">Khối 9</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-1.5">
+                    <label for="studentClass" class="block text-sm font-semibold text-gray-700">Lớp học</label>
+                    <div class="relative">
+                        <select id="studentClass" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200 appearance-none">
+                            <option value="">Chọn lớp</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Họ tên phụ huynh -->
+            <div class="space-y-1.5">
+                <label for="parentName" class="block text-sm font-semibold text-gray-700">Họ tên phụ huynh</label>
+                <input type="text" id="parentName" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập họ tên phụ huynh">
+            </div>
+
+            <!-- Số điện thoại phụ huynh -->
+            <div class="space-y-1.5">
+                <label for="parentPhone" class="block text-sm font-semibold text-gray-700">Số điện thoại phụ huynh</label>
+                <input type="tel" id="parentPhone" value="0912345678" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="0912345678">
+            </div>
+
+            <!-- Email -->
+            <div class="space-y-1.5">
+                <label for="studentEmail" class="block text-sm font-semibold text-gray-700">Email</label>
+                <input type="email" id="studentEmail" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="email@example.com">
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+                <button type="button" onclick="closeAddStudentModal()" class="w-24 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" class="flex-1 py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-xl text-sm transition-colors text-center">Thêm học sinh</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Premium Toast Notification -->
+<div id="toast" class="fixed top-5 right-5 z-50 bg-green-600 text-white font-semibold px-5 py-3.5 rounded-xl shadow-xl transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <span id="toastMessage">Thêm học sinh mới thành công!</span>
+</div>
+
+@section Scripts {
+    <script>
+        const classesByGrade = {
+            "12": ["Toán 12A", "Lý 12B", "Hóa 12C"],
+            "11": ["Toán 11A", "Lý 11B", "Anh 11C"],
+            "10": ["Toán 10A", "Lý 10B", "Hóa 10C"],
+            "9": ["Toán 9A", "Anh 9D", "Văn 9E"]
+        };
+
+        function updateClassOptions() {
+            const gradeSelect = document.getElementById('studentGrade');
+            const classSelect = document.getElementById('studentClass');
+            const selectedGrade = gradeSelect.value;
+
+            // Clear options
+            classSelect.innerHTML = '<option value="">Chọn lớp</option>';
+
+            if (selectedGrade && classesByGrade[selectedGrade]) {
+                classesByGrade[selectedGrade].forEach(className => {
+                    const option = document.createElement('option');
+                    option.value = className;
+                    option.textContent = className;
+                    classSelect.appendChild(option);
+                });
+            }
+        }
+
+        function openAddStudentModal() {
+            const modal = document.getElementById('addStudentModal');
+            const modalContent = modal.firstElementChild;
+            modal.classList.remove('hidden');
+            // Force a reflow
+            modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+            modal.classList.add('opacity-100');
+            modalContent.classList.remove('scale-95');
+            modalContent.classList.add('scale-100');
+        }
+
+        function closeAddStudentModal() {
+            const modal = document.getElementById('addStudentModal');
+            const modalContent = modal.firstElementChild;
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('addStudentForm').reset();
+            }, 300);
+        }
+
+        function getInitials(name) {
+            const words = name.trim().split(' ');
+            if (words.length >= 2) {
+                const first = words[words.length - 2].charAt(0).toUpperCase();
+                const second = words[words.length - 1].charAt(0).toUpperCase();
+                return first + second;
+            }
+            return name.substring(0, 2).toUpperCase();
+        }
+
+        function submitAddStudent(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('studentName').value;
+            const grade = document.getElementById('studentGrade').value;
+            const className = document.getElementById('studentClass').value;
+            const parent = document.getElementById('parentName').value;
+            const phone = document.getElementById('parentPhone').value;
+            const email = document.getElementById('studentEmail').value;
+
+            const initials = getInitials(name);
+
+            // Create new row
+            const newRow = document.createElement('tr');
+            newRow.className = "hover:bg-gray-50 transition-colors";
+            newRow.innerHTML = `
+                <td class="py-4 px-6">
+                    <div class="flex items-center">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">\${initials}</div>
+                        <div>
+                            <div class="font-semibold text-gray-900">\${name}</div>
+                            <div class="text-xs text-gray-500 mt-0.5">\${email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="py-4 px-6">
+                    <div class="font-medium text-gray-900">\${className}</div>
+                    <div class="text-xs text-gray-500 mt-0.5">Khối \${grade}</div>
+                </td>
+                <td class="py-4 px-6 text-gray-600 font-medium">\${parent}</td>
+                <td class="py-4 px-6 text-gray-600">
+                    <div class="flex items-center">
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                        \${phone}
+                    </div>
+                </td>
+                <td class="py-4 px-6">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang học</span>
+                </td>
+                <td class="py-4 px-6 text-right">
+                    <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    </button>
+                    <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa" onclick="this.closest('tr').remove()">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </td>
+            `;
+
+            const tbody = document.getElementById('studentTableBody');
+            tbody.insertBefore(newRow, tbody.firstChild);
+
+            closeAddStudentModal();
+
+            // Show Toast
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = `Thêm học sinh \${name} mới thành công!`;
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-100px]', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+}

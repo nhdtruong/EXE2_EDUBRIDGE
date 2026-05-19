@@ -1,0 +1,235 @@
+@page
+@{
+    ViewData["Title"] = "Dashboard Quản trị viên";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminDashboard";
+}
+
+<div class="space-y-6 pb-20">
+    <!-- Header -->
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p class="text-gray-500 mt-1">Tổng quan hoạt động trung tâm</p>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <!-- Card 1 -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Tổng số học sinh</h3>
+                <div class="bg-blue-50 p-2.5 rounded-xl text-blue-500">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900">342</div>
+            <p class="text-xs text-green-500 font-medium mt-2">+12% so với tháng trước</p>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Số lớp đang hoạt động</h3>
+                <div class="bg-green-50 p-2.5 rounded-xl text-green-500">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16M14 21h2M8 21h2M3 21h18M9 7h6M9 11h6M9 15h6"></path></svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900">18</div>
+            <p class="text-xs text-green-500 font-medium mt-2">+2 so với tháng trước</p>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Doanh thu tháng này</h3>
+                <div class="bg-purple-50 p-2.5 rounded-xl text-purple-500">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900">485M VNĐ</div>
+            <p class="text-xs text-green-500 font-medium mt-2">+8% so với tháng trước</p>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Tỷ lệ chuyên cần</h3>
+                <div class="bg-orange-50 p-2.5 rounded-xl text-orange-500">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                </div>
+            </div>
+            <div class="text-3xl font-bold text-gray-900">94.5%</div>
+            <p class="text-xs text-green-500 font-medium mt-2">+2.1% so với tháng trước</p>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid gap-6 md:grid-cols-2">
+        <!-- Revenue Chart -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-6">Doanh thu 6 tháng gần nhất</h3>
+            <div class="relative h-64">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Attendance Chart -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <h3 class="text-sm font-semibold text-gray-900 mb-6">Tình hình điểm danh tuần này</h3>
+            <div class="relative h-64">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row (Lớp học mới nhất & Thông báo quan trọng) -->
+    <div class="grid gap-6 md:grid-cols-2">
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <h3 class="text-sm font-bold text-gray-900 mb-6">Lớp học mới nhất</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div>
+                        <div class="font-bold text-gray-900 text-sm">Toán 10A</div>
+                        <div class="text-xs text-gray-400 mt-1">GV: Nguyễn Văn A</div>
+                    </div>
+                    <div class="text-sm font-bold text-gray-700">25 học sinh</div>
+                </div>
+                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                    <div>
+                        <div class="font-bold text-gray-900 text-sm">Lý 11B</div>
+                        <div class="text-xs text-gray-400 mt-1">GV: Trần Thị B</div>
+                    </div>
+                    <div class="text-sm font-bold text-gray-700">22 học sinh</div>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-bold text-gray-900 text-sm">Hóa 12C</div>
+                        <div class="text-xs text-gray-400 mt-1">GV: Lê Văn C</div>
+                    </div>
+                    <div class="text-sm font-bold text-gray-700">20 học sinh</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <h3 class="text-sm font-bold text-gray-900 mb-6">Thông báo quan trọng</h3>
+            <div class="space-y-4">
+                <div class="border-b border-gray-100 pb-4">
+                    <div class="font-bold text-red-500 text-sm">Học phí chưa đóng</div>
+                    <div class="text-xs text-gray-400 mt-1">15 học sinh chưa đóng học phí tháng 3</div>
+                </div>
+                <div class="border-b border-gray-100 pb-4">
+                    <div class="font-bold text-orange-500 text-sm">Báo cáo tháng</div>
+                    <div class="text-xs text-gray-400 mt-1">Cần xem xét báo cáo học tập tháng 2</div>
+                </div>
+                <div>
+                    <div class="font-bold text-blue-500 text-sm">Lịch thi</div>
+                    <div class="text-xs text-gray-400 mt-1">Kỳ thi giữa kỳ bắt đầu từ ngày 01/04</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Chart.js defaults
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#6b7280';
+            Chart.defaults.scale.grid.color = '#f3f4f6';
+            
+            // Biểu đồ đường (Line Chart) cho Doanh thu
+            var ctxRev = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctxRev, {
+                type: 'line',
+                data: {
+                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
+                    datasets: [{
+                        label: 'Doanh thu',
+                        data: [380, 420, 390, 450, 430, 485],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: '#8b5cf6',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#8b5cf6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 600,
+                            ticks: { stepSize: 150 },
+                            border: { dash: [4, 4] }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // Biểu đồ cột (Bar Chart) cho Điểm danh
+            var ctxAtt = document.getElementById('attendanceChart').getContext('2d');
+            new Chart(ctxAtt, {
+                type: 'bar',
+                data: {
+                    labels: ['T2', 'T3', 'T4', 'T5', 'T6'],
+                    datasets: [
+                        { 
+                            label: 'Có mặt', 
+                            data: [330, 325, 340, 335, 320], 
+                            backgroundColor: '#10b981',
+                            barThickness: 32,
+                            borderRadius: { topLeft: 4, topRight: 4 }
+                        },
+                        { 
+                            label: 'Vắng mặt', 
+                            data: [22, 27, 12, 17, 32], 
+                            backgroundColor: '#ef4444',
+                            barThickness: 32,
+                            borderRadius: { topLeft: 4, topRight: 4 }
+                        }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                boxHeight: 8,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 340,
+                            ticks: { stepSize: 85 },
+                            border: { dash: [4, 4] }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

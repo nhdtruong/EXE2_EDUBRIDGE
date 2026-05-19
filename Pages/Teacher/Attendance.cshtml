@@ -1,0 +1,268 @@
+@page
+@model EduBridge.Pages.Teacher.AttendanceModel
+@{
+    Layout = "_TeacherLayout";
+    ViewData["Title"] = "Điểm danh";
+    ViewData["ActivePage"] = "Attendance";
+}
+
+<div class="attendance-header-section">
+    <div>
+        <h1 class="attendance-main-title">Điểm danh</h1>
+        <p class="attendance-subtitle">Ghi nhận tình trạng chuyên cần</p>
+    </div>
+    <button class="btn-export">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Xuất báo cáo
+    </button>
+</div>
+
+<div class="attendance-stats-grid">
+    <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Có mặt</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #16a34a;">3</div>
+        </div>
+        <div style="color: #16a34a;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+    </div>
+    
+    <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Vắng mặt</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #dc2626;">1</div>
+        </div>
+        <div style="color: #dc2626;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        </div>
+    </div>
+    
+    <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Đi muộn</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ea580c;">1</div>
+        </div>
+        <div style="color: #ea580c;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        </div>
+    </div>
+    
+    <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Tỷ lệ</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #2563eb;">60%</div>
+        </div>
+        <div style="color: #2563eb;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        </div>
+    </div>
+</div>
+
+<div class="attendance-card">
+    <div class="attendance-card-header d-flex justify-content-between align-items-center">
+        <h3 class="attendance-card-title m-0">Điểm danh hôm nay</h3>
+        <div class="attendance-filters">
+            <select class="attendance-select">
+                <option>Toán 10A</option>
+                <option>Toán 10B</option>
+            </select>
+            <input type="text" class="attendance-date" value="24/03/2026" readonly style="width: 120px;">
+            <div style="position: relative; width: 200px;">
+                <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" class="attendance-select" style="width: 100%; padding-left: 2rem;" placeholder="Tìm học sinh...">
+            </div>
+        </div>
+    </div>
+    
+    <div class="attendance-table-wrapper">
+        <table class="attendance-table">
+            <thead>
+                <tr>
+                    <th>Học sinh</th>
+                    <th style="width: 150px;">Trạng thái</th>
+                    <th>Ghi chú</th>
+                    <th style="text-align: right;">Cập nhật</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="font-weight: 500; color: #1a202c;">Nguyễn Văn Minh</td>
+                    <td><span class="status-badge status-present"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Có mặt</span></td>
+                    <td><input type="text" class="notes-input" placeholder="Nhập ghi chú..."></td>
+                    <td>
+                        <div class="action-buttons justify-content-end">
+                            <button class="btn-status btn-status-active">Có mặt</button>
+                            <button class="btn-status">Muộn</button>
+                            <button class="btn-status">Vắng</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 500; color: #1a202c;">Trần Thị Lan</td>
+                    <td><span class="status-badge status-present"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Có mặt</span></td>
+                    <td><input type="text" class="notes-input" placeholder="Nhập ghi chú..."></td>
+                    <td>
+                        <div class="action-buttons justify-content-end">
+                            <button class="btn-status btn-status-active">Có mặt</button>
+                            <button class="btn-status">Muộn</button>
+                            <button class="btn-status">Vắng</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 500; color: #1a202c;">Lê Hoàng Nam</td>
+                    <td><span class="status-badge status-late"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Muộn</span></td>
+                    <td><input type="text" class="notes-input" value="Đến muộn 10 phút" placeholder="Nhập ghi chú..."></td>
+                    <td>
+                        <div class="action-buttons justify-content-end">
+                            <button class="btn-status">Có mặt</button>
+                            <button class="btn-status btn-status-active">Muộn</button>
+                            <button class="btn-status">Vắng</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 500; color: #1a202c;">Phạm Thu Hương</td>
+                    <td><span class="status-badge status-absent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Vắng</span></td>
+                    <td><input type="text" class="notes-input" value="Không có phép" placeholder="Nhập ghi chú..."></td>
+                    <td>
+                        <div class="action-buttons justify-content-end">
+                            <button class="btn-status">Có mặt</button>
+                            <button class="btn-status">Muộn</button>
+                            <button class="btn-status btn-status-active">Vắng</button>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight: 500; color: #1a202c;">Đỗ Minh Tú</td>
+                    <td><span class="status-badge status-present"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Có mặt</span></td>
+                    <td><input type="text" class="notes-input" placeholder="Nhập ghi chú..."></td>
+                    <td>
+                        <div class="action-buttons justify-content-end">
+                            <button class="btn-status btn-status-active">Có mặt</button>
+                            <button class="btn-status">Muộn</button>
+                            <button class="btn-status">Vắng</button>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="attendance-footer">
+        <button class="btn-save">Lưu điểm danh</button>
+    </div>
+</div>
+
+<div class="attendance-card mt-4" style="margin-top: 1.5rem;">
+    <div class="attendance-card-header">
+        <h3 class="attendance-card-title m-0">Lịch sử điểm danh</h3>
+    </div>
+    
+    <div class="attendance-table-wrapper">
+        <table class="attendance-table">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Lớp</th>
+                    <th style="text-align: center;">Có mặt</th>
+                    <th style="text-align: center;">Vắng</th>
+                    <th style="text-align: center;">Muộn</th>
+                    <th>Tỷ lệ</th>
+                    <th style="text-align: right;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="color: #6b7280;">24/3/2026</td>
+                    <td><span class="class-badge">Toán 10A</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-green">22</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-red">2</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-orange">1</span></td>
+                    <td style="font-weight: 600; color: #1a202c;">88%</td>
+                    <td style="text-align: right;">
+                        <button class="detail-btn">Xem chi tiết</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: #6b7280;">22/3/2026</td>
+                    <td><span class="class-badge">Toán 10A</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-green">23</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-red">1</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-orange">1</span></td>
+                    <td style="font-weight: 600; color: #1a202c;">92%</td>
+                    <td style="text-align: right;">
+                        <button class="detail-btn">Xem chi tiết</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="color: #6b7280;">20/3/2026</td>
+                    <td><span class="class-badge">Toán 10A</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-green">24</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-red">0</span></td>
+                    <td style="text-align: center;"><span class="stat-circle-orange">1</span></td>
+                    <td style="font-weight: 600; color: #1a202c;">96%</td>
+                    <td style="text-align: right;">
+                        <button class="detail-btn">Xem chi tiết</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <style>
+        .notes-input {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border: none;
+            background-color: #f3f4f6;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #4b5563;
+            outline: none;
+            transition: background-color 0.2s;
+        }
+        .notes-input:focus {
+            background-color: #e5e7eb;
+        }
+        .attendance-date {
+            text-align: center;
+        }
+        .stat-circle-green {
+            background-color: #dcfce7;
+            color: #166534;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-block;
+            min-width: 32px;
+            text-align: center;
+        }
+        .stat-circle-red {
+            background-color: #fee2e2;
+            color: #991b1b;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-block;
+            min-width: 32px;
+            text-align: center;
+        }
+        .stat-circle-orange {
+            background-color: #ffedd5;
+            color: #9a3412;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-block;
+            min-width: 32px;
+            text-align: center;
+        }
+    </style>
+}

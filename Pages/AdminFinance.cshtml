@@ -1,0 +1,368 @@
+@page
+@model EduBridge.Pages.AdminFinanceModel
+@{
+    ViewData["Title"] = "Quản lý tài chính";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminFinance";
+}
+
+<div class="space-y-6 pb-20">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Quản lý tài chính</h1>
+            <p class="text-gray-500 mt-1">Theo dõi doanh thu, công nợ và đóng tiền học của học sinh</p>
+        </div>
+        <button class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center transition-colors shadow-sm">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Tạo hóa đơn mới
+        </button>
+    </div>
+
+    <!-- Stat Cards Grid -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Revenue -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Tổng doanh thu dự kiến</h3>
+                <div class="bg-purple-50 p-2.5 rounded-xl text-purple-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">485M VNĐ</div>
+            <p class="text-xs text-green-500 font-medium mt-2">+8% so với tháng trước</p>
+        </div>
+
+        <!-- Collected -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Thực thu (Đã đóng)</h3>
+                <div class="bg-green-50 p-2.5 rounded-xl text-green-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">412M VNĐ</div>
+            <p class="text-xs text-gray-500 font-medium mt-2">Đạt 85% tổng chỉ tiêu tháng</p>
+        </div>
+
+        <!-- Uncollected -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Còn lại (Công nợ)</h3>
+                <div class="bg-orange-50 p-2.5 rounded-xl text-orange-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">73M VNĐ</div>
+            <p class="text-xs text-orange-500 font-medium mt-2">Chưa thu (15% còn lại)</p>
+        </div>
+
+        <!-- Debt Count -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
+            <div class="flex flex-row items-center justify-between pb-4">
+                <h3 class="text-sm font-medium text-gray-600">Học sinh chưa hoàn thành</h3>
+                <div class="bg-red-50 p-2.5 rounded-xl text-red-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                </div>
+            </div>
+            <div class="text-2xl font-bold text-gray-900">15 học sinh</div>
+            <p class="text-xs text-red-500 font-medium mt-2">-3 học sinh so với tuần trước</p>
+        </div>
+    </div>
+
+    <!-- Main Section -->
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-white">
+            <div>
+                <h3 class="text-base font-bold text-gray-900">Đóng tiền học và hóa đơn</h3>
+                <p class="text-xs text-gray-500 mt-1">Ghi nhận học phí đã thu và gửi biên lai tự động</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Search bar -->
+                <div class="relative w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input type="text" id="searchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors" placeholder="Tìm kiếm tên học sinh...">
+                </div>
+
+                <!-- Filter Status -->
+                <select id="statusFilter" class="block py-2 px-3 border border-gray-200 bg-gray-50 rounded-xl text-sm text-gray-600 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Đã đóng">Đã đóng</option>
+                    <option value="Chưa đóng">Chưa đóng</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-white border-b border-gray-100 text-sm font-semibold text-gray-900">
+                        <th class="py-4 px-6 font-semibold">Học sinh</th>
+                        <th class="py-4 px-6 font-semibold">Lớp học</th>
+                        <th class="py-4 px-6 font-semibold">Khoản thu</th>
+                        <th class="py-4 px-6 font-semibold">Số tiền</th>
+                        <th class="py-4 px-6 font-semibold">Hạn thanh toán</th>
+                        <th class="py-4 px-6 font-semibold">Trạng thái</th>
+                        <th class="py-4 px-6 font-semibold text-right">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="financeTableBody" class="text-sm divide-y divide-gray-100">
+                    <!-- Student 1 -->
+                    <tr class="hover:bg-gray-50 transition-colors" data-student="nguyen van minh" data-status="Chưa đóng">
+                        <td class="py-5 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">VM</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Nguyễn Văn Minh</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">minh.nguyen@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-5 px-6 font-medium text-gray-700">Toán 10A</td>
+                        <td class="py-5 px-6 text-gray-600 font-medium">Học phí Tháng 3/2026</td>
+                        <td class="py-5 px-6 font-semibold text-gray-900">2,500,000 đ</td>
+                        <td class="py-5 px-6 text-gray-500">10/03/2026</td>
+                        <td class="py-5 px-6">
+                            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600">Chưa đóng</span>
+                        </td>
+                        <td class="py-5 px-6 text-right">
+                            <button onclick="recordPayment(this, 'Nguyễn Văn Minh', '2,500,000 đ')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center shadow-sm">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Thu tiền
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Student 2 -->
+                    <tr class="hover:bg-gray-50 transition-colors" data-student="tran thi lan" data-status="Đã đóng">
+                        <td class="py-5 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">TL</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Trần Thị Lan</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">lan.tran@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-5 px-6 font-medium text-gray-700">Lý 11B</td>
+                        <td class="py-5 px-6 text-gray-600 font-medium">Học phí Tháng 3/2026</td>
+                        <td class="py-5 px-6 font-semibold text-gray-900">2,800,000 đ</td>
+                        <td class="py-5 px-6 text-gray-500">10/03/2026</td>
+                        <td class="py-5 px-6">
+                            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đã đóng</span>
+                        </td>
+                        <td class="py-5 px-6 text-right">
+                            <button onclick="printReceipt('Trần Thị Lan', '2,800,000 đ', 'Lý 11B')" class="bg-gray-50 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-5a2 2 0 00-2-2H5a2 2 0 00-2 2v5a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-17v4m0 0V5m0 4h.01"></path></svg>
+                                Hóa đơn
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Student 3 -->
+                    <tr class="hover:bg-gray-50 transition-colors" data-student="le hoang nam" data-status="Đã đóng">
+                        <td class="py-5 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">HN</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Lê Hoàng Nam</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">nam.le@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-5 px-6 font-medium text-gray-700">Hóa 12C</td>
+                        <td class="py-5 px-6 text-gray-600 font-medium">Học phí Tháng 3/2026</td>
+                        <td class="py-5 px-6 font-semibold text-gray-900">3,000,000 đ</td>
+                        <td class="py-5 px-6 text-gray-500">10/03/2026</td>
+                        <td class="py-5 px-6">
+                            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đã đóng</span>
+                        </td>
+                        <td class="py-5 px-6 text-right">
+                            <button onclick="printReceipt('Lê Hoàng Nam', '3,000,000 đ', 'Hóa 12C')" class="bg-gray-50 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-5a2 2 0 00-2-2H5a2 2 0 00-2 2v5a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-17v4m0 0V5m0 4h.01"></path></svg>
+                                Hóa đơn
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Student 4 -->
+                    <tr class="hover:bg-gray-50 transition-colors" data-student="pham thu huong" data-status="Chưa đóng">
+                        <td class="py-5 px-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">TH</div>
+                                <div>
+                                    <div class="font-semibold text-gray-900">Phạm Thu Hương</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">huong.pham@gmail.com</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-5 px-6 font-medium text-gray-700">Anh 9D</td>
+                        <td class="py-5 px-6 text-gray-600 font-medium">Học phí Tháng 3/2026</td>
+                        <td class="py-5 px-6 font-semibold text-gray-900">2,200,000 đ</td>
+                        <td class="py-5 px-6 text-gray-500">10/03/2026</td>
+                        <td class="py-5 px-6">
+                            <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600">Chưa đóng</span>
+                        </td>
+                        <td class="py-5 px-6 text-right">
+                            <button onclick="recordPayment(this, 'Phạm Thu Hương', '2,200,000 đ')" class="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center shadow-sm">
+                                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                Thu tiền
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Receipt Modal -->
+<div id="receiptModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-40 backdrop-blur-sm flex justify-center items-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl p-6 relative transform transition-all duration-300 scale-95 opacity-0" id="receiptModalBody">
+        <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 focus:outline-none">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <div class="text-center pb-4 border-b border-gray-100">
+            <div class="text-blue-600 font-bold text-2xl tracking-wide">EduBridge</div>
+            <div class="text-xs text-gray-500 font-semibold uppercase tracking-wider mt-1">Biên lai thu học phí</div>
+        </div>
+        <div class="py-6 space-y-4 text-sm text-gray-700">
+            <div class="flex justify-between">
+                <span class="text-gray-500">Mã hóa đơn:</span>
+                <span class="font-bold text-gray-900" id="receiptId">#HD89342</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Học sinh:</span>
+                <span class="font-semibold text-gray-900" id="receiptStudent">Nguyễn Văn A</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Lớp học:</span>
+                <span class="font-semibold text-gray-900" id="receiptClass">Toán 10A</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Nội dung thanh toán:</span>
+                <span class="text-gray-900 font-medium">Học phí Tháng 3/2026</span>
+            </div>
+            <div class="flex justify-between border-t border-gray-100 pt-4">
+                <span class="text-gray-900 font-semibold text-base">Tổng số tiền:</span>
+                <span class="text-blue-600 font-extrabold text-lg" id="receiptAmount">2,500,000 đ</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Ngày giao dịch:</span>
+                <span class="text-gray-900 font-medium">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Phương thức:</span>
+                <span class="text-gray-900 font-medium">Tiền mặt / Chuyển khoản</span>
+            </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button onclick="closeModal()" class="w-1/2 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 font-bold rounded-xl text-sm transition-colors">Đóng</button>
+            <button onclick="window.print()" class="w-1/2 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors shadow-md">In biên lai</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Alert -->
+<div id="toast" class="fixed top-5 right-5 z-50 bg-green-500 text-white font-bold px-4 py-3 rounded-xl shadow-lg transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <span id="toastMsg">Thu học phí thành công!</span>
+</div>
+
+@section Scripts {
+    <script>
+        // Filters and Search Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const tableRows = document.querySelectorAll('#financeTableBody tr');
+
+            function filterTable() {
+                const searchVal = searchInput.value.toLowerCase().trim();
+                const statusVal = statusFilter.value;
+
+                tableRows.forEach(row => {
+                    const name = row.getAttribute('data-student') || '';
+                    const status = row.getAttribute('data-status') || '';
+                    
+                    const matchSearch = name.includes(searchVal);
+                    const matchStatus = statusVal === '' || status === statusVal;
+
+                    if (matchSearch && matchStatus) {
+                        row.classList.remove('hidden');
+                    } else {
+                        row.classList.add('hidden');
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+        });
+
+        // Record Payment (Thu tiền) Action
+        function recordPayment(btn, studentName, amount) {
+            const row = btn.closest('tr');
+            row.setAttribute('data-status', 'Đã đóng');
+            
+            // Transform badge
+            const badge = row.querySelector('.status-badge');
+            badge.className = "status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white";
+            badge.textContent = "Đã đóng";
+
+            // Transform button to Print Bill
+            const actionTd = row.querySelector('td:last-child');
+            actionTd.innerHTML = `
+                <button onclick="printReceipt('${studentName}', '${amount}', '${row.cells[1].textContent.trim()}')" class="bg-gray-50 text-gray-700 hover:bg-gray-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-all inline-flex items-center">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-5a2 2 0 00-2-2H5a2 2 0 00-2 2v5a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-3a2 2 0 00-2-2H9a2 2 0 00-2 2v3a2 2 0 002 2zm5-17v4m0 0V5m0 4h.01"></path></svg>
+                    Hóa đơn
+                </button>
+            `;
+
+            // Display Toast
+            showToast(`Ghi nhận nộp học phí cho học sinh ${studentName} thành công!`);
+        }
+
+        // Print Receipt Modal trigger
+        function printReceipt(studentName, amount, className) {
+            document.getElementById('receiptStudent').textContent = studentName;
+            document.getElementById('receiptAmount').textContent = amount;
+            document.getElementById('receiptClass').textContent = className;
+            document.getElementById('receiptId').textContent = '#HD' + Math.floor(10000 + Math.random() * 90000);
+
+            // Open Modal
+            const modal = document.getElementById('receiptModal');
+            const body = document.getElementById('receiptModalBody');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                body.classList.remove('scale-95', 'opacity-0');
+                body.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('receiptModal');
+            const body = document.getElementById('receiptModalBody');
+            body.classList.remove('scale-100', 'opacity-100');
+            body.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').textContent = msg;
+            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-100px]', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+}

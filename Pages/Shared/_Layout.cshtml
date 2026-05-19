@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduBridge</title>
+    
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--primary)',
+                        muted: 'var(--muted)',
+                        border: 'var(--border)'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+    <main class="w-full max-w-screen-xl mx-auto p-4">
+        @RenderBody()
+    </main>
+
+    @{
+        var currentUrl = Context.Request.Path.Value?.ToLower();
+    }
+    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
+        <div class="max-w-screen-xl mx-auto flex justify-around items-center h-16 px-2">
+            
+            <a href="/Dashboard" class="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors @(currentUrl == "/dashboard" ? "text-blue-600" : "text-gray-500 hover:text-gray-700")">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="@(currentUrl == "/dashboard" ? "2.5" : "2")" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span class="text-xs @(currentUrl == "/dashboard" ? "font-semibold" : "font-normal")">Trang chủ</span>
+            </a>
+
+            <a href="/Homework" class="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors @(currentUrl == "/homework" ? "text-blue-600" : "text-gray-500 hover:text-gray-700")">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="@(currentUrl == "/homework" ? "2.5" : "2")" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <span class="text-xs @(currentUrl == "/homework" ? "font-semibold" : "font-normal")">Bài tập</span>
+            </a>
+
+            <a href="/Progress" class="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors @(currentUrl == "/progress" ? "text-blue-600" : "text-gray-500 hover:text-gray-700")">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="@(currentUrl == "/progress" ? "2.5" : "2")" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                <span class="text-xs @(currentUrl == "/progress" ? "font-semibold" : "font-normal")">Tiến độ</span>
+            </a>
+
+            <a href="/Grades" class="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors @(currentUrl == "/grades" ? "text-blue-600" : "text-gray-500 hover:text-gray-700")">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="@(currentUrl == "/grades" ? "2.5" : "2")" stroke-linecap="round" stroke-linejoin="round"><path d="M14 22v-4a2 2 0 1 0-4 0v4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M18 5v17"/><path d="m4 6 8-4 8 4"/><path d="M6 5v17"/><circle cx="12" cy="9" r="2"/></svg>
+                <span class="text-xs @(currentUrl == "/grades" ? "font-semibold" : "font-normal")">Sổ điểm</span>
+            </a>
+
+        </div>
+    </nav>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
