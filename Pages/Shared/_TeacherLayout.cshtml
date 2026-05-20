@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="~/css/teacher.css" asp-append-version="true" />
 </head>
 <body class="bg-gray">
+    <div id="layout-toast" style="position: fixed; right: 20px; top: 20px; z-index: 9999; display: none; max-width: 24rem; border-radius: 8px; background: #16a34a; padding: 12px 16px; color: #fff; font-size: 14px; font-weight: 600; box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);"></div>
+
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -81,6 +83,19 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        const layoutToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
+
+        if (layoutToastMessage) {
+            const toast = document.getElementById('layout-toast');
+            toast.textContent = layoutToastMessage;
+            toast.style.display = 'block';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

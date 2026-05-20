@@ -11,6 +11,7 @@
     </style>
 </head>
 <body class="text-gray-800 flex h-screen overflow-hidden">
+    <div id="layout-toast" class="fixed right-5 top-5 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg"></div>
 
     <!-- Sidebar -->
     <aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
@@ -80,6 +81,20 @@
     <main class="flex-1 overflow-y-auto p-8">
         @RenderBody()
     </main>
+
+    <script>
+        const layoutToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
+
+        if (layoutToastMessage) {
+            const toast = document.getElementById('layout-toast');
+            toast.textContent = layoutToastMessage;
+            toast.className = 'fixed right-5 top-5 z-50 max-w-sm rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white shadow-lg';
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

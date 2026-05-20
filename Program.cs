@@ -1,6 +1,7 @@
 using EduBridge.Data;
-using Microsoft.EntityFrameworkCore;
 using EduBridge.Hubs;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge
 {
@@ -9,20 +10,52 @@ namespace EduBridge
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            Console.WriteLine("HASH 123456 = " + BCrypt.Net.BCrypt.HashPassword("123456"));
 
-            // Add Entity Framework Core ApplicationDbContext
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(
+                    builder.Configuration.GetConnectionString("DefaultConnection")
+                )
+            );
 
-            // Add services to the container.
-            builder.Services.AddRazorPages();
-            
-            // Add SignalR
+            builder.Services.AddRazorPages(options =>
+            {
+                options.Conventions.AuthorizeFolder("/");
+                options.Conventions.AllowAnonymousToPage("/Login");
+                options.Conventions.AllowAnonymousToPage("/AccessDenied");
+            });
+
+            builder.Services
+                .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Login";
+                    options.LogoutPath = "/Logout";
+                    options.AccessDeniedPath = "/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+                    options.SlidingExpiration = true;
+
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                });
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOnly", policy =>
+                    policy.RequireRole("OWNER"));
+
+                options.AddPolicy("TeacherOnly", policy =>
+                    policy.RequireRole("TEACHER"));
+
+                options.AddPolicy("ParentOnly", policy =>
+                    policy.RequireRole("PARENT"));
+            });
+
             builder.Services.AddSignalR();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
@@ -34,52 +67,11 @@ namespace EduBridge
 
             app.UseRouting();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapRazorPages();
-            
-            // Map SignalR Hub
             app.MapHub<ChatHub>("/chatHub");
-
-            // Seed initial data and auto migrate
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                try {
-                    db.Database.Migrate();
-                    // Seed mock users and conversation if empty
-                    if (!db.Users.Any())
-                    {
-                        var teacher = new Models.User { Name = "Nguyễn Văn A", Email = "teacher@edubridge.com", Role = "Teacher" };
-                        var parent1 = new Models.User { Name = "Nguyễn Văn Hùng", Email = "parent1@edubridge.com", Role = "Parent" };
-                        var parent2 = new Models.User { Name = "Trần Văn Toàn", Email = "parent2@edubridge.com", Role = "Parent" };
-                        var parent3 = new Models.User { Name = "Lê Thị Mai", Email = "parent3@edubridge.com", Role = "Parent" };
-                        db.Users.AddRange(teacher, parent1, parent2, parent3);
-                        db.SaveChanges();
-                        
-                        var conv1 = new Models.Conversation {
-                            TeacherUserId = teacher.Id, ParentUserId = parent1.Id, StudentName = "Nguyễn Văn Minh",
-                            LastMessage = "Con em học bài này hơi khó, có thể giải thích thêm không ạ?", LastMessageTime = DateTime.Now.AddHours(-1), UnreadCount = 2
-                        };
-                        var conv2 = new Models.Conversation {
-                            TeacherUserId = teacher.Id, ParentUserId = parent2.Id, StudentName = "Trần Thị Lan",
-                            LastMessage = "Cảm ơn cô đã quan tâm đến con em.", LastMessageTime = DateTime.Now.AddHours(-2), UnreadCount = 0
-                        };
-                        var conv3 = new Models.Conversation {
-                            TeacherUserId = teacher.Id, ParentUserId = parent3.Id, StudentName = "Lê Hoàng Nam",
-                            LastMessage = "Con em có thể học bù vào thứ 7 được không ạ?", LastMessageTime = DateTime.Now.AddDays(-1), UnreadCount = 1
-                        };
-                        db.Conversations.AddRange(conv1, conv2, conv3);
-                        db.SaveChanges();
-
-                        var msg1 = new Models.Message { ConversationId = conv1.Id, SenderId = parent1.Id, Content = "Xin chào cô, con em học bài này hơi khó. Có thể giải thích thêm không ạ?", SentAt = conv1.LastMessageTime.AddMinutes(-10) };
-                        var msg2 = new Models.Message { ConversationId = conv1.Id, SenderId = teacher.Id, Content = "Chào phụ huynh. Cô sẽ gửi thêm tài liệu và video bài giảng cho em ạ. Phụ huynh có thể cho em xem lại.", SentAt = conv1.LastMessageTime.AddMinutes(-5) };
-                        var msg3 = new Models.Message { ConversationId = conv1.Id, SenderId = parent1.Id, Content = "Cảm ơn cô nhiều ạ!", SentAt = conv1.LastMessageTime };
-                        db.Messages.AddRange(msg1, msg2, msg3);
-                        db.SaveChanges();
-                    }
-                } catch { }
-            }
 
             app.Run();
         }

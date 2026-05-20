@@ -1,0 +1,25 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace EduBridge.Models;
+
+public partial class Teacher
+{
+    public int TeacherId { get; set; }
+
+    public int UserId { get; set; }
+
+    public int CenterId { get; set; }
+
+    public string? Specialization { get; set; }
+
+    public int ExperienceYears { get; set; }
+
+    public string Status { get; set; } = null!;
+
+    public virtual Center Center { get; set; } = null!;
+
+    public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+
+    public virtual User User { get; set; } = null!;
+}
