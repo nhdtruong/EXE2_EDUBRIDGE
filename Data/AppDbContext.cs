@@ -22,6 +22,10 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Class> Classes { get; set; }
 
+    public virtual DbSet<ClassCodeCounter> ClassCodeCounters { get; set; }
+
+    public virtual DbSet<ClassSchedule> ClassSchedules { get; set; }
+
     public virtual DbSet<Course> Courses { get; set; }
 
     public virtual DbSet<Enrollment> Enrollments { get; set; }
@@ -30,11 +34,15 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Homework> Homeworks { get; set; }
 
+    public virtual DbSet<Invoice> Invoices { get; set; }
+
     public virtual DbSet<Lesson> Lessons { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
+
+    public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -42,11 +50,15 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Teacher> Teachers { get; set; }
 
+    public virtual DbSet<TeacherCodeCounter> TeacherCodeCounters { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<VwAttendanceSummary> VwAttendanceSummaries { get; set; }
 
     public virtual DbSet<VwClassOverview> VwClassOverviews { get; set; }
+
+    public virtual DbSet<VwRevenueByPayment> VwRevenueByPayments { get; set; }
 
     public virtual DbSet<VwStudentOverview> VwStudentOverviews { get; set; }
 
@@ -104,17 +116,18 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => e.CenterId, "IX_Classes_CenterId");
 
+            entity.HasIndex(e => new { e.CenterId, e.ClassCode }, "IX_Classes_CenterId_ClassCode");
+
             entity.HasIndex(e => e.ClassCode, "IX_Classes_ClassCode");
 
             entity.HasIndex(e => e.CourseId, "IX_Classes_CourseId");
 
             entity.HasIndex(e => e.TeacherId, "IX_Classes_TeacherId");
 
-            entity.HasIndex(e => e.ClassCode, "UQ__Classes__2ECD4A557BAAF4A4").IsUnique();
+            entity.HasIndex(e => e.ClassCode, "UQ_Classes_ClassCode").IsUnique();
 
             entity.Property(e => e.ClassCode).HasMaxLength(30);
             entity.Property(e => e.ClassName).HasMaxLength(150);
-            entity.Property(e => e.MaxStudents).HasDefaultValue(20);
             entity.Property(e => e.Room).HasMaxLength(50);
             entity.Property(e => e.ScheduleText).HasMaxLength(255);
             entity.Property(e => e.Status)
@@ -135,6 +148,39 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Classes_Teachers");
+        });
+
+        modelBuilder.Entity<ClassCodeCounter>(entity =>
+        {
+            entity.HasKey(e => new { e.CenterId, e.YearMonth });
+
+            entity.Property(e => e.YearMonth)
+                .HasMaxLength(6)
+                .IsUnicode(false)
+                .IsFixedLength();
+
+            entity.HasOne(d => d.Center).WithMany(p => p.ClassCodeCounters)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ClassCodeCounters_Centers");
+        });
+
+        modelBuilder.Entity<ClassSchedule>(entity =>
+        {
+            entity.HasKey(e => e.ClassScheduleId).HasName("PK__ClassSch__6A8D56FE6DDE5B24");
+
+            entity.HasIndex(e => e.ClassId, "IX_ClassSchedules_ClassId");
+
+            entity.HasIndex(e => new { e.ClassId, e.DayOfWeek, e.StartTime, e.EndTime }, "UQ_ClassSchedules_Class_Day_Time").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.EndTime).HasPrecision(0);
+            entity.Property(e => e.StartTime).HasPrecision(0);
+
+            entity.HasOne(d => d.Class).WithMany(p => p.ClassSchedules)
+                .HasForeignKey(d => d.ClassId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ClassSchedules_Classes");
         });
 
         modelBuilder.Entity<Course>(entity =>
@@ -216,6 +262,37 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Homework_Lessons");
         });
 
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(e => e.InvoiceId).HasName("PK__Invoices__D796AAB514CC5E3C");
+
+            entity.HasIndex(e => e.ClassId, "IX_Invoices_ClassId");
+
+            entity.HasIndex(e => e.Status, "IX_Invoices_Status");
+
+            entity.HasIndex(e => e.StudentId, "IX_Invoices_StudentId");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.FinalAmount)
+                .HasComputedColumnSql("([Amount]-[DiscountAmount])", true)
+                .HasColumnType("decimal(19, 2)");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Unpaid");
+
+            entity.HasOne(d => d.Class).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.ClassId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Classes");
+
+            entity.HasOne(d => d.Student).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.StudentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Students");
+        });
+
         modelBuilder.Entity<Lesson>(entity =>
         {
             entity.HasKey(e => e.LessonId).HasName("PK__Lessons__B084ACD01DD907D6");
@@ -267,6 +344,25 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Notifications_Users");
         });
 
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A3855CF874E");
+
+            entity.HasIndex(e => e.InvoiceId, "IX_Payments_InvoiceId");
+
+            entity.HasIndex(e => e.PaidAt, "IX_Payments_PaidAt");
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.PaidAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.PaymentMethod).HasMaxLength(30);
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Payments_Invoices");
+        });
+
         modelBuilder.Entity<Role>(entity =>
         {
             entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A388E3B2F");
@@ -315,7 +411,11 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => e.CenterId, "IX_Teachers_CenterId");
 
+            entity.HasIndex(e => new { e.CenterId, e.TeacherCode }, "IX_Teachers_CenterId_TeacherCode");
+
             entity.HasIndex(e => e.UserId, "IX_Teachers_UserId");
+
+            entity.HasIndex(e => e.TeacherCode, "UQ_Teachers_TeacherCode").IsUnique();
 
             entity.HasIndex(e => e.UserId, "UQ__Teachers__1788CC4DD5305503").IsUnique();
 
@@ -323,6 +423,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
+            entity.Property(e => e.TeacherCode).HasMaxLength(30);
 
             entity.HasOne(d => d.Center).WithMany(p => p.Teachers)
                 .HasForeignKey(d => d.CenterId)
@@ -335,23 +436,56 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Teachers_Users");
         });
 
+        modelBuilder.Entity<TeacherCodeCounter>(entity =>
+        {
+            entity.HasKey(e => e.CenterId).HasName("PK__TeacherC__398FC7F7E07FB32A");
+
+            entity.Property(e => e.CenterId).ValueGeneratedNever();
+
+            entity.HasOne(d => d.Center).WithOne(p => p.TeacherCodeCounter)
+                .HasForeignKey<TeacherCodeCounter>(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TeacherCodeCounters_Centers");
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CB36B485D");
 
-            entity.HasIndex(e => e.Email, "IX_Users_Email");
+            entity.HasIndex(e => e.NormalizedPhoneNumber, "IX_Users_NormalizedPhoneNumber");
 
             entity.HasIndex(e => new { e.RoleId, e.Status }, "IX_Users_RoleId_Status");
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D105346CC3F558").IsUnique();
+            entity.HasIndex(e => e.Email, "UX_Users_Email_NotNull")
+                .IsUnique()
+                .HasFilter("([Email] IS NOT NULL)");
 
+            entity.HasIndex(e => e.IdentityNumber, "UX_Users_IdentityNumber_NotNull")
+                .IsUnique()
+                .HasFilter("([IdentityNumber] IS NOT NULL)");
+
+            entity.HasIndex(e => e.NormalizedPhoneNumber, "UX_Users_NormalizedPhoneNumber_NotNull")
+                .IsUnique()
+                .HasFilter("([NormalizedPhoneNumber] IS NOT NULL)");
+
+            entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.CurrentAddress).HasMaxLength(255);
             entity.Property(e => e.Email).HasMaxLength(150);
             entity.Property(e => e.EmailConfirmed).HasDefaultValue(true);
+            entity.Property(e => e.Ethnicity).HasMaxLength(50);
             entity.Property(e => e.FullName).HasMaxLength(100);
+            entity.Property(e => e.Gender).HasMaxLength(10);
+            entity.Property(e => e.Hometown).HasMaxLength(150);
+            entity.Property(e => e.IdentityIssuedPlace).HasMaxLength(150);
+            entity.Property(e => e.IdentityNumber).HasMaxLength(20);
+            entity.Property(e => e.NormalizedPhoneNumber).HasMaxLength(20);
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
+            entity.Property(e => e.PermanentAddress).HasMaxLength(255);
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+            entity.Property(e => e.PlaceOfBirth).HasMaxLength(150);
+            entity.Property(e => e.Religion).HasMaxLength(50);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
@@ -386,6 +520,15 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ScheduleText).HasMaxLength(255);
             entity.Property(e => e.Status).HasMaxLength(20);
             entity.Property(e => e.TeacherName).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<VwRevenueByPayment>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_RevenueByPayment");
+
+            entity.Property(e => e.RevenueAmount).HasColumnType("decimal(38, 2)");
         });
 
         modelBuilder.Entity<VwStudentOverview>(entity =>

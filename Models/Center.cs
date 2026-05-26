@@ -21,6 +21,8 @@ public partial class Center
 
     public DateTime CreatedAt { get; set; }
 
+    public virtual ICollection<ClassCodeCounter> ClassCodeCounters { get; set; } = new List<ClassCodeCounter>();
+
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
@@ -28,6 +30,8 @@ public partial class Center
     public virtual User OwnerUser { get; set; } = null!;
 
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
+
+    public virtual TeacherCodeCounter? TeacherCodeCounter { get; set; }
 
     public virtual ICollection<Teacher> Teachers { get; set; } = new List<Teacher>();
 }

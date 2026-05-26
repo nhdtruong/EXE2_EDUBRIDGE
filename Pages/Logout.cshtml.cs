@@ -10,7 +10,8 @@ namespace EduBridge.Pages
         public async Task<IActionResult> OnPostAsync()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToPage("/Login");
+            TempData["ToastMessage"] = "Đã đăng xuất.";
+            return RedirectToPage("/Login", new { loggedOut = true });
         }
     }
 }

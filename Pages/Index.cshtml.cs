@@ -12,9 +12,29 @@ namespace EduBridge.Pages
             _logger = logger;
         }
 
-        public void OnGet()
+        public IActionResult OnGet()
         {
+            if (!User.Identity?.IsAuthenticated ?? true)
+            {
+                return RedirectToPage("/Login");
+            }
 
+            if (User.IsInRole("OWNER"))
+            {
+                return RedirectToPage("/AdminDashboard");
+            }
+
+            if (User.IsInRole("TEACHER"))
+            {
+                return RedirectToPage("/Teacher/Dashboard");
+            }
+
+            if (User.IsInRole("PARENT"))
+            {
+                return RedirectToPage("/Messages");
+            }
+
+            return RedirectToPage("/Login");
         }
     }
 }

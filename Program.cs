@@ -1,6 +1,9 @@
 using EduBridge.Data;
 using EduBridge.Hubs;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge
@@ -10,19 +13,53 @@ namespace EduBridge
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-            Console.WriteLine("HASH 123456 = " + BCrypt.Net.BCrypt.HashPassword("123456"));
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
+            }
 
             builder.Services.AddDbContext<AppDbContext>(options =>
-                options.UseSqlServer(
-                    builder.Configuration.GetConnectionString("DefaultConnection")
-                )
+                options.UseSqlServer(connectionString)
             );
+
+            builder.Services.AddMemoryCache();
+
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+            });
+
+            builder.Services.Configure<FormOptions>(options =>
+            {
+                options.MultipartBodyLengthLimit = 5 * 1024 * 1024;
+            });
+
+            var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+
+            if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+            {
+                builder.Services
+                    .AddDataProtection()
+                    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
+                    .SetApplicationName("EduBridge");
+            }
 
             builder.Services.AddRazorPages(options =>
             {
                 options.Conventions.AuthorizeFolder("/");
                 options.Conventions.AllowAnonymousToPage("/Login");
                 options.Conventions.AllowAnonymousToPage("/AccessDenied");
+                options.Conventions.AuthorizePage("/AdminDashboard", "AdminOnly");
+                options.Conventions.AuthorizePage("/AdminClasses", "AdminOnly");
+                options.Conventions.AuthorizePage("/AdminStudents", "AdminOnly");
+                options.Conventions.AuthorizePage("/AdminTeachers", "AdminOnly");
+                options.Conventions.AuthorizePage("/AdminFinance", "AdminOnly");
+                options.Conventions.AuthorizePage("/AdminSettings", "AdminOnly");
+                options.Conventions.AuthorizeFolder("/Teacher", "TeacherOnly");
             });
 
             builder.Services
@@ -37,7 +74,9 @@ namespace EduBridge
 
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SameSite = SameSiteMode.Lax;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                        ? CookieSecurePolicy.SameAsRequest
+                        : CookieSecurePolicy.Always;
                 });
 
             builder.Services.AddAuthorization(options =>
@@ -56,11 +95,21 @@ namespace EduBridge
 
             var app = builder.Build();
 
+            app.UseForwardedHeaders();
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
+
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+                context.Response.Headers["X-Frame-Options"] = "DENY";
+                context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+                await next();
+            });
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();

@@ -33,5 +33,7 @@ public partial class Student
 
     public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
 
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
     public virtual User ParentUser { get; set; } = null!;
 }

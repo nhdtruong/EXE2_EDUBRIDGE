@@ -13,7 +13,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 font-sans text-gray-900">
-    <div id="login-toast" class="fixed right-5 top-5 z-50 hidden max-w-sm rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg"></div>
+    <div id="login-toast" class="fixed right-6 top-6 z-50 hidden w-[360px] rounded-xl px-5 py-4 text-white shadow-2xl">
+        <div id="login-toast-title" class="text-lg font-bold leading-6"></div>
+        <div id="login-toast-message" class="mt-1 text-sm font-medium leading-5 text-white/95"></div>
+    </div>
 
     <div class="w-full max-w-md bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
         <div class="p-6 text-center">
@@ -38,19 +41,19 @@
                 <input type="hidden" name="Input.RoleGroup" value="Admin" />
 
                 <input name="Input.Email"
-                       type="email"
-                       placeholder="admin@edubridge.com"
+                       type="text"
+                       placeholder="Email hoặc số điện thoại"
                        required
                        class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
 
                 <input name="Input.Password"
                        type="password"
-                       placeholder="••••••••"
+                       placeholder="Nhập mật khẩu"
                        required
                        class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
 
                 <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                    Đăng nhập với tư cách Admin
+                    Đăng nhập với tư cách Chủ trung tâm
                 </button>
             </form>
 
@@ -59,14 +62,14 @@
 
                 <input type="hidden" name="Input.RoleGroup" value="Teacher" />
                 <input name="Input.Email"
-                       type="email"
-                       placeholder="teacher@edubridge.com"
+                       type="text"
+                       placeholder="Email hoặc số điện thoại"
                        required
                        class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
 
                 <input name="Input.Password"
                        type="password"
-                       placeholder="••••••••"
+                       placeholder="Nhập mật khẩu"
                        required
                        class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
 
@@ -75,12 +78,17 @@
                 </button>
             </form>
 
-            <p class="text-xs text-center text-gray-500 mt-6">Demo: Bạn có thể đăng nhập với bất kỳ email/mật khẩu nào</p>
+            <p class="text-xs text-center text-gray-500 mt-6">Sử dụng email hoặc số điện thoại của tài khoản đã được cấp</p>
         </div>
     </div>
 
     <script>
         const loginErrorMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ErrorMessage));
+        const loginSuccessMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
+        const logoutSuccessMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            string.Equals(HttpContext.Request.Query["loggedOut"], "true", StringComparison.OrdinalIgnoreCase)
+                ? "Đã đăng xuất."
+                : null));
 
         function showLoginToast(message, isSuccess) {
             if (!message) {
@@ -88,14 +96,16 @@
             }
 
             const toast = document.getElementById('login-toast');
-            toast.textContent = message;
-            toast.className = `fixed right-5 top-5 z-50 max-w-sm rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${isSuccess ? 'bg-green-600' : 'bg-red-600'}`;
+            document.getElementById('login-toast-title').textContent = isSuccess ? 'Thành công' : 'Thất bại';
+            document.getElementById('login-toast-message').textContent = message;
+            toast.className = `fixed right-6 top-6 z-50 w-[360px] rounded-xl px-5 py-4 text-white shadow-2xl ${isSuccess ? 'bg-green-600' : 'bg-red-600'}`;
 
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 3000);
         }
 
+        showLoginToast(logoutSuccessMessage || loginSuccessMessage, true);
         showLoginToast(loginErrorMessage, false);
 
         function switchTab(tab) {

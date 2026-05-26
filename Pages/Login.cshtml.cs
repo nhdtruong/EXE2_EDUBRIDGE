@@ -35,13 +35,28 @@ namespace EduBridge.Pages
 
         public async Task<IActionResult> OnPostAsync()
         {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            }
+
             if (!ModelState.IsValid)
             {
                 ErrorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập.";
                 return Page();
             }
 
-            var email = Input.Email.Trim().ToLowerInvariant();
+            var loginIdentifier = Input.Email.Trim();
+            var isEmailLogin = loginIdentifier.Contains('@');
+            var normalizedEmail = isEmailLogin
+                ? loginIdentifier.ToLowerInvariant()
+                : null;
+            var normalizedPhone = isEmailLogin
+                ? null
+                : NormalizePhoneNumber(loginIdentifier);
+            var internationalPhone = normalizedPhone == null
+                ? null
+                : ToInternationalPhone(normalizedPhone);
             var expectedRoleCode = MapRoleGroupToRoleCode(Input.RoleGroup);
 
             if (expectedRoleCode == null)
@@ -53,11 +68,30 @@ namespace EduBridge.Pages
             var user = await _context.Users
                 .AsTracking()
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+                .FirstOrDefaultAsync(u => isEmailLogin
+                    ? u.Email != null && u.Email == normalizedEmail
+                    : u.NormalizedPhoneNumber == normalizedPhone ||
+                      u.PhoneNumber != null &&
+                      (
+                          u.PhoneNumber
+                              .Replace(" ", "")
+                              .Replace("-", "")
+                              .Replace(".", "")
+                              .Replace("(", "")
+                              .Replace(")", "")
+                              .Replace("+", "") == normalizedPhone ||
+                          u.PhoneNumber
+                              .Replace(" ", "")
+                              .Replace("-", "")
+                              .Replace(".", "")
+                              .Replace("(", "")
+                              .Replace(")", "")
+                              .Replace("+", "") == internationalPhone
+                      ));
 
             if (user == null)
             {
-                ErrorMessage = "Email hoặc mật khẩu không đúng.";
+                ErrorMessage = "Email/số điện thoại hoặc mật khẩu không đúng.";
                 return Page();
             }
 
@@ -105,7 +139,7 @@ namespace EduBridge.Pages
 
             if (!passwordValid)
             {
-                ErrorMessage = "Email hoặc mật khẩu không đúng.";
+                ErrorMessage = "Email/số điện thoại hoặc mật khẩu không đúng.";
                 return Page();
             }
 
@@ -116,7 +150,7 @@ namespace EduBridge.Pages
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
                 new Claim(ClaimTypes.Role, user.Role.RoleCode)
             };
 
@@ -155,6 +189,25 @@ namespace EduBridge.Pages
             };
         }
 
+        private static string NormalizePhoneNumber(string value)
+        {
+            var digits = new string(value.Where(char.IsDigit).ToArray());
+
+            if (digits.StartsWith("84") && digits.Length >= 11)
+            {
+                return "0" + digits[2..];
+            }
+
+            return digits;
+        }
+
+        private static string ToInternationalPhone(string normalizedPhone)
+        {
+            return normalizedPhone.StartsWith('0') && normalizedPhone.Length >= 10
+                ? "84" + normalizedPhone[1..]
+                : normalizedPhone;
+        }
+
         private IActionResult RedirectByRole(string roleCode)
         {
             return roleCode.ToUpperInvariant() switch
@@ -168,8 +221,7 @@ namespace EduBridge.Pages
 
         public class LoginInput
         {
-            [Required(ErrorMessage = "Vui lòng nhập email.")]
-            [EmailAddress(ErrorMessage = "Email không đúng định dạng.")]
+            [Required(ErrorMessage = "Vui lòng nhập email hoặc số điện thoại.")]
             [MaxLength(150)]
             public string Email { get; set; } = string.Empty;
 

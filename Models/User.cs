@@ -11,7 +11,7 @@ public partial class User
 
     public string FullName { get; set; } = null!;
 
-    public string Email { get; set; } = null!;
+    public string? Email { get; set; }
 
     public string PasswordHash { get; set; } = null!;
 
@@ -26,6 +26,32 @@ public partial class User
     public DateTime CreatedAt { get; set; }
 
     public DateTime? LastLoginAt { get; set; }
+
+    public string? NormalizedPhoneNumber { get; set; }
+
+    public DateOnly? DateOfBirth { get; set; }
+
+    public string? Gender { get; set; }
+
+    public string? Address { get; set; }
+
+    public string? Ethnicity { get; set; }
+
+    public string? Religion { get; set; }
+
+    public string? IdentityNumber { get; set; }
+
+    public DateOnly? IdentityIssuedDate { get; set; }
+
+    public string? IdentityIssuedPlace { get; set; }
+
+    public string? CurrentAddress { get; set; }
+
+    public string? PermanentAddress { get; set; }
+
+    public string? Hometown { get; set; }
+
+    public string? PlaceOfBirth { get; set; }
 
     public virtual ICollection<Center> Centers { get; set; } = new List<Center>();
 

@@ -17,6 +17,8 @@ public partial class Teacher
 
     public string Status { get; set; } = null!;
 
+    public string TeacherCode { get; set; } = null!;
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();

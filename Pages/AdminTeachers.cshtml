@@ -7,393 +7,651 @@
 }
 
 <div class="space-y-6 pb-20">
-    <!-- Header -->
     <div class="flex justify-between items-start">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">Quản lý giáo viên</h1>
             <p class="text-gray-500 mt-1">Quản lý thông tin giáo viên và phân công</p>
         </div>
-        <button onclick="openAddTeacherModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center transition-colors">
+        <a asp-page="/AdminTeachers/Create" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center transition-colors">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Thêm giáo viên
-        </button>
+        </a>
     </div>
 
-    <!-- Main Card -->
     <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-white">
+        <div class="border-b border-blue-100 bg-blue-50/60 p-6">
             <h3 class="text-base font-bold text-gray-900">Danh sách giáo viên</h3>
-            <div class="relative w-64">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+
+            <form method="get" class="mt-5 space-y-4">
+                <input type="hidden" name="PageNumber" value="1" />
+                <input type="hidden" name="PageSize" value="@Model.PageSize" />
+                <div class="grid gap-4 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_260px]">
+                    <div>
+                        <label for="teacherSearch" class="sr-only">Tìm kiếm theo mã hoặc tên</label>
+                        <input id="teacherSearch" type="text" name="Search" value="@Model.Search" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm theo mã, tên">
+                        <span asp-validation-for="Search" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    </div>
+
+                    <div>
+                        <label for="teacherContactSearch" class="sr-only">Tìm kiếm theo email hoặc số điện thoại</label>
+                        <input id="teacherContactSearch" type="text" name="ContactSearch" value="@Model.ContactSearch" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm theo email, SĐT">
+                        <span asp-validation-for="ContactSearch" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    </div>
+
+                    <div>
+                        <label for="teacherStatusFilter" class="sr-only">Trạng thái</label>
+                        <select id="teacherStatusFilter" name="StatusFilter" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">Trạng thái</option>
+                            <option value="Active" selected="@(Model.StatusFilter == "Active")">Đang dạy</option>
+                            <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Tạm dừng</option>
+                        </select>
+                        <span asp-validation-for="StatusFilter" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    </div>
                 </div>
-                <input type="text" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors" placeholder="Tìm kiếm giáo viên...">
-            </div>
+
+                <div class="flex justify-end gap-3">
+                    <a asp-page="/AdminTeachers" class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
+                        Làm mới bộ lọc
+                    </a>
+                    <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        Tìm kiếm
+                    </button>
+                </div>
+            </form>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
-                    <tr class="bg-white border-b border-gray-100 text-sm font-semibold text-gray-900">
-                        <th class="py-4 px-6 font-semibold">Giáo viên</th>
-                        <th class="py-4 px-6 font-semibold">Môn học</th>
-                        <th class="py-4 px-6 font-semibold">Liên hệ</th>
-                        <th class="py-4 px-6 font-semibold">Số lớp</th>
-                        <th class="py-4 px-6 font-semibold">Số học sinh</th>
-                        <th class="py-4 px-6 font-semibold">Trạng thái</th>
-                        <th class="py-4 px-6 font-semibold text-right">Thao tác</th>
+                    <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                        <th class="py-4 px-4 text-center font-bold border-r border-slate-200">STT</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Giáo viên</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Liên hệ</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Số lớp</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Số học sinh</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Trạng thái</th>
+                        <th class="py-4 px-6 text-center font-bold">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody id="teacherTableBody" class="text-sm divide-y divide-gray-100">
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">NV</div>
-                                <div class="font-semibold text-gray-900">Nguyễn Văn A</div>
-                            </div>
-                        </td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-gray-200 text-gray-700 bg-white">Toán</span>
-                        </td>
-                        <td class="py-4 px-6 text-gray-600">
-                            <div class="flex items-center mb-1">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                nguyenvana@edubridge.com
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                0901234567
-                            </div>
-                        </td>
-                        <td class="py-4 px-6 font-medium text-gray-900">3 lớp</td>
-                        <td class="py-4 px-6 font-medium text-gray-900">75 HS</td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang dạy</span>
-                        </td>
-                        <td class="py-4 px-6 text-right">
-                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">TT</div>
-                                <div class="font-semibold text-gray-900">Trần Thị B</div>
-                            </div>
-                        </td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-gray-200 text-gray-700 bg-white">Vật lý</span>
-                        </td>
-                        <td class="py-4 px-6 text-gray-600">
-                            <div class="flex items-center mb-1">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                tranthib@edubridge.com
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                0912345678
-                            </div>
-                        </td>
-                        <td class="py-4 px-6 font-medium text-gray-900">2 lớp</td>
-                        <td class="py-4 px-6 font-medium text-gray-900">50 HS</td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang dạy</span>
-                        </td>
-                        <td class="py-4 px-6 text-right">
-                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">LV</div>
-                                <div class="font-semibold text-gray-900">Lê Văn C</div>
-                            </div>
-                        </td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-gray-200 text-gray-700 bg-white">Hóa học</span>
-                        </td>
-                        <td class="py-4 px-6 text-gray-600">
-                            <div class="flex items-center mb-1">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                levanc@edubridge.com
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                0923456789
-                            </div>
-                        </td>
-                        <td class="py-4 px-6 font-medium text-gray-900">2 lớp</td>
-                        <td class="py-4 px-6 font-medium text-gray-900">45 HS</td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang dạy</span>
-                        </td>
-                        <td class="py-4 px-6 text-right">
-                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">PT</div>
-                                <div class="font-semibold text-gray-900">Phạm Thị D</div>
-                            </div>
-                        </td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-gray-200 text-gray-700 bg-white">Tiếng Anh</span>
-                        </td>
-                        <td class="py-4 px-6 text-gray-600">
-                            <div class="flex items-center mb-1">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                phamthid@edubridge.com
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                0934567890
-                            </div>
-                        </td>
-                        <td class="py-4 px-6 font-medium text-gray-900">4 lớp</td>
-                        <td class="py-4 px-6 font-medium text-gray-900">92 HS</td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang dạy</span>
-                        </td>
-                        <td class="py-4 px-6 text-right">
-                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="py-4 px-6">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">HV</div>
-                                <div class="font-semibold text-gray-900">Hoàng Văn E</div>
-                            </div>
-                        </td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-gray-200 text-gray-700 bg-white">Sinh học</span>
-                        </td>
-                        <td class="py-4 px-6 text-gray-600">
-                            <div class="flex items-center mb-1">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                hoangvane@edubridge.com
-                            </div>
-                            <div class="flex items-center">
-                                <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                0945678901
-                            </div>
-                        </td>
-                        <td class="py-4 px-6 font-medium text-gray-900">1 lớp</td>
-                        <td class="py-4 px-6 font-medium text-gray-900">28 HS</td>
-                        <td class="py-4 px-6">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">Nghỉ</span>
-                        </td>
-                        <td class="py-4 px-6 text-right">
-                            <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                            </button>
-                            <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            </button>
-                        </td>
-                    </tr>
+                <tbody class="text-sm divide-y divide-gray-100">
+                    @if (Model.Teachers.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="py-10 px-6 text-center text-gray-500">
+                                Chưa có giáo viên phù hợp.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (var index = 0; index < Model.Teachers.Count; index++)
+                        {
+                            var teacher = Model.Teachers[index];
+                            <tr class="group hover:bg-slate-100 transition-colors">
+                                <td class="py-4 px-4 text-center font-medium text-gray-700 border-r border-gray-200">
+                                    @(Model.FirstItemNumber + index)
+                                </td>
+                                <td class="py-4 px-6 border-r border-gray-200">
+                                    <div class="flex items-center">
+                                        @if (!string.IsNullOrWhiteSpace(teacher.AvatarUrl))
+                                        {
+                                            <img src="@teacher.AvatarUrl" alt="@teacher.FullName" class="mr-4 h-10 w-10 flex-shrink-0 rounded-full bg-white object-contain" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-10 h-10 rounded-full @(teacher.IsActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500") flex items-center justify-center font-bold mr-4 flex-shrink-0">@teacher.Initials</div>
+                                        }
+                                        <div>
+                                            <div class="font-semibold text-gray-900 group-hover:text-gray-950">@teacher.FullName</div>
+                                            <div class="text-xs text-gray-400">ID: @teacher.TeacherCode</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6 text-gray-600 border-r border-gray-200">
+                                    <div class="flex items-center mb-1 whitespace-nowrap">
+                                        <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                        @teacher.DisplayEmail
+                                    </div>
+                                    <div class="flex items-center whitespace-nowrap">
+                                        <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                        @teacher.DisplayPhoneNumber
+                                    </div>
+                                </td>
+                                <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">@teacher.ClassCount lớp</td>
+                                <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">@teacher.StudentCount HS</td>
+                                <td class="py-4 px-6 border-r border-gray-200">
+                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-teacherId="@teacher.TeacherId" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="flex justify-center">
+                                        <button type="submit" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(teacher.IsActive ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200")" title="Đổi trạng thái giáo viên">
+                                            <span class="relative h-6 w-11 rounded-full transition-colors @(teacher.IsActive ? "bg-green-500" : "bg-gray-300")">
+                                                <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(teacher.IsActive ? "left-5" : "left-0.5")"></span>
+                                            </span>
+                                            <span class="min-w-20 text-left text-xs font-semibold">@teacher.StatusText</span>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <div class="flex items-center justify-center gap-3">
+                                    <a asp-page="/AdminTeachers/Edit" asp-route-teacherId="@teacher.TeacherId" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem chi tiết/Sửa">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                    </a>
+                                    @if (teacher.IsActive)
+                                    {
+                                        <button type="button" disabled class="inline-flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-gray-300 bg-gray-100 text-gray-400" title="Chỉ xóa được giáo viên tạm dừng">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" onclick="openDeleteTeacherConfirm(this)" data-teacher-id="@teacher.TeacherId" data-teacher-name="@teacher.FullName" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    }
+                                    <button type="button" onclick="openResetPasswordConfirm(this)" data-teacher-id="@teacher.TeacherId" data-teacher-name="@teacher.FullName" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-500 bg-white text-blue-600 transition-colors hover:bg-blue-50" title="Cấp lại mật khẩu nhanh">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M19 9A7 7 0 007.05 4.05M5 15a7 7 0 0011.95 4.95"></path></svg>
+                                    </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
                 </tbody>
             </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-6 border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">
+            <div class="flex items-center gap-1">
+                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="1" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang đầu">
+                    <span class="text-lg">&laquo;</span>
+                </a>
+                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang trước">
+                    <span class="text-lg">&lsaquo;</span>
+                </a>
+
+                @{
+                    var startPage = Math.Max(1, Model.PageNumber - 2);
+                    var endPage = Math.Min(Model.TotalPages, startPage + 4);
+                    startPage = Math.Max(1, endPage - 4);
+                }
+
+                @for (var pageIndex = startPage; pageIndex <= endPage; pageIndex++)
+                {
+                    <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@pageIndex" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 min-w-9 items-center justify-center rounded px-3 font-medium transition-colors @(pageIndex == Model.PageNumber ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">
+                        @pageIndex
+                    </a>
+                }
+
+                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang sau">
+                    <span class="text-lg">&rsaquo;</span>
+                </a>
+                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.TotalPages" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang cuối">
+                    <span class="text-lg">&raquo;</span>
+                </a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <span>Tổng số: @Model.TotalTeachers bản ghi</span>
+                <form method="get" class="flex items-center">
+                    <input type="hidden" name="Search" value="@Model.Search" />
+                    <input type="hidden" name="ContactSearch" value="@Model.ContactSearch" />
+                    <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                    <input type="hidden" name="PageNumber" value="1" />
+                    <select name="PageSize" onchange="this.form.submit()" class="h-10 rounded border border-blue-400 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        @foreach (var option in Model.PageSizeOptions)
+                        {
+                            <option value="@option" selected="@(Model.PageSize == option)">@option</option>
+                        }
+                    </select>
+                </form>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Thêm giáo viên mới -->
-<div id="addTeacherModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-lg w-full overflow-hidden transform scale-95 transition-transform duration-300 p-6 space-y-6">
-        <!-- Modal Header -->
-        <div class="flex justify-between items-start">
-            <div>
-                <h3 class="text-xl font-bold text-gray-900">Thêm giáo viên mới</h3>
-                <p class="text-sm text-gray-500 mt-1">Nhập thông tin giáo viên mới</p>
-            </div>
-            <button onclick="closeAddTeacherModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+<div id="addTeacherModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h3 class="text-lg font-bold text-gray-900">Thêm giáo viên mới</h3>
+            <button type="button" onclick="closeAddTeacherModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
-        <!-- Form fields -->
-        <form id="addTeacherForm" onsubmit="submitAddTeacher(event)" class="space-y-4">
-            <!-- Họ và tên -->
-            <div class="space-y-1.5">
-                <label for="teacherName" class="block text-sm font-semibold text-gray-700">Họ và tên</label>
-                <input type="text" id="teacherName" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập họ tên đầy đủ">
+        <form id="addTeacherForm" method="post" asp-page-handler="Create" enctype="multipart/form-data" class="space-y-5 px-6 py-5">
+            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
+
+            <div class="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-5">
+                <label class="mb-3 block text-lg font-bold text-gray-900">Ảnh đại diện</label>
+                <div class="mb-4 flex h-36 w-44 items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white">
+                    <img id="avatarPreview" alt="Ảnh đại diện" class="hidden h-full w-full object-contain" />
+                    <svg id="avatarPlaceholder" class="h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
+                        <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
+                        <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
+                        <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
+                    </svg>
+                </div>
+                <input asp-for="Input.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="clearAvatar()" class="inline-flex h-12 w-14 items-center justify-center rounded bg-sky-600 text-white transition-colors hover:bg-sky-700" title="Xóa ảnh">
+                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
+                    </button>
+                    <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-12 rounded bg-sky-600 px-6 text-base font-semibold text-white transition-colors hover:bg-sky-700">Chọn</button>
+                </div>
+                <span asp-validation-for="Input.AvatarFile" class="mt-2 block text-xs font-medium text-red-600"></span>
             </div>
 
-            <!-- Môn giảng dạy -->
-            <div class="space-y-1.5">
-                <label for="teacherSubject" class="block text-sm font-semibold text-gray-700">Môn giảng dạy</label>
-                <div class="relative">
-                    <select id="teacherSubject" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200 appearance-none">
-                        <option value="">Chọn môn học</option>
-                        <option value="Toán">Toán học</option>
-                        <option value="Vật lý">Vật lý</option>
-                        <option value="Hóa học">Hóa học</option>
-                        <option value="Tiếng Anh">Tiếng Anh</option>
-                        <option value="Sinh học">Sinh học</option>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+            <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                    <label asp-for="Input.TeacherCode" class="block text-sm font-semibold text-gray-700">Mã giáo viên (*)</label>
+                    <input asp-for="Input.TeacherCode" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: GV-1-0002" />
+                    <span asp-validation-for="Input.TeacherCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.FullName" class="block text-sm font-semibold text-gray-700">Họ và tên (*)</label>
+                    <input asp-for="Input.FullName" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập họ và tên" />
+                    <span asp-validation-for="Input.FullName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.DateOfBirth" class="block text-sm font-semibold text-gray-700">Ngày tháng năm sinh</label>
+                    <input asp-for="Input.DateOfBirth" type="date" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="Input.DateOfBirth" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.PhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại (*)</label>
+                    <input asp-for="Input.PhoneNumber" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 0901234567" />
+                    <span asp-validation-for="Input.PhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.Email" class="block text-sm font-semibold text-gray-700">Email</label>
+                    <input asp-for="Input.Email" type="email" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="email@example.com" />
+                    <span asp-validation-for="Input.Email" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.Gender" class="block text-sm font-semibold text-gray-700">Giới tính</label>
+                    <div class="mt-1 grid grid-cols-2 gap-3">
+                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
+                            <input asp-for="Input.Gender" type="radio" value="Nam" checked="@(Model.Input.Gender == "Nam")" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="ml-2">Nam</span>
+                        </label>
+                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
+                            <input asp-for="Input.Gender" type="radio" value="Nữ" checked="@(Model.Input.Gender == "Nữ")" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="ml-2">Nữ</span>
+                        </label>
                     </div>
+                    <span asp-validation-for="Input.Gender" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="Input.Address" class="block text-sm font-semibold text-gray-700">Địa chỉ</label>
+                    <input asp-for="Input.Address" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập địa chỉ" />
+                    <span asp-validation-for="Input.Address" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
             </div>
 
-            <!-- Email -->
-            <div class="space-y-1.5">
-                <label for="teacherEmail" class="block text-sm font-semibold text-gray-700">Email</label>
-                <input type="email" id="teacherEmail" value="email@edubridge.com" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="email@edubridge.com">
-            </div>
-
-            <!-- Số điện thoại -->
-            <div class="space-y-1.5">
-                <label for="teacherPhone" class="block text-sm font-semibold text-gray-700">Số điện thoại</label>
-                <input type="tel" id="teacherPhone" value="0901234567" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="0901234567">
-            </div>
-
-            <!-- Mật khẩu tạm thời -->
-            <div class="space-y-1.5">
-                <label for="teacherPassword" class="block text-sm font-semibold text-gray-700">Mật khẩu tạm thời</label>
-                <input type="password" id="teacherPassword" value="12345678" required class="block w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="••••••••">
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                <button type="button" onclick="closeAddTeacherModal()" class="w-24 py-2.5 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" class="flex-1 py-2.5 bg-gray-950 hover:bg-gray-900 text-white font-semibold rounded-xl text-sm transition-colors text-center">Thêm giáo viên</button>
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                <button type="button" onclick="closeAddTeacherModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu giáo viên</button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Premium Toast Notification -->
-<div id="toast" class="fixed top-5 right-5 z-50 bg-green-600 text-white font-semibold px-5 py-3.5 rounded-xl shadow-xl transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-    <span id="toastMessage">Tạo tài khoản giáo viên mới thành công!</span>
+<div id="editTeacherModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h3 class="text-lg font-bold text-gray-900">Xem/Sửa giáo viên</h3>
+            <button type="button" onclick="closeEditTeacherModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form id="editTeacherForm" method="post" asp-page-handler="Update" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" enctype="multipart/form-data" class="space-y-5 px-6 py-5">
+            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
+            <input asp-for="EditInput.TeacherId" type="hidden" />
+            <input asp-for="EditInput.RemoveAvatar" type="hidden" value="false" />
+
+            <div class="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-5">
+                <label class="mb-3 block text-lg font-bold text-gray-900">Ảnh đại diện</label>
+                <div class="mb-4 flex h-36 w-44 items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white">
+                    <img id="editAvatarPreview" alt="Ảnh đại diện" class="hidden h-full w-full object-contain" />
+                    <svg id="editAvatarPlaceholder" class="h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
+                        <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
+                        <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
+                        <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
+                    </svg>
+                </div>
+                <input asp-for="EditInput.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="editAvatarFileInput" onchange="previewEditAvatar(this)" />
+                <div class="flex items-center gap-3">
+                    <button type="button" onclick="clearEditAvatar()" class="inline-flex h-12 w-14 items-center justify-center rounded bg-sky-600 text-white transition-colors hover:bg-sky-700" title="Xóa ảnh">
+                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
+                    </button>
+                    <button type="button" onclick="document.getElementById('editAvatarFileInput').click()" class="h-12 rounded bg-sky-600 px-6 text-base font-semibold text-white transition-colors hover:bg-sky-700">Chọn</button>
+                </div>
+                <span asp-validation-for="EditInput.AvatarFile" class="mt-2 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                    <label asp-for="EditInput.TeacherCode" class="block text-sm font-semibold text-gray-700">Mã giáo viên (*)</label>
+                    <input asp-for="EditInput.TeacherCode" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditInput.TeacherCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.FullName" class="block text-sm font-semibold text-gray-700">Họ và tên (*)</label>
+                    <input asp-for="EditInput.FullName" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditInput.FullName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.DateOfBirth" class="block text-sm font-semibold text-gray-700">Ngày tháng năm sinh</label>
+                    <input asp-for="EditInput.DateOfBirth" type="date" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditInput.DateOfBirth" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.PhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại (*)</label>
+                    <input asp-for="EditInput.PhoneNumber" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditInput.PhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.Email" class="block text-sm font-semibold text-gray-700">Email</label>
+                    <input asp-for="EditInput.Email" type="email" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditInput.Email" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.Gender" class="block text-sm font-semibold text-gray-700">Giới tính</label>
+                    <div class="mt-1 grid grid-cols-2 gap-3">
+                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
+                            <input asp-for="EditInput.Gender" type="radio" value="Nam" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="ml-2">Nam</span>
+                        </label>
+                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
+                            <input asp-for="EditInput.Gender" type="radio" value="Nữ" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
+                            <span class="ml-2">Nữ</span>
+                        </label>
+                    </div>
+                    <span asp-validation-for="EditInput.Gender" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="EditInput.Address" class="block text-sm font-semibold text-gray-700">Địa chỉ</label>
+                    <input asp-for="EditInput.Address" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditInput.Address" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                <button type="button" onclick="closeEditTeacherModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="resetPasswordConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-xl rounded bg-white shadow-2xl">
+        <div class="flex items-center justify-end border-b border-gray-100 px-5 py-4">
+            <button type="button" onclick="closeResetPasswordConfirm()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex items-start gap-4 px-6 py-6">
+            <div class="mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-500 text-gray-600">
+                <span class="text-xl font-semibold">i</span>
+            </div>
+            <div>
+                <p class="text-sm text-gray-600">Bạn có muốn tiếp tục thay đổi mật khẩu của giáo viên này?</p>
+                <p id="resetPasswordTeacherName" class="mt-1 text-sm font-semibold text-gray-900"></p>
+            </div>
+        </div>
+        <form id="resetPasswordForm" method="post" asp-page-handler="ResetPassword" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize">
+            <input id="resetPasswordTeacherId" type="hidden" name="teacherId" />
+            <div class="flex justify-end gap-5 px-6 pb-6">
+                <button type="button" onclick="closeResetPasswordConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">No</button>
+                <button type="submit" class="rounded bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Yes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="resetPasswordResultModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-lg rounded bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+            <h3 class="text-xl font-bold text-gray-800">Mật khẩu mới</h3>
+            <button type="button" onclick="closeResetPasswordResult()" class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-blue-200 text-gray-500 hover:bg-blue-50">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="px-6 py-14 text-center">
+            <p class="text-lg font-semibold text-gray-700">Mật khẩu mới là: <span class="text-gray-900">@Model.ResetPasswordValue</span></p>
+            @if (!string.IsNullOrWhiteSpace(Model.ResetPasswordTeacherName))
+            {
+                <p class="mt-2 text-sm text-gray-500">@Model.ResetPasswordTeacherName</p>
+            }
+        </div>
+    </div>
+</div>
+
+<div id="deleteTeacherConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-xl rounded bg-white shadow-2xl">
+        <div class="flex items-center justify-end border-b border-gray-100 px-5 py-4">
+            <button type="button" onclick="closeDeleteTeacherConfirm()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex items-start gap-4 px-6 py-6">
+            <div class="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full border-2 border-red-500 text-red-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-700">Bạn có chắc chắn muốn xóa giáo viên này?</p>
+                <p id="deleteTeacherName" class="mt-1 text-sm font-semibold text-gray-900"></p>
+                <p class="mt-3 text-xs text-gray-500">Chỉ giáo viên ở trạng thái tạm dừng và chưa gắn lớp mới được xóa.</p>
+            </div>
+        </div>
+        <form id="deleteTeacherForm" method="post" asp-page-handler="Delete" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize">
+            <input id="deleteTeacherId" type="hidden" name="teacherId" />
+            <div class="flex justify-end gap-5 px-6 pb-6">
+                <button type="button" onclick="closeDeleteTeacherConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
+                <button type="submit" class="rounded bg-red-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">Xóa</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
         function openAddTeacherModal() {
             const modal = document.getElementById('addTeacherModal');
-            const modalContent = modal.firstElementChild;
             modal.classList.remove('hidden');
-            // Force a reflow
-            modal.offsetWidth;
-            modal.classList.remove('opacity-0');
-            modal.classList.add('opacity-100');
-            modalContent.classList.remove('scale-95');
-            modalContent.classList.add('scale-100');
+            modal.classList.add('flex');
         }
 
         function closeAddTeacherModal() {
             const modal = document.getElementById('addTeacherModal');
-            const modalContent = modal.firstElementChild;
-            modal.classList.remove('opacity-100');
-            modal.classList.add('opacity-0');
-            modalContent.classList.remove('scale-100');
-            modalContent.classList.add('scale-95');
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                document.getElementById('addTeacherForm').reset();
-            }, 300);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
-        function getInitials(name) {
-            const words = name.trim().split(' ');
-            if (words.length >= 2) {
-                const first = words[words.length - 2].charAt(0).toUpperCase();
-                const second = words[words.length - 1].charAt(0).toUpperCase();
-                return first + second;
+        function previewAvatar(input) {
+            const file = input.files && input.files[0];
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+
+            if (!file) {
+                clearAvatar();
+                return;
             }
-            return name.substring(0, 2).toUpperCase();
+
+            preview.src = URL.createObjectURL(file);
+            preview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
         }
 
-        function submitAddTeacher(event) {
-            event.preventDefault();
+        function clearAvatar() {
+            const input = document.getElementById('avatarFileInput');
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
 
-            const name = document.getElementById('teacherName').value;
-            const subject = document.getElementById('teacherSubject').value;
-            const email = document.getElementById('teacherEmail').value;
-            const phone = document.getElementById('teacherPhone').value;
+            input.value = '';
+            preview.removeAttribute('src');
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+        }
 
-            const initials = getInitials(name);
+        async function openEditTeacherModal(teacherId) {
+            const response = await fetch(`?handler=Detail&teacherId=${encodeURIComponent(teacherId)}`, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
 
-            // Create new row
-            const newRow = document.createElement('tr');
-            newRow.className = "hover:bg-gray-50 transition-colors";
-            newRow.innerHTML = `
-                <td class="py-4 px-6">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold mr-4 flex-shrink-0">\${initials}</div>
-                        <div class="font-semibold text-gray-900">\${name}</div>
-                    </div>
-                </td>
-                <td class="py-4 px-6">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border border-gray-200 text-gray-700 bg-white">\${subject}</span>
-                </td>
-                <td class="py-4 px-6 text-gray-600">
-                    <div class="flex items-center mb-1">
-                        <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                        \${email}
-                    </div>
-                    <div class="flex items-center">
-                        <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                        \${phone}
-                    </div>
-                </td>
-                <td class="py-4 px-6 font-medium text-gray-900">0 lớp</td>
-                <td class="py-4 px-6 font-medium text-gray-900">0 HS</td>
-                <td class="py-4 px-6">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-900 text-white">Đang dạy</span>
-                </td>
-                <td class="py-4 px-6 text-right">
-                    <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                    </button>
-                    <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa" onclick="this.closest('tr').remove()">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                    </button>
-                </td>
-            `;
+            if (!response.ok) {
+                return;
+            }
 
-            const tbody = document.getElementById('teacherTableBody');
-            tbody.insertBefore(newRow, tbody.firstChild);
+            const teacher = await response.json();
+            fillEditTeacherForm(teacher);
 
-            closeAddTeacherModal();
+            const modal = document.getElementById('editTeacherModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
 
-            // Show Toast
-            const toast = document.getElementById('toast');
-            document.getElementById('toastMessage').textContent = `Cấp tài khoản giáo viên \${name} mới thành công!`;
-            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
+        function closeEditTeacherModal() {
+            const modal = document.getElementById('editTeacherModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
 
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-[-100px]', 'opacity-0');
-            }, 3000);
+        function fillEditTeacherForm(teacher) {
+            document.getElementById('EditInput_TeacherId').value = teacher.teacherId ?? '';
+            document.getElementById('EditInput_TeacherCode').value = teacher.teacherCode ?? '';
+            document.getElementById('EditInput_FullName').value = teacher.fullName ?? '';
+            document.getElementById('EditInput_DateOfBirth').value = teacher.dateOfBirth ?? '';
+            document.getElementById('EditInput_PhoneNumber').value = teacher.phoneNumber ?? '';
+            document.getElementById('EditInput_Email').value = teacher.email ?? '';
+            document.getElementById('EditInput_Address').value = teacher.address ?? '';
+            document.getElementById('EditInput_RemoveAvatar').value = 'false';
+
+            const gender = teacher.gender === 'Nữ' ? 'Nữ' : 'Nam';
+            document.querySelectorAll('input[name="EditInput.Gender"]').forEach(input => {
+                input.checked = input.value === gender;
+            });
+
+            setEditAvatarPreview(teacher.avatarUrl);
+            document.getElementById('editAvatarFileInput').value = '';
+        }
+
+        function previewEditAvatar(input) {
+            const file = input.files && input.files[0];
+
+            if (!file) {
+                return;
+            }
+
+            document.getElementById('EditInput_RemoveAvatar').value = 'false';
+            setEditAvatarPreview(URL.createObjectURL(file));
+        }
+
+        function clearEditAvatar() {
+            document.getElementById('editAvatarFileInput').value = '';
+            document.getElementById('EditInput_RemoveAvatar').value = 'true';
+            setEditAvatarPreview(null);
+        }
+
+        function setEditAvatarPreview(src) {
+            const preview = document.getElementById('editAvatarPreview');
+            const placeholder = document.getElementById('editAvatarPlaceholder');
+
+            if (src) {
+                preview.src = src;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                return;
+            }
+
+            preview.removeAttribute('src');
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+        }
+
+        function openResetPasswordConfirm(button) {
+            const teacherId = button.dataset.teacherId;
+            const teacherName = button.dataset.teacherName;
+
+            document.getElementById('resetPasswordTeacherId').value = teacherId;
+            document.getElementById('resetPasswordTeacherName').textContent = teacherName;
+
+            const modal = document.getElementById('resetPasswordConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetPasswordConfirm() {
+            const modal = document.getElementById('resetPasswordConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openResetPasswordResult() {
+            const modal = document.getElementById('resetPasswordResultModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetPasswordResult() {
+            const modal = document.getElementById('resetPasswordResultModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openDeleteTeacherConfirm(button) {
+            const teacherId = button.dataset.teacherId;
+            const teacherName = button.dataset.teacherName;
+
+            document.getElementById('deleteTeacherId').value = teacherId;
+            document.getElementById('deleteTeacherName').textContent = teacherName;
+
+            const modal = document.getElementById('deleteTeacherConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteTeacherConfirm() {
+            const modal = document.getElementById('deleteTeacherConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        const postedHandler = @Json.Serialize(Request.Query["handler"].ToString());
+        const hasCreateErrors = @Json.Serialize(Request.Method == "POST" && !ViewData.ModelState.IsValid) && postedHandler === 'Create';
+        const hasEditErrors = @Json.Serialize(Request.Method == "POST" && !ViewData.ModelState.IsValid) && postedHandler === 'Update';
+        const hasResetPasswordValue = @Json.Serialize(!string.IsNullOrWhiteSpace(Model.ResetPasswordValue));
+
+        if (hasCreateErrors) {
+            openAddTeacherModal();
+        }
+
+        if (hasEditErrors) {
+            const modal = document.getElementById('editTeacherModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        if (hasResetPasswordValue) {
+            openResetPasswordResult();
         }
     </script>
 }
