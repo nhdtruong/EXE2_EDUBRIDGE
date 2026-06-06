@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -24,6 +24,36 @@ public partial class Student
     public string Status { get; set; } = null!;
 
     public DateTime CreatedAt { get; set; }
+
+    public string? PhoneNumber { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? NormalizedPhoneNumber { get; set; }
+
+    public string? AvatarUrl { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
+    public string? Ethnicity { get; set; }
+
+    public string? Religion { get; set; }
+
+    public string? IdentityNumber { get; set; }
+
+    public DateOnly? IdentityIssuedDate { get; set; }
+
+    public string? IdentityIssuedPlace { get; set; }
+
+    public string? PermanentAddress { get; set; }
+
+    public string? Hometown { get; set; }
+
+    public string? PlaceOfBirth { get; set; }
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 

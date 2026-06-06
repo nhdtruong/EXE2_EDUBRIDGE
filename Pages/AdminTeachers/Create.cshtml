@@ -30,14 +30,14 @@
                         <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
                     </svg>
                 </div>
-                <input asp-for="Input.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
+                <input asp-for="AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
                 <div class="mt-4 flex gap-2">
                     <button type="button" onclick="clearAvatar()" class="inline-flex h-9 w-9 items-center justify-center rounded bg-sky-600 text-white hover:bg-sky-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
                     </button>
                     <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-9 rounded bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700">Chọn</button>
                 </div>
-                <span asp-validation-for="Input.AvatarFile" class="mt-2 text-xs font-medium text-red-600"></span>
+                <span asp-validation-for="AvatarFile" class="mt-2 text-xs font-medium text-red-600"></span>
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">

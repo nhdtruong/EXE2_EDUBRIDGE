@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>EduBridge Forms Export</title>
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="../css/buttons.css">
+</head>
+<body class="ds-page">
+    <h1 class="ds-page-title">Forms</h1>
+    <form class="ds-card" style="margin-top:24px;padding:20px;max-width:900px">
+        <div class="ds-form-grid">
+            <div class="ds-form-field">
+                <label class="ds-label">Mã giáo viên (*)</label>
+                <input class="ds-input" placeholder="Nhập mã">
+            </div>
+            <div class="ds-form-field">
+                <label class="ds-label">Tên giáo viên (*)</label>
+                <input class="ds-input" placeholder="Nhập tên">
+            </div>
+            <div class="ds-form-field">
+                <label class="ds-label">Ngày sinh (*)</label>
+                <div class="ds-date-field">
+                    <input class="ds-input" placeholder="dd/mm/yyyy">
+                    <button type="button" class="ds-date-button">▣</button>
+                </div>
+            </div>
+            <div class="ds-form-field">
+                <label class="ds-label">Giới tính</label>
+                <div class="ds-radio-row">
+                    <label class="ds-radio"><input type="radio" checked> Nam</label>
+                    <label class="ds-radio"><input type="radio"> Nữ</label>
+                </div>
+            </div>
+        </div>
+        <div class="ds-form-field" style="margin-top:16px">
+            <label class="ds-label">Mô tả</label>
+            <textarea class="ds-textarea" placeholder="Nhập mô tả"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:20px">
+            <button type="button" class="ds-btn ds-btn-outline">Hủy</button>
+            <button type="submit" class="ds-btn ds-btn-primary">Lưu</button>
+        </div>
+    </form>
+</body>
+</html>
+

@@ -1,0 +1,50 @@
+/* Source: Pages/AdminTeachers.cshtml and Pages/AdminCourses.cshtml status toggle */
+.ds-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #bbf7d0;
+    border-radius: 999px;
+    background: #f0fdf4;
+    padding: 6px 12px;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.ds-toggle-track {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    border-radius: 999px;
+    background: var(--ds-success);
+    transition: background-color 0.2s;
+}
+
+.ds-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 20px;
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+    transition: left 0.2s;
+}
+
+.ds-toggle-inactive {
+    border-color: var(--ds-border);
+    background: #f3f4f6;
+    color: #4b5563;
+}
+
+.ds-toggle-inactive .ds-toggle-track {
+    background: #d1d5db;
+}
+
+.ds-toggle-inactive .ds-toggle-knob {
+    left: 2px;
+}
+

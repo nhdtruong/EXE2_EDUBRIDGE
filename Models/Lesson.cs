@@ -17,9 +17,21 @@ public partial class Lesson
 
     public DateTime CreatedAt { get; set; }
 
+    public int? SessionNumber { get; set; }
+
+    public int? ClassScheduleId { get; set; }
+
+    public TimeOnly? StartTime { get; set; }
+
+    public TimeOnly? EndTime { get; set; }
+
+    public string Status { get; set; } = null!;
+
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 
     public virtual Class Class { get; set; } = null!;
+
+    public virtual ClassSchedule? ClassSchedule { get; set; }
 
     public virtual ICollection<Homework> Homeworks { get; set; } = new List<Homework>();
 }
