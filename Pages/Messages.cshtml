@@ -46,7 +46,12 @@
             {
                 var isActive = conv.Id == 1;
                 <div class="message-item @(isActive ? "message-item-active" : "")">
-                    <div class="message-avatar">@conv.Name.Substring(0, 1)</div>
+                    <div class="message-avatar" style="position: relative;">
+                        @conv.Name.Substring(0, 1)
+                        @if(isActive) {
+                            <span style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: #22c55e; border: 2px solid white; border-radius: 50%;"></span>
+                        }
+                    </div>
                     <div class="message-item-content">
                         <div class="message-item-header">
                             <h4 class="message-item-name">@conv.Name</h4>
@@ -69,7 +74,10 @@
         <!-- Header -->
         <div class="messages-chat-header">
             <div class="chat-user-info">
-                <div class="chat-avatar">N</div>
+                <div class="chat-avatar" style="position: relative;">
+                    N
+                    <span style="position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background-color: #22c55e; border: 2px solid white; border-radius: 50%;"></span>
+                </div>
                 <div>
                     <h3 class="chat-username">Nguyễn Văn Hùng</h3>
                     <p class="chat-userinfo">Phụ huynh: Nguyễn Văn Minh</p>

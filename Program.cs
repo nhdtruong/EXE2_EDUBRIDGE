@@ -48,6 +48,11 @@ namespace EduBridge
                     .SetApplicationName("EduBridge");
             }
 
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            });
+
             builder.Services.AddRazorPages(options =>
             {
                 options.Conventions.AuthorizeFolder("/");
@@ -119,6 +124,7 @@ namespace EduBridge
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.MapControllers();
             app.MapRazorPages();
             app.MapHub<ChatHub>("/chatHub");
 
