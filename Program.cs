@@ -45,6 +45,12 @@ namespace EduBridge
             builder.Services.AddScoped<EduBridge.Services.Dashboard.IDashboardService, EduBridge.Services.Dashboard.DashboardService>();
             builder.Services.AddScoped<EduBridge.Services.Auth.IAccountAuthenticationService, EduBridge.Services.Auth.AccountAuthenticationService>();
             builder.Services.AddScoped<EduBridge.Services.Auth.IJwtTokenService, EduBridge.Services.Auth.JwtTokenService>();
+            builder.Services.AddScoped<EduBridge.Services.Lectures.ILectureService, EduBridge.Services.Lectures.LectureService>();
+            builder.Services.AddScoped<EduBridge.Services.Homeworks.IHomeworkService, EduBridge.Services.Homeworks.HomeworkService>();
+            builder.Services.AddScoped<EduBridge.Services.Grades.IGradeService, EduBridge.Services.Grades.GradeService>();
+            builder.Services.AddScoped<EduBridge.Services.Attendance.IAttendanceService, EduBridge.Services.Attendance.AttendanceService>();
+            builder.Services.AddScoped<EduBridge.Services.Chat.IChatService, EduBridge.Services.Chat.ChatService>();
+            builder.Services.AddScoped<EduBridge.Services.Notifications.INotificationService, EduBridge.Services.Notifications.NotificationService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)
@@ -73,6 +79,11 @@ namespace EduBridge
                     .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
                     .SetApplicationName("EduBridge");
             }
+
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            });
 
             builder.Services.AddRazorPages(options =>
             {
@@ -145,6 +156,7 @@ namespace EduBridge
             app.UseAuthentication();
             app.UseAuthorization();
 
+            app.MapControllers();
             app.MapRazorPages();
             app.MapHub<ChatHub>("/chatHub");
 

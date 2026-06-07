@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +37,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Grade> Grades { get; set; }
 
     public virtual DbSet<Homework> Homeworks { get; set; }
+
+    public virtual DbSet<HomeworkSubmission> HomeworkSubmissions { get; set; }
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
@@ -387,6 +389,32 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.LessonId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Homework_Lessons");
+        });
+
+        modelBuilder.Entity<HomeworkSubmission>(entity =>
+        {
+            entity.HasKey(e => e.SubmissionId).HasName("PK_HomeworkSubmissions");
+
+            entity.ToTable("HomeworkSubmissions");
+
+            entity.HasIndex(e => e.HomeworkId, "IX_HomeworkSubmissions_HomeworkId");
+            entity.HasIndex(e => e.StudentId, "IX_HomeworkSubmissions_StudentId");
+            entity.HasIndex(e => new { e.HomeworkId, e.StudentId }, "UQ_HomeworkSubmissions").IsUnique();
+
+            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Score).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Feedback).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Submitted");
+
+            entity.HasOne(d => d.Homework).WithMany(p => p.HomeworkSubmissions)
+                .HasForeignKey(d => d.HomeworkId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_HomeworkSubmissions_Homework");
+
+            entity.HasOne(d => d.Student).WithMany(p => p.HomeworkSubmissions)
+                .HasForeignKey(d => d.StudentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_HomeworkSubmissions_Students");
         });
 
         modelBuilder.Entity<Invoice>(entity =>

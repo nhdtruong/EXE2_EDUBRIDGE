@@ -1,14 +1,33 @@
 @page
+@model EduBridge.Pages.HomeworkModel
 @{
     ViewData["Title"] = "Quản lý bài tập";
     Layout = "_TeacherLayout";
     ViewData["ActivePage"] = "Assignments";
+}
 
-    var mockHomework = new[] {
-        new { Id = 1, Class = "Toán 10A", Title = "Bài tập về hàm số bậc nhất", Desc = "Làm bài tập 1, 2, 3 trang 45 SGK. Nộp bài trước 18:00 ngày 25/03", Assigned = "20/3/2026", Due = "25/3/2026", Sub = 18, Total = 25, Graded = 12, Pending = 6 },
-        new { Id = 2, Class = "Toán 10B", Title = "Luyện tập phương trình bậc hai", Desc = "Giải các bài tập 5, 6, 7 trang 52 SGK", Assigned = "21/3/2026", Due = "26/3/2026", Sub = 15, Total = 22, Graded = 8, Pending = 7 },
-        new { Id = 3, Class = "Toán 10A", Title = "Bài tập về phương trình", Desc = "Hoàn thành worksheet về phương trình bậc nhất", Assigned = "18/3/2026", Due = "23/3/2026", Sub = 25, Total = 25, Graded = 25, Pending = 0 }
-    };
+@functions {
+    public string GetStatusBadgeClass(string status)
+    {
+        return status switch
+        {
+            "Graded" => "badge-success",
+            "Submitted" => "badge-warning",
+            "NotSubmitted" => "badge-danger",
+            _ => "badge-default"
+        };
+    }
+
+    public string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Graded" => "Đã chấm",
+            "Submitted" => "Chờ chấm",
+            "NotSubmitted" => "Chưa nộp",
+            _ => status
+        };
+    }
 }
 
 <!-- Header -->
@@ -17,7 +36,7 @@
         <h1 class="homework-main-title">Quản lý bài tập</h1>
         <p class="homework-subtitle">Giao bài tập và chấm điểm</p>
     </div>
-    <button class="btn-create-homework">
+    <button class="btn-create-homework" data-bs-toggle="modal" data-bs-target="#createHomeworkModal">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         Giao bài tập mới
     </button>
@@ -36,59 +55,316 @@
 
     <!-- Assignments List -->
     <div class="assignments-container">
-        @foreach(var hw in mockHomework)
+        @if (Model.HomeworkList.Any())
         {
-            var submitPct = (double)hw.Sub / hw.Total * 100;
-            var gradePct = (double)hw.Graded / hw.Sub * 100;
+            foreach (var hw in Model.HomeworkList)
+            {
+                var submitPct = hw.TotalStudents == 0 ? 0 : (double)hw.SubmittedCount / hw.TotalStudents * 100;
+                var gradePct = hw.SubmittedCount == 0 ? 0 : (double)hw.GradedCount / hw.SubmittedCount * 100;
 
-            <div class="assignment-row">
-                <!-- Left: Info -->
-                <div class="assignment-info">
-                    <div class="assignment-top">
-                        <div>
-                            <h4 class="assignment-name">@hw.Title</h4>
-                            <span class="class-badge">@hw.Class</span>
+                <div class="assignment-row">
+                    <!-- Left: Info -->
+                    <div class="assignment-info">
+                        <div class="assignment-top">
+                            <div>
+                                <h4 class="assignment-name">@hw.Title</h4>
+                                <span class="class-badge">@hw.ClassName</span>
+                            </div>
+                            <button class="detail-btn" data-homework-id="@hw.HomeworkId" data-title="@hw.Title" data-class-name="@hw.ClassName">Chi tiết</button>
                         </div>
-                        <button class="detail-btn">Chi tiết</button>
+                        <p class="assignment-desc">@hw.Description</p>
+                        <div class="assignment-dates-row">
+                            <span>Giao: @hw.CreatedAtString</span>
+                            <span>Hạn: @hw.DueDateString</span>
+                        </div>
                     </div>
-                    <p class="assignment-desc">@hw.Desc</p>
-                    <div class="assignment-dates-row">
-                        <span>Giao: @hw.Assigned</span>
-                        <span>Hạn: @hw.Due</span>
+
+                    <!-- Right: Progress -->
+                    <div class="assignment-progress-row">
+                        <!-- Đã nộp -->
+                        <div class="progress-item">
+                            <label class="progress-item-label">Đã nộp</label>
+                            <div class="progress-bar-row">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: @submitPct%;"></div>
+                                </div>
+                                <span class="progress-value">@hw.SubmittedCount/@hw.TotalStudents</span>
+                            </div>
+                        </div>
+
+                        <!-- Đã chấm -->
+                        <div class="progress-item">
+                            <label class="progress-item-label">Đã chấm</label>
+                            <div class="progress-bar-row">
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: @gradePct%;"></div>
+                                </div>
+                                <span class="progress-value">@hw.GradedCount/@hw.SubmittedCount</span>
+                            </div>
+                        </div>
+
+                        <!-- Cần chấm -->
+                        <div class="progress-item">
+                            <label class="progress-item-label">Cần chấm</label>
+                            <span class="pending-count">@hw.PendingCount bài</span>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Right: Progress -->
-                <div class="assignment-progress-row">
-                    <!-- Đã nộp -->
-                    <div class="progress-item">
-                        <label class="progress-item-label">Đã nộp</label>
-                        <div class="progress-bar-row">
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: @submitPct%;"></div>
-                            </div>
-                            <span class="progress-value">@hw.Sub/@hw.Total</span>
-                        </div>
-                    </div>
-
-                    <!-- Đã chấm -->
-                    <div class="progress-item">
-                        <label class="progress-item-label">Đã chấm</label>
-                        <div class="progress-bar-row">
-                            <div class="progress-bar-bg">
-                                <div class="progress-bar-fill" style="width: @gradePct%;"></div>
-                            </div>
-                            <span class="progress-value">@hw.Graded/@hw.Sub</span>
-                        </div>
-                    </div>
-
-                    <!-- Cần chấm -->
-                    <div class="progress-item">
-                        <label class="progress-item-label">Cần chấm</label>
-                        <span class="pending-count">@hw.Pending bài</span>
-                    </div>
-                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state text-center py-5 text-muted">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <p>Chưa có bài tập nào được giao.</p>
             </div>
         }
     </div>
 </div>
+
+<!-- Add/Create Homework Modal -->
+<div class="modal fade" id="createHomeworkModal" tabindex="-1" aria-labelledby="createHomeworkModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                <h5 class="modal-title fw-bold" id="createHomeworkModalLabel">Giao bài tập mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-page-handler="Create">
+                <div class="modal-body" style="padding: 1.5rem;">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="alert alert-danger mb-3" style="border-radius: 12px; font-size: 0.9rem;">
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-sm">Lớp học</label>
+                        <select id="selectClass" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                            <option value="">-- Chọn lớp học --</option>
+                            @foreach (var cls in Model.TeacherClasses)
+                            {
+                                <option value="@cls.ClassId">@cls.ClassName</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-sm">Buổi học (Lesson)</label>
+                        <select id="selectLesson" name="lessonId" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required disabled>
+                            <option value="">-- Vui lòng chọn lớp học trước --</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-sm">Tiêu đề bài tập</label>
+                        <input type="text" name="title" class="form-control" placeholder="Nhập tiêu đề (vd: Bài tập về nhà hàm số)" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-sm">Mô tả / Yêu cầu</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết, bài tập trang mấy..." style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-sm">Hạn nộp (Due Date)</label>
+                        <input type="datetime-local" name="dueDate" class="form-control" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Hủy</button>
+                    <button type="submit" class="btn-primary-green">Giao bài tập</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Homework Submission Detail Modal -->
+<div class="modal fade" id="homeworkDetailModal" tabindex="-1" aria-labelledby="homeworkDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                <div>
+                    <h5 class="modal-title fw-bold" id="homeworkDetailModalLabel">Chi tiết & Chấm điểm bài tập</h5>
+                    <span id="detailSubTitle" class="text-muted text-sm" style="font-weight: 600;"></span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="padding: 1.5rem; max-height: 450px; overflow-y: auto;">
+                <div class="table-responsive">
+                    <table class="table align-middle" style="min-width: 700px;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e2e8f0;">
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Mã học sinh</th>
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Học sinh</th>
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Nội dung nộp</th>
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Trạng thái</th>
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem; width: 80px;">Điểm</th>
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem; width: 180px;">Nhận xét</th>
+                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem; text-align: center;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissionsTableBody">
+                            <!-- Sẽ được fill bằng JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Form ẩn phục vụ việc Submit chấm điểm -->
+<form id="hiddenGradeForm" method="post" asp-page-handler="Grade" style="display: none;">
+    <input type="hidden" name="homeworkId" id="gradeHomeworkId" />
+    <input type="hidden" name="studentId" id="gradeStudentId" />
+    <input type="hidden" name="score" id="gradeScore" />
+    <input type="hidden" name="feedback" id="gradeFeedback" />
+</form>
+
+@section Scripts {
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var createHomeworkModal = new bootstrap.Modal(document.getElementById('createHomeworkModal'));
+                createHomeworkModal.show();
+            });
+        </script>
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Tải Lessons khi chọn Lớp học
+            const selectClass = document.getElementById("selectClass");
+            const selectLesson = document.getElementById("selectLesson");
+
+            selectClass.addEventListener("change", async function() {
+                const classId = this.value;
+                selectLesson.innerHTML = "";
+                selectLesson.disabled = true;
+
+                if (!classId) {
+                    selectLesson.innerHTML = '<option value="">-- Vui lòng chọn lớp học trước --</option>';
+                    return;
+                }
+
+                selectLesson.innerHTML = '<option value="">Đang tải các buổi học...</option>';
+
+                try {
+                    const response = await fetch(`/api/v1/teacher/homework/lessons?classId=${classId}`);
+                    const json = await response.json();
+                    
+                    if (json.success && json.data.length > 0) {
+                        let html = '<option value="">-- Chọn buổi học --</option>';
+                        json.data.forEach(l => {
+                            html += `<option value="${l.lessonId}">${l.lessonTitle} (${l.dateString})</option>`;
+                        });
+                        selectLesson.innerHTML = html;
+                        selectLesson.disabled = false;
+                    } else {
+                        selectLesson.innerHTML = '<option value="">Lớp học chưa có buổi học nào</option>';
+                    }
+                } catch (err) {
+                    console.error("Lỗi tải buổi học:", err);
+                    selectLesson.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
+                }
+            });
+
+            // 2. Chi tiết và chấm điểm bài nộp
+            const detailButtons = document.querySelectorAll(".detail-btn");
+            const detailModalEl = document.getElementById("homeworkDetailModal");
+            const detailModal = new bootstrap.Modal(detailModalEl);
+            const submissionsTableBody = document.getElementById("submissionsTableBody");
+            const detailSubTitle = document.getElementById("detailSubTitle");
+
+            detailButtons.forEach(btn => {
+                btn.addEventListener("click", async function() {
+                    const homeworkId = this.getAttribute("data-homework-id");
+                    const title = this.getAttribute("data-title");
+                    const className = this.getAttribute("data-class-name");
+
+                    detailSubTitle.textContent = `Lớp: ${className} | Bài tập: ${title}`;
+                    submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Đang tải danh sách bài nộp...</td></tr>';
+                    
+                    detailModal.show();
+
+                    try {
+                        const response = await fetch(`/api/v1/teacher/homework/${homeworkId}/submissions`);
+                        const json = await response.json();
+
+                        if (json.success && json.data.length > 0) {
+                            let html = "";
+                            json.data.forEach(sub => {
+                                const submissionContent = sub.submissionContent || '<span class="text-muted italic">Chưa nộp bài</span>';
+                                const statusClass = sub.status === 'Graded' ? 'badge-success' : (sub.status === 'Submitted' ? 'badge-warning' : 'badge-danger');
+                                const statusText = sub.status === 'Graded' ? 'Đã chấm' : (sub.status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
+                                const scoreValue = sub.score !== null ? sub.score : '';
+                                const feedbackValue = sub.feedback || '';
+
+                                html += `
+                                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                                        <td style="padding: 0.75rem;"><strong>${sub.studentCode}</strong></td>
+                                        <td style="padding: 0.75rem;">${sub.studentName}</td>
+                                        <td style="padding: 0.75rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${sub.submissionContent || ''}">${submissionContent}</td>
+                                        <td style="padding: 0.75rem;"><span class="${statusClass}">${statusText}</span></td>
+                                        <td style="padding: 0.75rem;">
+                                            <input type="number" class="form-control score-input" style="padding: 0.35rem 0.5rem; border-radius: 8px;" step="0.1" min="0" max="10" value="${scoreValue}" placeholder="Điểm" data-student-id="${sub.studentId}" />
+                                        </td>
+                                        <td style="padding: 0.75rem;">
+                                            <input type="text" class="form-control feedback-input" style="padding: 0.35rem 0.5rem; border-radius: 8px;" value="${feedbackValue}" placeholder="Nhận xét" data-student-id="${sub.studentId}" />
+                                        </td>
+                                        <td style="padding: 0.75rem; text-align: center;">
+                                            <button class="btn btn-primary btn-sm save-grade-btn" style="padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem;" data-homework-id="${homeworkId}" data-student-id="${sub.studentId}">Lưu</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            });
+                            submissionsTableBody.innerHTML = html;
+
+                            // Đăng ký sự kiện click cho các nút Lưu điểm
+                            const saveBtns = submissionsTableBody.querySelectorAll(".save-grade-btn");
+                            saveBtns.forEach(saveBtn => {
+                                saveBtn.addEventListener("click", function() {
+                                    const hwId = this.getAttribute("data-homework-id");
+                                    const sId = this.getAttribute("data-student-id");
+                                    
+                                    // Tìm ô input tương ứng
+                                    const scoreInput = submissionsTableBody.querySelector(`input.score-input[data-student-id="${sId}"]`);
+                                    const feedbackInput = submissionsTableBody.querySelector(`input.feedback-input[data-student-id="${sId}"]`);
+                                    
+                                    const score = scoreInput.value;
+                                    const feedback = feedbackInput.value;
+
+                                    if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
+                                        alert("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.");
+                                        return;
+                                    }
+
+                                    // Điền dữ liệu vào form ẩn và Submit
+                                    document.getElementById("gradeHomeworkId").value = hwId;
+                                    document.getElementById("gradeStudentId").value = sId;
+                                    document.getElementById("gradeScore").value = score;
+                                    document.getElementById("gradeFeedback").value = feedback;
+                                    
+                                    document.getElementById("hiddenGradeForm").submit();
+                                });
+                            });
+                        } else {
+                            submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Lớp học này chưa có học sinh nào.</td></tr>';
+                        }
+                    } catch (err) {
+                        console.error("Lỗi tải bài nộp:", err);
+                        submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Có lỗi khi tải danh sách nộp bài.</td></tr>';
+                    }
+                });
+            });
+        });
+    </script>
+}
+

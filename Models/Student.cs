@@ -66,4 +66,6 @@ public partial class Student
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
     public virtual User ParentUser { get; set; } = null!;
+
+    public virtual ICollection<HomeworkSubmission> HomeworkSubmissions { get; set; } = new List<HomeworkSubmission>();
 }

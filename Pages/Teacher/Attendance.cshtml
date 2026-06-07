@@ -4,6 +4,15 @@
     Layout = "_TeacherLayout";
     ViewData["Title"] = "Điểm danh";
     ViewData["ActivePage"] = "Attendance";
+
+    string GetBadgeClass(string? status) {
+        return status switch {
+            "Present" => "status-present",
+            "Late" => "status-late",
+            "Absent" => "status-absent",
+            _ => "status-empty"
+        };
+    }
 }
 
 <div class="attendance-header-section">
@@ -11,17 +20,18 @@
         <h1 class="attendance-main-title">Điểm danh</h1>
         <p class="attendance-subtitle">Ghi nhận tình trạng chuyên cần</p>
     </div>
-    <button class="btn-export">
+    <button class="btn-export" id="btnExportReport">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Xuất báo cáo
     </button>
 </div>
 
+<!-- 4 Thẻ Thống kê -->
 <div class="attendance-stats-grid">
     <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Có mặt</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #16a34a;">3</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #16a34a;" id="statPresent">0</div>
         </div>
         <div style="color: #16a34a;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
@@ -31,7 +41,7 @@
     <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Vắng mặt</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #dc2626;">1</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #dc2626;" id="statAbsent">0</div>
         </div>
         <div style="color: #dc2626;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
@@ -41,7 +51,7 @@
     <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
             <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Đi muộn</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #ea580c;">1</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ea580c;" id="statLate">0</div>
         </div>
         <div style="color: #ea580c;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
@@ -50,8 +60,8 @@
     
     <div class="attendance-card" style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Tỷ lệ</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #2563eb;">60%</div>
+            <div style="font-size: 0.9rem; color: #6b7280; margin-bottom: 0.5rem;">Tỷ lệ chuyên cần</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #2563eb;" id="statRate">0%</div>
         </div>
         <div style="color: #2563eb;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -61,16 +71,27 @@
 
 <div class="attendance-card">
     <div class="attendance-card-header d-flex justify-content-between align-items-center">
-        <h3 class="attendance-card-title m-0">Điểm danh hôm nay</h3>
+        <h3 class="attendance-card-title m-0">Bảng điểm danh</h3>
         <div class="attendance-filters">
-            <select class="attendance-select">
-                <option>Toán 10A</option>
-                <option>Toán 10B</option>
+            <!-- Select Lớp học -->
+            <select class="attendance-select" id="classSelect">
+                @foreach(var c in Model.TeacherClasses)
+                {
+                    <!option value="@c.ClassId" @(c.ClassId == Model.SelectedClassId ? "selected" : "")>@c.ClassName</!option>
+                }
             </select>
-            <input type="text" class="attendance-date" value="24/03/2026" readonly style="width: 120px;">
+            
+            <!-- Select Buổi học (Thay thế cho ô nhập ngày tĩnh) -->
+            <select class="attendance-select" id="lessonSelect" style="width: 200px;">
+                @foreach(var l in Model.ClassLessons)
+                {
+                    <!option value="@l.LessonId" @(l.LessonId == Model.SelectedLessonId ? "selected" : "")>@l.LessonTitle (@l.DateString)</!option>
+                }
+            </select>
+
             <div style="position: relative; width: 200px;">
                 <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" class="attendance-select" style="width: 100%; padding-left: 2rem;" placeholder="Tìm học sinh...">
+                <input type="text" id="studentSearchInput" class="attendance-select" style="width: 100%; padding-left: 2rem;" placeholder="Tìm học sinh...">
             </div>
         </div>
     </div>
@@ -86,72 +107,58 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td style="font-weight: 500; color: #1a202c;">Nguyễn Văn Minh</td>
-                    <td><span class="status-badge status-present"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Có mặt</span></td>
-                    <td><input type="text" class="notes-input" placeholder="Nhập ghi chú..."></td>
-                    <td>
-                        <div class="action-buttons justify-content-end">
-                            <button class="btn-status btn-status-active">Có mặt</button>
-                            <button class="btn-status">Muộn</button>
-                            <button class="btn-status">Vắng</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 500; color: #1a202c;">Trần Thị Lan</td>
-                    <td><span class="status-badge status-present"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Có mặt</span></td>
-                    <td><input type="text" class="notes-input" placeholder="Nhập ghi chú..."></td>
-                    <td>
-                        <div class="action-buttons justify-content-end">
-                            <button class="btn-status btn-status-active">Có mặt</button>
-                            <button class="btn-status">Muộn</button>
-                            <button class="btn-status">Vắng</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 500; color: #1a202c;">Lê Hoàng Nam</td>
-                    <td><span class="status-badge status-late"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> Muộn</span></td>
-                    <td><input type="text" class="notes-input" value="Đến muộn 10 phút" placeholder="Nhập ghi chú..."></td>
-                    <td>
-                        <div class="action-buttons justify-content-end">
-                            <button class="btn-status">Có mặt</button>
-                            <button class="btn-status btn-status-active">Muộn</button>
-                            <button class="btn-status">Vắng</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 500; color: #1a202c;">Phạm Thu Hương</td>
-                    <td><span class="status-badge status-absent"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> Vắng</span></td>
-                    <td><input type="text" class="notes-input" value="Không có phép" placeholder="Nhập ghi chú..."></td>
-                    <td>
-                        <div class="action-buttons justify-content-end">
-                            <button class="btn-status">Có mặt</button>
-                            <button class="btn-status">Muộn</button>
-                            <button class="btn-status btn-status-active">Vắng</button>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="font-weight: 500; color: #1a202c;">Đỗ Minh Tú</td>
-                    <td><span class="status-badge status-present"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg> Có mặt</span></td>
-                    <td><input type="text" class="notes-input" placeholder="Nhập ghi chú..."></td>
-                    <td>
-                        <div class="action-buttons justify-content-end">
-                            <button class="btn-status btn-status-active">Có mặt</button>
-                            <button class="btn-status">Muộn</button>
-                            <button class="btn-status">Vắng</button>
-                        </div>
-                    </td>
-                </tr>
+                @if (Model.StudentAttendances.Any())
+                {
+                    @foreach(var std in Model.StudentAttendances)
+                    {
+                        <tr data-student-id="@std.StudentId">
+                            <td style="font-weight: 500; color: #1a202c;">
+                                @std.StudentName
+                                <div class="student-code text-muted small">@std.StudentCode</div>
+                            </td>
+                            <td>
+                                <span class="status-badge @GetBadgeClass(std.Status)" id="badge-@std.StudentId">
+                                    @if (std.Status == "Present")
+                                    {
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>@:Có mặt
+                                    }
+                                    else if (std.Status == "Late")
+                                    {
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>@:Muộn
+                                    }
+                                    else if (std.Status == "Absent")
+                                    {
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>@:Vắng
+                                    }
+                                    else
+                                    {
+                                        @:Chưa điểm danh
+                                    }
+                                </span>
+                            </td>
+                            <td><input type="text" class="notes-input" id="note-@std.StudentId" value="@std.Note" placeholder="Nhập ghi chú..." style="border-radius: 12px; padding: 0.6rem 1rem; border-color: #cbd5e1;" /></td>
+                            <td>
+                                <div class="action-buttons justify-content-end">
+                                    <button class="btn-status btn-present-select @(std.Status == "Present" ? "btn-status-active" : "")" data-id="@std.StudentId">Có mặt</button>
+                                    <button class="btn-status btn-late-select @(std.Status == "Late" ? "btn-status-active" : "")" data-id="@std.StudentId">Muộn</button>
+                                    <button class="btn-status btn-absent-select @(std.Status == "Absent" ? "btn-status-active" : "")" data-id="@std.StudentId">Vắng</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">Không có học sinh hoặc buổi học nào được chọn.</td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
     
     <div class="attendance-footer">
-        <button class="btn-save">Lưu điểm danh</button>
+        <button class="btn-save" id="btnSaveAttendance">Lưu điểm danh</button>
     </div>
 </div>
 
@@ -174,39 +181,29 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td style="color: #6b7280;">24/3/2026</td>
-                    <td><span class="class-badge">Toán 10A</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-green">22</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-red">2</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-orange">1</span></td>
-                    <td style="font-weight: 600; color: #1a202c;">88%</td>
-                    <td style="text-align: right;">
-                        <button class="detail-btn">Xem chi tiết</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="color: #6b7280;">22/3/2026</td>
-                    <td><span class="class-badge">Toán 10A</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-green">23</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-red">1</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-orange">1</span></td>
-                    <td style="font-weight: 600; color: #1a202c;">92%</td>
-                    <td style="text-align: right;">
-                        <button class="detail-btn">Xem chi tiết</button>
-                    </td>
-                </tr>
-                <tr>
-                    <td style="color: #6b7280;">20/3/2026</td>
-                    <td><span class="class-badge">Toán 10A</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-green">24</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-red">0</span></td>
-                    <td style="text-align: center;"><span class="stat-circle-orange">1</span></td>
-                    <td style="font-weight: 600; color: #1a202c;">96%</td>
-                    <td style="text-align: right;">
-                        <button class="detail-btn">Xem chi tiết</button>
-                    </td>
-                </tr>
+                @if (Model.AttendanceHistory.Any())
+                {
+                    @foreach(var history in Model.AttendanceHistory)
+                    {
+                        <tr>
+                            <td style="color: #6b7280;">@history.DateString</td>
+                            <td><span class="class-badge">@history.ClassName</span></td>
+                            <td style="text-align: center;"><span class="stat-circle-green">@history.PresentCount</span></td>
+                            <td style="text-align: center;"><span class="stat-circle-red">@history.AbsentCount</span></td>
+                            <td style="text-align: center;"><span class="stat-circle-orange">@history.LateCount</span></td>
+                            <td style="font-weight: 600; color: #1a202c;">@history.AttendanceRate</td>
+                            <td style="text-align: right;">
+                                <button class="detail-btn view-history-detail" data-lesson-id="@history.LessonId">Xem chi tiết</button>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">Chưa có lịch sử điểm danh nào.</td>
+                    </tr>
+                }
             </tbody>
         </table>
     </div>
@@ -217,19 +214,17 @@
         .notes-input {
             width: 100%;
             padding: 0.5rem 1rem;
-            border: none;
-            background-color: #f3f4f6;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
             border-radius: 8px;
             font-size: 0.9rem;
-            color: #4b5563;
+            color: #334155;
             outline: none;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
         }
         .notes-input:focus {
-            background-color: #e5e7eb;
-        }
-        .attendance-date {
-            text-align: center;
+            background-color: #ffffff;
+            border-color: #94a3b8;
         }
         .stat-circle-green {
             background-color: #dcfce7;
@@ -264,5 +259,468 @@
             min-width: 32px;
             text-align: center;
         }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .status-present {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .status-late {
+            background-color: #ffedd5;
+            color: #b45309;
+        }
+        .status-absent {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .status-empty {
+            background-color: #f1f5f9;
+            color: #64748b;
+        }
     </style>
+
+    <script>
+        // Dữ liệu học sinh điểm danh cục bộ
+        let studentAttendancesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StudentAttendances));
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Thống kê lúc load trang ban đầu
+            updateStatistics();
+
+            // Lắng nghe đổi Lớp học
+            document.getElementById("classSelect").addEventListener("change", function () {
+                const classId = this.value;
+                loadLessonsForClass(classId);
+            });
+
+            // Lắng nghe đổi Buổi học
+            document.getElementById("lessonSelect").addEventListener("change", function () {
+                const lessonId = this.value;
+                loadAttendanceForLesson(lessonId);
+            });
+
+            // Tìm kiếm học sinh trực tiếp
+            document.getElementById("studentSearchInput").addEventListener("input", function () {
+                const query = this.value.trim().toLowerCase();
+                const filtered = studentAttendancesData.filter(std => 
+                    std.StudentName.toLowerCase().includes(query) || 
+                    std.StudentCode.toLowerCase().includes(query)
+                );
+                renderAttendanceTable(filtered);
+            });
+
+            // Gán sự kiện click nút bấm đổi trạng thái & ghi chú ban đầu
+            registerAttendanceActions();
+
+            // Sự kiện Click xem chi tiết ở bảng lịch sử điểm danh
+            registerHistoryDetails();
+
+            // Sự kiện lưu điểm danh
+            document.getElementById("btnSaveAttendance").addEventListener("click", function () {
+                saveAttendance();
+            });
+
+            // Xuất báo cáo chuyên cần
+            document.getElementById("btnExportReport").addEventListener("click", function () {
+                exportAttendanceToCSV();
+            });
+        });
+
+        // Xuất báo cáo chuyên cần ra file CSV chuẩn UTF-8 có BOM
+        function exportAttendanceToCSV() {
+            if (!studentAttendancesData || studentAttendancesData.length === 0) {
+                showToast("Không có dữ liệu để xuất báo cáo.", false);
+                return;
+            }
+
+            const classSelect = document.getElementById("classSelect");
+            const className = classSelect.options[classSelect.selectedIndex].text;
+            const lessonSelect = document.getElementById("lessonSelect");
+            if (!lessonSelect || !lessonSelect.value) {
+                showToast("Vui lòng chọn một buổi học để xuất báo cáo.", false);
+                return;
+            }
+            const lessonTitle = lessonSelect.options[lessonSelect.selectedIndex].text;
+
+            let csvContent = "\uFEFF"; // BOM để Excel nhận dạng UTF-8 tiếng Việt
+            csvContent += `BÁO CÁO ĐIỂM DANH - LỚP: ${className}\r\n`;
+            csvContent += `Buổi học: ${lessonTitle}\r\n\r\n`;
+            csvContent += "Mã học sinh,Học sinh,Trạng thái,Ghi chú\r\n";
+
+            studentAttendancesData.forEach(std => {
+                const statusText = std.Status === "Present" ? "Có mặt" :
+                                   std.Status === "Late" ? "Muộn" :
+                                   std.Status === "Absent" ? "Vắng" : "Chưa điểm danh";
+                const noteText = std.Note ? std.Note.replace(/"/g, '""').replace(/,/g, ";") : "";
+                csvContent += `"${std.StudentCode}","${std.StudentName}","${statusText}","${noteText}"\r\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            
+            const fileName = `diem_danh_${className.replace(/\s+/g, "_")}_lesson_${lessonSelect.value}.csv`;
+            link.setAttribute("download", fileName);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("Xuất báo cáo chuyên cần thành công!");
+        }
+
+        // Tải danh sách buổi học & lịch sử khi đổi lớp
+        function loadLessonsForClass(classId) {
+            fetch(`/api/v1/teacher/attendance/lessons?classId=${classId}`)
+                .then(res => res.json())
+                .then(res => {
+                    const lessonSelect = document.getElementById("lessonSelect");
+                    lessonSelect.innerHTML = "";
+                    
+                    if (res.success && res.data.length > 0) {
+                        res.data.forEach(l => {
+                            const opt = document.createElement("option");
+                            opt.value = l.lessonId;
+                            opt.textContent = `${l.lessonTitle} (${l.dateString})`;
+                            lessonSelect.appendChild(opt);
+                        });
+                        
+                        // Tải bảng điểm danh buổi học đầu tiên
+                        loadAttendanceForLesson(res.data[0].lessonId);
+                    } else {
+                        lessonSelect.innerHTML = `<option value="">-- Không có buổi học --</option>`;
+                        studentAttendancesData = [];
+                        renderAttendanceTable([]);
+                        updateStatistics();
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Đã xảy ra lỗi khi tải danh sách buổi học.", false);
+                });
+
+            // Tải lịch sử điểm danh của lớp
+            loadHistoryForClass(classId);
+        }
+
+        // Tải lịch sử điểm danh qua API
+        function loadHistoryForClass(classId) {
+            fetch(`/api/v1/teacher/attendance/history?classId=${classId}`)
+                .then(res => res.json())
+                .then(res => {
+                    const tbody = document.querySelector(".attendance-card:last-child tbody");
+                    tbody.innerHTML = "";
+                    
+                    if (res.success && res.data.length > 0) {
+                        res.data.forEach(h => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td style="color: #6b7280;">${h.dateString}</td>
+                                <td><span class="class-badge">${h.className}</span></td>
+                                <td style="text-align: center;"><span class="stat-circle-green">${h.presentCount}</span></td>
+                                <td style="text-align: center;"><span class="stat-circle-red">${h.absentCount}</span></td>
+                                <td style="text-align: center;"><span class="stat-circle-orange">${h.lateCount}</span></td>
+                                <td style="font-weight: 600; color: #1a202c;">${h.attendanceRate}</td>
+                                <td style="text-align: right;">
+                                    <button class="detail-btn view-history-detail" data-lesson-id="${h.lessonId}">Xem chi tiết</button>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        registerHistoryDetails();
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Chưa có lịch sử điểm danh nào.</td></tr>`;
+                    }
+                })
+                .catch(err => console.error(err));
+        }
+
+        // Tải bảng điểm danh của một buổi học
+        function loadAttendanceForLesson(lessonId) {
+            if (!lessonId) return;
+            fetch(`/api/v1/teacher/attendance?lessonId=${lessonId}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        studentAttendancesData = res.data.map(std => ({
+                            StudentId: std.studentId,
+                            StudentName: std.studentName,
+                            StudentCode: std.studentCode,
+                            Status: std.status,
+                            Note: std.note
+                        }));
+                        renderAttendanceTable(studentAttendancesData);
+                        updateStatistics();
+                        // Reset tìm kiếm
+                        document.getElementById("studentSearchInput").value = "";
+                    } else {
+                        showToast(res.message, false);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Đã xảy ra lỗi khi tải danh sách điểm danh.", false);
+                });
+        }
+
+        // Render bảng điểm danh
+        function renderAttendanceTable(studentsList) {
+            const tbody = document.querySelector(".attendance-table tbody");
+            tbody.innerHTML = "";
+
+            if (studentsList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted py-4">Không tìm thấy học sinh nào.</td></tr>`;
+                return;
+            }
+
+            studentsList.forEach(std => {
+                const tr = document.createElement("tr");
+                tr.setAttribute("data-student-id", std.StudentId);
+                tr.innerHTML = `
+                    <td style="font-weight: 500; color: #1a202c;">
+                        ${std.StudentName}
+                        <div class="student-code text-muted small">${std.StudentCode}</div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${getBadgeClass(std.Status)}" id="badge-${std.StudentId}">
+                            ${getBadgeText(std.Status)}
+                        </span>
+                    </td>
+                    <td><input type="text" class="notes-input" id="note-${std.StudentId}" value="${std.Note || ''}" placeholder="Nhập ghi chú..." style="border-radius: 12px; padding: 0.6rem 1rem; border-color: #cbd5e1;" /></td>
+                    <td>
+                        <div class="action-buttons justify-content-end">
+                            <button class="btn-status btn-present-select ${std.Status === 'Present' ? 'btn-status-active' : ''}" data-id="${std.StudentId}">Có mặt</button>
+                            <button class="btn-status btn-late-select ${std.Status === 'Late' ? 'btn-status-active' : ''}" data-id="${std.StudentId}">Muộn</button>
+                            <button class="btn-status btn-absent-select ${std.Status === 'Absent' ? 'btn-status-active' : ''}" data-id="${std.StudentId}">Vắng</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            registerAttendanceActions();
+        }
+
+        // Gán sự kiện click nút bấm đổi trạng thái & ghi chú
+        function registerAttendanceActions() {
+            // Có mặt
+            document.querySelectorAll(".btn-present-select").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const studentId = parseInt(this.getAttribute("data-id"));
+                    changeStudentStatus(studentId, "Present", this);
+                });
+            });
+
+            // Muộn
+            document.querySelectorAll(".btn-late-select").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const studentId = parseInt(this.getAttribute("data-id"));
+                    changeStudentStatus(studentId, "Late", this);
+                });
+            });
+
+            // Vắng
+            document.querySelectorAll(".btn-absent-select").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const studentId = parseInt(this.getAttribute("data-id"));
+                    changeStudentStatus(studentId, "Absent", this);
+                });
+            });
+
+            // Lắng nghe ghi chú thay đổi để cập nhật dữ liệu cục bộ
+            document.querySelectorAll(".notes-input").forEach(input => {
+                input.addEventListener("change", function () {
+                    const tr = this.closest("tr");
+                    if (tr) {
+                        const studentId = parseInt(tr.getAttribute("data-student-id"));
+                        const std = studentAttendancesData.find(s => s.StudentId === studentId);
+                        if (std) {
+                            std.Note = this.value;
+                        }
+                    }
+                });
+            });
+        }
+
+        // Đổi trạng thái học sinh cục bộ
+        function changeStudentStatus(studentId, status, clickedBtn) {
+            const std = studentAttendancesData.find(s => s.StudentId === studentId);
+            if (!std) return;
+
+            std.Status = status;
+
+            // Cập nhật giao diện nút bấm trong dòng tương ứng
+            const row = clickedBtn.closest("tr");
+            row.querySelectorAll(".btn-status").forEach(btn => btn.classList.remove("btn-status-active"));
+            clickedBtn.classList.add("btn-status-active");
+
+            // Cập nhật badge
+            const badge = document.getElementById(`badge-${studentId}`);
+            badge.className = `status-badge ${getBadgeClass(status)}`;
+            badge.innerHTML = getBadgeText(status);
+
+            // Cập nhật lại số liệu thống kê
+            updateStatistics();
+        }
+
+        // Đăng ký sự kiện nút Xem chi tiết ở bảng Lịch sử
+        function registerHistoryDetails() {
+            document.querySelectorAll(".view-history-detail").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const lessonId = parseInt(this.getAttribute("data-lesson-id"));
+                    const lessonSelect = document.getElementById("lessonSelect");
+                    
+                    lessonSelect.value = lessonId;
+                    loadAttendanceForLesson(lessonId);
+                    
+                    // Cuộn trang lên trên để xem bảng
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        }
+
+        // Lưu thông tin điểm danh lên Server
+        function saveAttendance() {
+            const lessonSelect = document.getElementById("lessonSelect");
+            if (!lessonSelect || !lessonSelect.value) {
+                showToast("Vui lòng chọn một buổi học hợp lệ trước khi lưu.", false);
+                return;
+            }
+
+            const lessonId = parseInt(lessonSelect.value);
+
+            // Gom dữ liệu nộp theo định dạng camelCase
+            const attendances = studentAttendancesData.map(std => {
+                const noteInput = document.getElementById(`note-${std.StudentId}`);
+                return {
+                    studentId: std.StudentId,
+                    status: std.Status || "Present", // Mặc định là Có mặt nếu giáo viên chưa chọn
+                    note: noteInput ? noteInput.value : (std.Note || "")
+                };
+            });
+
+            const requestData = {
+                lessonId: lessonId,
+                attendances: attendances
+            };
+
+            fetch('/api/v1/teacher/attendance/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(async res => {
+                const isJson = res.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await res.json() : null;
+                
+                if (res.ok) {
+                    return data;
+                } else {
+                    const errorMsg = data?.message || `Lỗi máy chủ (${res.status})`;
+                    throw new Error(errorMsg);
+                }
+            })
+            .then(res => {
+                if (res && res.success) {
+                    showToast("Lưu thông tin điểm danh thành công!");
+                    // Tải lại lịch sử điểm danh của lớp
+                    const classId = parseInt(document.getElementById("classSelect").value);
+                    loadHistoryForClass(classId);
+                } else {
+                    showToast(res ? res.message : "Đã có lỗi xảy ra", false);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Lỗi lưu điểm danh: " + err.message, false);
+            });
+        }
+
+        // Tính toán lại số liệu thống kê ở 4 thẻ trên
+        function updateStatistics() {
+            if (!studentAttendancesData || studentAttendancesData.length === 0) {
+                document.getElementById("statPresent").textContent = "0";
+                document.getElementById("statAbsent").textContent = "0";
+                document.getElementById("statLate").textContent = "0";
+                document.getElementById("statRate").textContent = "0%";
+                return;
+            }
+
+            let present = 0;
+            let absent = 0;
+            let late = 0;
+            let total = studentAttendancesData.length;
+
+            studentAttendancesData.forEach(std => {
+                if (std.Status === "Present") present++;
+                else if (std.Status === "Absent") absent++;
+                else if (std.Status === "Late") late++;
+                // Nếu chưa điểm danh, ta có thể mặc định là Có mặt trong thống kê hoặc bỏ qua
+                else total--; // Không tính vào tổng nếu chưa điểm danh
+            });
+
+            document.getElementById("statPresent").textContent = present;
+            document.getElementById("statAbsent").textContent = absent;
+            document.getElementById("statLate").textContent = late;
+
+            let rate = "0%";
+            if (total > 0) {
+                const percent = Math.round((present + late) / total * 100);
+                rate = `${percent}%`;
+            }
+            document.getElementById("statRate").textContent = rate;
+        }
+
+        // Hàm helper lấy class của Badge
+        function getBadgeClass(status) {
+            return status === "Present" ? "status-present" :
+                   status === "Late" ? "status-late" :
+                   status === "Absent" ? "status-absent" : "status-empty";
+        }
+
+        // Hàm helper lấy text kèm icon của Badge
+        function getBadgeText(status) {
+            if (status === "Present") {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Có mặt`;
+            } else if (status === "Late") {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Muộn`;
+            } else if (status === "Absent") {
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Vắng`;
+            }
+            return "Chưa điểm danh";
+        }
+
+        // Hàm hiển thị Toast
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('layout-toast');
+            const title = document.getElementById('layout-toast-title');
+            const msg = document.getElementById('layout-toast-message');
+            
+            if (isSuccess) {
+                toast.style.background = '#16a34a';
+                title.textContent = 'Thành công';
+            } else {
+                toast.style.background = '#dc2626';
+                title.textContent = 'Lỗi';
+            }
+            msg.textContent = message;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    </script>
 }

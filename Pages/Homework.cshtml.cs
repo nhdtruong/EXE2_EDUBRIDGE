@@ -1,11 +1,105 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using EduBridge.Data;
+using EduBridge.Models;
+using EduBridge.Services.Homeworks;
+using EduBridge.Models.DTOs.TeacherHomework;
 
 namespace EduBridge.Pages
 {
     public class HomeworkModel : PageModel
     {
-        public void OnGet()
+        private readonly AppDbContext _context;
+        private readonly IHomeworkService _homeworkService;
+
+        public HomeworkModel(AppDbContext context, IHomeworkService homeworkService)
         {
+            _context = context;
+            _homeworkService = homeworkService;
+        }
+
+        public List<HomeworkListItemDto> HomeworkList { get; set; } = new();
+        public List<Class> TeacherClasses { get; set; } = new();
+
+        public async Task<IActionResult> OnGetAsync()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
+
+            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
+            if (teacher == null) return RedirectToPage("/Login");
+
+            TeacherClasses = await _context.Classes
+                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
+                .ToListAsync();
+
+            HomeworkList = await _homeworkService.GetHomeworkListAsync(userId);
+
+            return Page();
+        }
+
+        public async Task<IActionResult> OnPostCreateAsync(int lessonId, string title, string? description, DateTime dueDate)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
+
+            if (lessonId <= 0 || string.IsNullOrWhiteSpace(title))
+            {
+                TempData["ErrorMessage"] = "Thông tin bài tập không hợp lệ.";
+                return RedirectToPage();
+            }
+
+            var request = new CreateHomeworkRequest
+            {
+                LessonId = lessonId,
+                Title = title,
+                Description = description,
+                DueDate = dueDate
+            };
+
+            var success = await _homeworkService.CreateHomeworkAsync(userId, request);
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không thể giao bài tập. Vui lòng kiểm tra lại lớp học/buổi học.";
+                return RedirectToPage();
+            }
+
+            TempData["ToastMessage"] = "Giao bài tập mới thành công!";
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostGradeAsync(int homeworkId, int studentId, decimal score, string? feedback)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
+
+            if (homeworkId <= 0 || studentId <= 0)
+            {
+                TempData["ErrorMessage"] = "Thông tin bài nộp không hợp lệ.";
+                return RedirectToPage();
+            }
+
+            var request = new GradeSubmissionRequest
+            {
+                Score = score,
+                Feedback = feedback
+            };
+
+            var success = await _homeworkService.GradeSubmissionAsync(userId, homeworkId, studentId, request);
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không thể chấm điểm bài tập này.";
+                return RedirectToPage();
+            }
+
+            TempData["ToastMessage"] = "Chấm điểm bài tập thành công!";
+            return RedirectToPage();
         }
     }
 }
