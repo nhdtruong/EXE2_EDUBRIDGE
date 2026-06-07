@@ -1,203 +1,126 @@
-using EduBridge.Data;
+using System.Security.Claims;
+using EduBridge.Contracts.Teachers;
+using EduBridge.Services.Teachers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EduBridge.Pages.AdminTeachers;
 
 [Authorize(Policy = "AdminOnly")]
-public sealed class EditModel : TeacherProfilePageModel
+public class EditModel : PageModel
 {
-    public EditModel(AppDbContext context)
-        : base(context)
+    private readonly ITeacherManagementService _service;
+
+    public EditModel(ITeacherManagementService service)
     {
+        _service = service;
     }
+
+    [BindProperty]
+    public SaveTeacherRequest Input { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
     public int TeacherId { get; set; }
 
     [BindProperty]
-    public TeacherProfileInput Input { get; set; } = new();
+    public IFormFile? AvatarFile { get; set; }
 
-    public string? CurrentAvatarUrl { get; private set; }
+    [BindProperty]
+    public bool RemoveAvatar { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
+    public string? ExistingAvatarUrl { get; set; }
+
+    public async Task<IActionResult> OnGetAsync(int teacherId, CancellationToken cancellationToken)
     {
-        var loadResult = await LoadTeacherAsync(cancellationToken);
+        var ownerUserId = GetCurrentUserId();
+        if (ownerUserId == null) return RedirectToPage("/Login");
 
-        return loadResult ?? Page();
+        var result = await _service.GetTeacherAsync(ownerUserId.Value, teacherId, cancellationToken);
+        if (!result.IsSuccess) return NotFound();
+
+        var t = result.Value!;
+        TeacherId = teacherId;
+        ExistingAvatarUrl = t.AvatarUrl;
+
+        Input = new SaveTeacherRequest
+        {
+            TeacherCode = t.TeacherCode,
+            FullName = t.FullName,
+            PhoneNumber = t.PhoneNumber ?? "",
+            Email = t.Email,
+            DateOfBirth = t.DateOfBirth,
+            Gender = t.Gender,
+            Ethnicity = t.Ethnicity,
+            Religion = t.Religion,
+            IdentityNumber = t.IdentityNumber,
+            IdentityIssuedDate = t.IdentityIssuedDate,
+            IdentityIssuedPlace = t.IdentityIssuedPlace,
+            CurrentAddress = t.CurrentAddress,
+            PermanentAddress = t.PermanentAddress,
+            Hometown = t.Hometown,
+            PlaceOfBirth = t.PlaceOfBirth,
+            IsActive = t.Status == "Active"
+        };
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
-        var ownerUserId = GetCurrentUserId();
-
-        if (ownerUserId == null)
-        {
-            return RedirectToPage("/Login");
-        }
-
-        var centerId = await GetOwnerCenterIdAsync(ownerUserId.Value, cancellationToken);
-
-        if (centerId == null)
-        {
-            return Forbid();
-        }
-
-        var teacher = await Context.Teachers
-            .Include(t => t.User)
-            .FirstOrDefaultAsync(
-                t => t.TeacherId == TeacherId && t.CenterId == centerId.Value,
-                cancellationToken);
-
-        if (teacher == null)
-        {
-            return NotFound();
-        }
-
-        Input.Normalize();
-        await ValidateTeacherProfileAsync(
-            Input,
-            teacher.TeacherId,
-            teacher.UserId,
-            cancellationToken);
-
-        CurrentAvatarUrl = teacher.User.AvatarUrl;
-
         if (!ModelState.IsValid)
         {
+            // Re-fetch avatar url so the UI doesn't break
+            var oId = GetCurrentUserId();
+            if (oId != null)
+            {
+                var tr = await _service.GetTeacherAsync(oId.Value, TeacherId, cancellationToken);
+                if (tr.IsSuccess) ExistingAvatarUrl = tr.Value!.AvatarUrl;
+            }
             return Page();
         }
 
-        var oldAvatarUrl = teacher.User.AvatarUrl;
-        string? uploadedAvatarUrl = null;
+        var ownerUserId = GetCurrentUserId();
+        if (ownerUserId == null) return RedirectToPage("/Login");
 
-        try
+        var result = await _service.UpdateAsync(ownerUserId.Value, TeacherId, Input, cancellationToken);
+
+        if (!result.IsSuccess)
         {
-            uploadedAvatarUrl = await SaveAvatarAsync(
-                Input.AvatarFile,
-                Input.TeacherCode,
-                cancellationToken);
-
-            teacher.TeacherCode = Input.TeacherCode;
-            teacher.Status = Input.IsActive ? "Active" : "Inactive";
-            teacher.User.Status = Input.IsActive ? "Active" : "Inactive";
-            teacher.User.FullName = Input.FullName;
-            teacher.User.Email = Input.Email;
-            teacher.User.PhoneNumber = Input.PhoneNumber;
-            teacher.User.NormalizedPhoneNumber = NormalizePhoneNumber(Input.PhoneNumber);
-            teacher.User.DateOfBirth = Input.DateOfBirth;
-            teacher.User.Gender = Input.Gender;
-            teacher.User.Ethnicity = Input.Ethnicity;
-            teacher.User.Religion = Input.Religion;
-            teacher.User.IdentityNumber = Input.IdentityNumber;
-            teacher.User.IdentityIssuedDate = Input.IdentityIssuedDate;
-            teacher.User.IdentityIssuedPlace = Input.IdentityIssuedPlace;
-            teacher.User.CurrentAddress = Input.CurrentAddress;
-            teacher.User.PermanentAddress = Input.PermanentAddress;
-            teacher.User.Hometown = Input.Hometown;
-            teacher.User.PlaceOfBirth = Input.PlaceOfBirth;
-
-            if (Input.RemoveAvatar)
+            if (result.Errors != null)
             {
-                teacher.User.AvatarUrl = null;
+                foreach (var (key, errors) in result.Errors)
+                foreach (var error in errors)
+                    ModelState.AddModelError(string.IsNullOrEmpty(key) ? string.Empty : $"Input.{key}", error);
             }
+            else ModelState.AddModelError(string.Empty, result.Message);
 
-            if (!string.IsNullOrWhiteSpace(uploadedAvatarUrl))
-            {
-                teacher.User.AvatarUrl = uploadedAvatarUrl;
-            }
+            var tr = await _service.GetTeacherAsync(ownerUserId.Value, TeacherId, cancellationToken);
+            if (tr.IsSuccess) ExistingAvatarUrl = tr.Value!.AvatarUrl;
 
-            await Context.SaveChangesAsync(cancellationToken);
-
-            if (!string.Equals(oldAvatarUrl, teacher.User.AvatarUrl, StringComparison.OrdinalIgnoreCase))
-            {
-                DeleteUploadedAvatar(oldAvatarUrl);
-            }
-        }
-        catch (DbUpdateException)
-        {
-            DeleteUploadedAvatar(uploadedAvatarUrl);
-            ModelState.AddModelError(string.Empty, "Không thể cập nhật giáo viên. Vui lòng kiểm tra dữ liệu trùng.");
-            CurrentAvatarUrl = oldAvatarUrl;
             return Page();
+        }
+
+        if (RemoveAvatar)
+        {
+            await _service.RemoveAvatarAsync(ownerUserId.Value, TeacherId, cancellationToken);
+        }
+        else if (AvatarFile != null)
+        {
+            await using var stream = AvatarFile.OpenReadStream();
+            await _service.UpdateAvatarAsync(ownerUserId.Value, TeacherId, stream, AvatarFile.FileName, AvatarFile.ContentType, cancellationToken);
         }
 
         TempData["ToastType"] = "success";
         TempData["ToastTitle"] = "Thành công";
-        TempData["ToastMessage"] = "Đã cập nhật thông tin giáo viên.";
+        TempData["ToastMessage"] = result.Message;
 
         return RedirectToPage("/AdminTeachers");
     }
 
-    private async Task<IActionResult?> LoadTeacherAsync(CancellationToken cancellationToken)
+    private int? GetCurrentUserId()
     {
-        var ownerUserId = GetCurrentUserId();
-
-        if (ownerUserId == null)
-        {
-            return RedirectToPage("/Login");
-        }
-
-        var centerId = await GetOwnerCenterIdAsync(ownerUserId.Value, cancellationToken);
-
-        if (centerId == null)
-        {
-            return Forbid();
-        }
-
-        var teacher = await Context.Teachers
-            .AsNoTracking()
-            .Where(t => t.TeacherId == TeacherId && t.CenterId == centerId.Value)
-            .Select(t => new
-            {
-                t.TeacherId,
-                t.TeacherCode,
-                TeacherStatus = t.Status,
-                t.User.FullName,
-                t.User.DateOfBirth,
-                t.User.Gender,
-                t.User.Ethnicity,
-                t.User.Religion,
-                t.User.IdentityNumber,
-                t.User.IdentityIssuedDate,
-                t.User.IdentityIssuedPlace,
-                t.User.CurrentAddress,
-                t.User.PermanentAddress,
-                t.User.Hometown,
-                t.User.PlaceOfBirth,
-                t.User.PhoneNumber,
-                t.User.Email,
-                t.User.AvatarUrl
-            })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (teacher == null)
-        {
-            return NotFound();
-        }
-
-        Input = new TeacherProfileInput
-        {
-            TeacherCode = teacher.TeacherCode,
-            FullName = teacher.FullName,
-            DateOfBirth = teacher.DateOfBirth,
-            Gender = string.IsNullOrWhiteSpace(teacher.Gender) ? "Nam" : teacher.Gender,
-            Ethnicity = teacher.Ethnicity,
-            Religion = teacher.Religion,
-            IdentityNumber = teacher.IdentityNumber ?? string.Empty,
-            IdentityIssuedDate = teacher.IdentityIssuedDate,
-            IdentityIssuedPlace = teacher.IdentityIssuedPlace,
-            CurrentAddress = teacher.CurrentAddress,
-            PermanentAddress = teacher.PermanentAddress,
-            Hometown = teacher.Hometown,
-            PlaceOfBirth = teacher.PlaceOfBirth,
-            PhoneNumber = teacher.PhoneNumber ?? string.Empty,
-            Email = teacher.Email,
-            IsActive = teacher.TeacherStatus == "Active"
-        };
-        CurrentAvatarUrl = teacher.AvatarUrl;
-
-        return null;
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out var userId) ? userId : null;
     }
 }

@@ -1,0 +1,117 @@
+/* Source: wwwroot/css/site.css - .form-group, .form-label, .form-control */
+.ds-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.ds-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ds-label {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Source: Pages/Admin*.cshtml - h-12 rounded border border-gray-300 */
+.ds-input,
+.ds-select,
+.ds-textarea {
+    width: 100%;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-sm);
+    background: #ffffff;
+    color: var(--ds-text);
+    font-family: var(--ds-font-family);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ds-input,
+.ds-select {
+    height: 40px;
+    padding: 0 14px;
+}
+
+.ds-textarea {
+    min-height: 84px;
+    padding: 12px 14px;
+    resize: vertical;
+}
+
+.ds-input::placeholder,
+.ds-textarea::placeholder {
+    color: var(--ds-text-subtle);
+}
+
+.ds-input:focus,
+.ds-select:focus,
+.ds-textarea:focus {
+    border-color: var(--ds-primary);
+    box-shadow: 0 0 0 1px var(--ds-primary);
+}
+
+/* Source: Pages/AdminTeachers/Create.cshtml date input + blue calendar button */
+.ds-date-field {
+    display: flex;
+    overflow: hidden;
+    width: 100%;
+    height: 40px;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-sm);
+    background: #ffffff;
+}
+
+.ds-date-field:focus-within {
+    border-color: var(--ds-primary);
+    box-shadow: 0 0 0 1px var(--ds-primary);
+}
+
+.ds-date-field .ds-input {
+    height: 100%;
+    border: 0;
+    box-shadow: none;
+}
+
+.ds-date-button {
+    display: inline-flex;
+    width: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: #0284c7;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.ds-radio-row {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+}
+
+.ds-radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #374151;
+    font-size: 13px;
+}
+
+.ds-validation {
+    color: #dc2626;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .ds-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+

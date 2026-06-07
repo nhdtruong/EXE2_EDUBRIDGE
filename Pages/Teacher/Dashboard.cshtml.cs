@@ -61,20 +61,23 @@ namespace EduBridge.Pages.Teacher
             UnreadMessages = await _context.Messages
                 .CountAsync(m => m.ReceiverUserId == userId && !m.IsRead);
 
-            // Lịch dạy hôm nay theo thứ trong tuần (DayOfWeek là byte trong DB)
-            var today = (byte)DateTime.Now.DayOfWeek; // 0=CN, 1=T2, ..., 6=T7
-            var todayRaw = await _context.ClassSchedules
-                .Include(cs => cs.Class)
-                .Where(cs => classIds.Contains(cs.ClassId) && cs.DayOfWeek == today)
+            // Lịch dạy hôm nay theo buổi học (Lesson) thực tế trong ngày hôm nay
+            var todayDate = DateOnly.FromDateTime(DateTime.Now);
+            var todayLessons = await _context.Lessons
+                .Include(l => l.Class)
+                .Where(l => classIds.Contains(l.ClassId) && l.LessonDate == todayDate)
+                .OrderBy(l => l.StartTime)
                 .Take(5)
                 .ToListAsync();
 
-            TodaySchedules = todayRaw.Select(cs => new DashboardScheduleDto
+            TodaySchedules = todayLessons.Select(l => new DashboardScheduleDto
             {
-                ClassName = cs.Class.ClassName,
-                Topic = "Bài giảng",
-                TimeRange = cs.StartTime.ToString("HH:mm") + " - " + cs.EndTime.ToString("HH:mm"),
-                Room = cs.Class.Room ?? "Không có phòng"
+                ClassName = l.Class.ClassName,
+                Topic = l.LessonTitle,
+                TimeRange = (l.StartTime.HasValue && l.EndTime.HasValue)
+                    ? $"{l.StartTime.Value.ToString("HH:mm")} - {l.EndTime.Value.ToString("HH:mm")}"
+                    : "Chưa cấu hình giờ học",
+                Room = l.Class.Room ?? "Không có phòng"
             }).ToList();
 
             // Lấy lessonIds để tìm homework

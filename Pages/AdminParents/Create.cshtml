@@ -1,0 +1,14 @@
+@page
+@model EduBridge.Pages.AdminParents.CreateModel
+@{ ViewData["Title"]="Thêm phụ huynh"; Layout="_AdminLayout"; ViewData["ActivePage"]="AdminParents"; }
+<form method="post" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200">
+    <div class="border-b pb-3"><h1 class="text-lg font-bold">Thêm phụ huynh</h1><p class="mt-1 text-sm text-gray-500">Nếu email hoặc số điện thoại đã tồn tại, hệ thống sẽ gắn tài khoản phụ huynh hiện có vào trung tâm.</p></div>
+    <div asp-validation-summary="All" class="mb-2 text-sm font-semibold text-red-600"></div>
+    <partial name="_ParentForm" for="Input" />
+    <div class="flex justify-end gap-3"><a asp-page="/AdminParents" class="rounded border px-5 py-2.5 font-semibold">Hủy</a><button class="rounded bg-blue-600 px-5 py-2.5 font-semibold text-white">Lưu phụ huynh</button></div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/teacher-profile-form.js" asp-append-version="true"></script>
+    <script src="~/js/parent-form.js" asp-append-version="true"></script>
+}

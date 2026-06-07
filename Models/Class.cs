@@ -27,11 +27,35 @@ public partial class Class
 
     public string ClassCode { get; set; } = null!;
 
+    public int RoomId { get; set; }
+
+    public int TotalSessions { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public int? UpdatedByUserId { get; set; }
+
+    public DateTime? ClosedAt { get; set; }
+
+    public int? ClosedByUserId { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
+    public byte[] RowVersion { get; set; } = null!;
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<ClassSchedule> ClassSchedules { get; set; } = new List<ClassSchedule>();
 
+    public virtual User? ClosedByUser { get; set; }
+
     public virtual Course Course { get; set; } = null!;
+
+    public virtual User? DeletedByUser { get; set; }
 
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
@@ -41,5 +65,9 @@ public partial class Class
 
     public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 
+    public virtual Room RoomNavigation { get; set; } = null!;
+
     public virtual Teacher Teacher { get; set; } = null!;
+
+    public virtual User? UpdatedByUser { get; set; }
 }

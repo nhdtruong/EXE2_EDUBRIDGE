@@ -5,6 +5,18 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
+using EduBridge.Services.Classes;
+using EduBridge.Services.Courses;
+using EduBridge.Services.Dashboard;
+using EduBridge.Services.Parents;
+using EduBridge.Services.Rooms;
+using EduBridge.Services.Shifts;
+using EduBridge.Services.Students;
+using EduBridge.Services.Teachers;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace EduBridge
 {
@@ -19,6 +31,26 @@ namespace EduBridge
             {
                 throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured.");
             }
+
+            builder.Services.AddScoped<IClassLessonPlanner, ClassLessonPlanner>();
+            builder.Services.AddScoped<IClassCreationService, ClassCreationService>();
+            builder.Services.AddScoped<IClassManagementService, ClassManagementService>();
+            builder.Services.AddScoped<IRoomManagementService, RoomManagementService>();
+            builder.Services.AddScoped<IShiftManagementService, ShiftManagementService>();
+            builder.Services.AddScoped<IClassEnrollmentService, ClassEnrollmentService>();
+            builder.Services.AddScoped<IParentManagementService, ParentManagementService>();
+            builder.Services.AddScoped<EduBridge.Services.Teachers.ITeacherManagementService, EduBridge.Services.Teachers.TeacherManagementService>();
+            builder.Services.AddScoped<EduBridge.Services.Students.IStudentManagementService, EduBridge.Services.Students.StudentManagementService>();
+            builder.Services.AddScoped<EduBridge.Services.Courses.ICourseManagementService, EduBridge.Services.Courses.CourseManagementService>();
+            builder.Services.AddScoped<EduBridge.Services.Dashboard.IDashboardService, EduBridge.Services.Dashboard.DashboardService>();
+            builder.Services.AddScoped<EduBridge.Services.Auth.IAccountAuthenticationService, EduBridge.Services.Auth.AccountAuthenticationService>();
+            builder.Services.AddScoped<EduBridge.Services.Auth.IJwtTokenService, EduBridge.Services.Auth.JwtTokenService>();
+            builder.Services.AddScoped<EduBridge.Services.Lectures.ILectureService, EduBridge.Services.Lectures.LectureService>();
+            builder.Services.AddScoped<EduBridge.Services.Homeworks.IHomeworkService, EduBridge.Services.Homeworks.HomeworkService>();
+            builder.Services.AddScoped<EduBridge.Services.Grades.IGradeService, EduBridge.Services.Grades.GradeService>();
+            builder.Services.AddScoped<EduBridge.Services.Attendance.IAttendanceService, EduBridge.Services.Attendance.AttendanceService>();
+            builder.Services.AddScoped<EduBridge.Services.Chat.IChatService, EduBridge.Services.Chat.ChatService>();
+            builder.Services.AddScoped<EduBridge.Services.Notifications.INotificationService, EduBridge.Services.Notifications.NotificationService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)

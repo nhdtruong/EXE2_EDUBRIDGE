@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +20,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Center> Centers { get; set; }
 
+    public virtual DbSet<CenterUser> CenterUsers { get; set; }
+
     public virtual DbSet<Class> Classes { get; set; }
 
     public virtual DbSet<ClassCodeCounter> ClassCodeCounters { get; set; }
@@ -30,9 +32,13 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Enrollment> Enrollments { get; set; }
 
+    public virtual DbSet<EnrollmentHistory> EnrollmentHistories { get; set; }
+
     public virtual DbSet<Grade> Grades { get; set; }
 
     public virtual DbSet<Homework> Homeworks { get; set; }
+
+    public virtual DbSet<HomeworkSubmission> HomeworkSubmissions { get; set; }
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
@@ -46,7 +52,11 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<Room> Rooms { get; set; }
+
     public virtual DbSet<Student> Students { get; set; }
+
+    public virtual DbSet<StudyShift> StudyShifts { get; set; }
 
     public virtual DbSet<Teacher> Teachers { get; set; }
 
@@ -60,7 +70,12 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<VwRevenueByPayment> VwRevenueByPayments { get; set; }
 
+    public virtual DbSet<VwRoomOverview> VwRoomOverviews { get; set; }
+
     public virtual DbSet<VwStudentOverview> VwStudentOverviews { get; set; }
+
+    public virtual DbSet<VwStudyShiftOverview> VwStudyShiftOverviews { get; set; }
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -110,6 +125,33 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Centers_Users");
         });
 
+        modelBuilder.Entity<CenterUser>(entity =>
+        {
+            entity.HasIndex(e => new { e.CenterId, e.UserType, e.Status }, "IX_CenterUsers_Center_UserType_Status");
+
+            entity.HasIndex(e => new { e.UserId, e.UserType }, "IX_CenterUsers_UserId_UserType");
+
+            entity.HasIndex(e => new { e.UserId, e.UserType, e.Status }, "IX_CenterUsers_UserId_UserType_Status");
+
+            entity.HasIndex(e => new { e.CenterId, e.UserId, e.UserType }, "UX_CenterUsers_Center_User_Type").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
+            entity.Property(e => e.UserType).HasMaxLength(20);
+
+            entity.HasOne(d => d.Center).WithMany(p => p.CenterUsers)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CenterUsers_Centers");
+
+            entity.HasOne(d => d.User).WithMany(p => p.CenterUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CenterUsers_Users");
+        });
+
         modelBuilder.Entity<Class>(entity =>
         {
             entity.HasKey(e => e.ClassId).HasName("PK__Classes__CB1927C0260CB969");
@@ -118,9 +160,23 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => new { e.CenterId, e.ClassCode }, "IX_Classes_CenterId_ClassCode");
 
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.Status, e.ClassId }, "IX_Classes_Center_IsDeleted_Status_ClassId").IsDescending(false, false, false, true);
+
+            entity.HasIndex(e => new { e.CenterId, e.RoomId, e.IsDeleted, e.Status, e.ClassId }, "IX_Classes_Center_Room_Active");
+
+            entity.HasIndex(e => new { e.CenterId, e.RoomId, e.Status, e.ClassId }, "IX_Classes_Center_Room_Status");
+
+            entity.HasIndex(e => new { e.CenterId, e.TeacherId, e.IsDeleted, e.Status, e.ClassId }, "IX_Classes_Center_Teacher_Active");
+
+            entity.HasIndex(e => new { e.CenterId, e.TeacherId, e.Status, e.ClassId }, "IX_Classes_Center_Teacher_Status");
+
             entity.HasIndex(e => e.ClassCode, "IX_Classes_ClassCode");
 
             entity.HasIndex(e => e.CourseId, "IX_Classes_CourseId");
+
+            entity.HasIndex(e => e.DeletedByUserId, "IX_Classes_DeletedByUserId").HasFilter("([DeletedByUserId] IS NOT NULL)");
+
+            entity.HasIndex(e => e.RoomId, "IX_Classes_RoomId");
 
             entity.HasIndex(e => e.TeacherId, "IX_Classes_TeacherId");
 
@@ -128,26 +184,49 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.ClassCode).HasMaxLength(30);
             entity.Property(e => e.ClassName).HasMaxLength(150);
+            entity.Property(e => e.ClosedAt).HasPrecision(0);
+            entity.Property(e => e.DeletedAt).HasPrecision(0);
             entity.Property(e => e.Room).HasMaxLength(50);
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
             entity.Property(e => e.ScheduleText).HasMaxLength(255);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
+            entity.Property(e => e.UpdatedAt).HasPrecision(0);
 
             entity.HasOne(d => d.Center).WithMany(p => p.Classes)
                 .HasForeignKey(d => d.CenterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Classes_Centers");
 
+            entity.HasOne(d => d.ClosedByUser).WithMany(p => p.ClassClosedByUsers)
+                .HasForeignKey(d => d.ClosedByUserId)
+                .HasConstraintName("FK_Classes_ClosedByUser");
+
             entity.HasOne(d => d.Course).WithMany(p => p.Classes)
                 .HasForeignKey(d => d.CourseId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Classes_Courses");
 
+            entity.HasOne(d => d.DeletedByUser).WithMany(p => p.ClassDeletedByUsers)
+                .HasForeignKey(d => d.DeletedByUserId)
+                .HasConstraintName("FK_Classes_DeletedByUser");
+
+            entity.HasOne(d => d.RoomNavigation).WithMany(p => p.Classes)
+                .HasForeignKey(d => d.RoomId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Classes_Rooms");
+
             entity.HasOne(d => d.Teacher).WithMany(p => p.Classes)
                 .HasForeignKey(d => d.TeacherId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Classes_Teachers");
+
+            entity.HasOne(d => d.UpdatedByUser).WithMany(p => p.ClassUpdatedByUsers)
+                .HasForeignKey(d => d.UpdatedByUserId)
+                .HasConstraintName("FK_Classes_UpdatedByUser");
         });
 
         modelBuilder.Entity<ClassCodeCounter>(entity =>
@@ -187,18 +266,31 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.CourseId).HasName("PK__Courses__C92D71A7312A9D7F");
 
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.CourseCode }, "IX_Courses_CenterId_IsDeleted_CourseCode");
+
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.Status, e.CourseId }, "IX_Courses_CenterId_IsDeleted_Status_CourseId").IsDescending(false, false, false, true);
+
+            entity.HasIndex(e => new { e.CenterId, e.CourseCode }, "UX_Courses_CenterId_CourseCode_NotDeleted")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
+            entity.Property(e => e.CourseCode).HasMaxLength(30);
             entity.Property(e => e.CourseName).HasMaxLength(150);
             entity.Property(e => e.Description).HasMaxLength(500);
-            entity.Property(e => e.DurationWeeks).HasDefaultValue(12);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
+            entity.Property(e => e.TotalSessions).HasDefaultValue(24);
             entity.Property(e => e.TuitionFee).HasColumnType("decimal(18, 2)");
 
             entity.HasOne(d => d.Center).WithMany(p => p.Courses)
                 .HasForeignKey(d => d.CenterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Courses_Centers");
+
+            entity.HasOne(d => d.DeletedByUser).WithMany(p => p.Courses)
+                .HasForeignKey(d => d.DeletedByUserId)
+                .HasConstraintName("FK_Courses_DeletedByUser");
         });
 
         modelBuilder.Entity<Enrollment>(entity =>
@@ -207,14 +299,23 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => e.ClassId, "IX_Enrollments_ClassId");
 
+            entity.HasIndex(e => new { e.ClassId, e.Status, e.StudentId }, "IX_Enrollments_ClassId_Status_StudentId");
+
             entity.HasIndex(e => e.StudentId, "IX_Enrollments_StudentId");
+
+            entity.HasIndex(e => new { e.StudentId, e.Status, e.ClassId }, "IX_Enrollments_StudentId_Status_ClassId");
 
             entity.HasIndex(e => new { e.StudentId, e.ClassId }, "UQ_Enrollments").IsUnique();
 
             entity.Property(e => e.EnrollDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken();
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Đang học");
+            entity.Property(e => e.StatusChangedAt).HasPrecision(0);
 
             entity.HasOne(d => d.Class).WithMany(p => p.Enrollments)
                 .HasForeignKey(d => d.ClassId)
@@ -225,6 +326,34 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.StudentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Enrollments_Students");
+
+            entity.HasOne(d => d.UpdatedByUser).WithMany(p => p.Enrollments)
+                .HasForeignKey(d => d.UpdatedByUserId)
+                .HasConstraintName("FK_Enrollments_UpdatedByUser");
+        });
+
+        modelBuilder.Entity<EnrollmentHistory>(entity =>
+        {
+            entity.HasKey(e => e.EnrollmentHistoryId).HasName("PK_EnrollmentHistories");
+
+            entity.HasIndex(e => new { e.EnrollmentId, e.ChangedAt }, "IX_EnrollmentHistories_EnrollmentId_ChangedAt")
+                .IsDescending(false, true);
+
+            entity.Property(e => e.ChangedAt)
+                .HasPrecision(0)
+                .HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.NewStatus).HasMaxLength(20);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.OldStatus).HasMaxLength(20);
+
+            entity.HasOne(d => d.ChangedByUser).WithMany(p => p.EnrollmentHistories)
+                .HasForeignKey(d => d.ChangedByUserId)
+                .HasConstraintName("FK_EnrollmentHistories_ChangedByUser");
+
+            entity.HasOne(d => d.Enrollment).WithMany(p => p.EnrollmentHistories)
+                .HasForeignKey(d => d.EnrollmentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_EnrollmentHistories_Enrollments");
         });
 
         modelBuilder.Entity<Grade>(entity =>
@@ -260,6 +389,32 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.LessonId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Homework_Lessons");
+        });
+
+        modelBuilder.Entity<HomeworkSubmission>(entity =>
+        {
+            entity.HasKey(e => e.SubmissionId).HasName("PK_HomeworkSubmissions");
+
+            entity.ToTable("HomeworkSubmissions");
+
+            entity.HasIndex(e => e.HomeworkId, "IX_HomeworkSubmissions_HomeworkId");
+            entity.HasIndex(e => e.StudentId, "IX_HomeworkSubmissions_StudentId");
+            entity.HasIndex(e => new { e.HomeworkId, e.StudentId }, "UQ_HomeworkSubmissions").IsUnique();
+
+            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Score).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Feedback).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Submitted");
+
+            entity.HasOne(d => d.Homework).WithMany(p => p.HomeworkSubmissions)
+                .HasForeignKey(d => d.HomeworkId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_HomeworkSubmissions_Homework");
+
+            entity.HasOne(d => d.Student).WithMany(p => p.HomeworkSubmissions)
+                .HasForeignKey(d => d.StudentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_HomeworkSubmissions_Students");
         });
 
         modelBuilder.Entity<Invoice>(entity =>
@@ -299,13 +454,30 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => new { e.ClassId, e.LessonDate }, "IX_Lessons_ClassId_LessonDate");
 
+            entity.HasIndex(e => new { e.ClassId, e.Status, e.LessonDate }, "IX_Lessons_ClassId_Status_LessonDate");
+
+            entity.HasIndex(e => new { e.LessonDate, e.StartTime, e.EndTime, e.Status, e.ClassId }, "IX_Lessons_Date_Time_Status_Class").HasFilter("([StartTime] IS NOT NULL AND [EndTime] IS NOT NULL)");
+
+            entity.HasIndex(e => new { e.ClassId, e.SessionNumber }, "UX_Lessons_ClassId_SessionNumber")
+                .IsUnique()
+                .HasFilter("([SessionNumber] IS NOT NULL)");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.EndTime).HasPrecision(0);
             entity.Property(e => e.LessonTitle).HasMaxLength(200);
+            entity.Property(e => e.StartTime).HasPrecision(0);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Scheduled");
 
             entity.HasOne(d => d.Class).WithMany(p => p.Lessons)
                 .HasForeignKey(d => d.ClassId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lessons_Classes");
+
+            entity.HasOne(d => d.ClassSchedule).WithMany(p => p.Lessons)
+                .HasForeignKey(d => d.ClassScheduleId)
+                .HasConstraintName("FK_Lessons_ClassSchedules");
         });
 
         modelBuilder.Entity<Message>(entity =>
@@ -373,22 +545,84 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RoleName).HasMaxLength(50);
         });
 
+        modelBuilder.Entity<Room>(entity =>
+        {
+            entity.HasKey(e => e.RoomId).HasName("PK__Rooms__32863939AF21C496");
+
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.RoomCode }, "IX_Rooms_CenterId_IsDeleted_RoomCode");
+
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.Status, e.RoomId }, "IX_Rooms_CenterId_IsDeleted_Status_RoomId").IsDescending(false, false, false, true);
+
+            entity.HasIndex(e => new { e.CenterId, e.Status }, "IX_Rooms_CenterId_Status");
+
+            entity.HasIndex(e => new { e.CenterId, e.RoomCode }, "UX_Rooms_CenterId_RoomCode_NotDeleted")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Location).HasMaxLength(150);
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.RoomCode).HasMaxLength(30);
+            entity.Property(e => e.RoomName).HasMaxLength(100);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
+
+            entity.HasOne(d => d.Center).WithMany(p => p.Rooms)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Rooms_Centers");
+
+            entity.HasOne(d => d.DeletedByUser).WithMany(p => p.Rooms)
+                .HasForeignKey(d => d.DeletedByUserId)
+                .HasConstraintName("FK_Rooms_DeletedByUser");
+        });
+
         modelBuilder.Entity<Student>(entity =>
         {
             entity.HasKey(e => e.StudentId).HasName("PK__Students__32C52B990550F83F");
 
             entity.HasIndex(e => e.CenterId, "IX_Students_CenterId");
 
+            entity.HasIndex(e => new { e.CenterId, e.FullName }, "IX_Students_CenterId_FullName");
+
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.Status, e.StudentId }, "IX_Students_CenterId_IsDeleted_Status_StudentId").IsDescending(false, false, false, true);
+
+            entity.HasIndex(e => new { e.CenterId, e.ParentUserId }, "IX_Students_CenterId_ParentUserId");
+
+            entity.HasIndex(e => new { e.CenterId, e.Status, e.StudentId }, "IX_Students_CenterId_Status_StudentId").IsDescending(false, false, true);
+
+            entity.HasIndex(e => new { e.CenterId, e.StudentCode }, "IX_Students_CenterId_StudentCode");
+
+            entity.HasIndex(e => e.Email, "IX_Students_Email").HasFilter("([Email] IS NOT NULL)");
+
+            entity.HasIndex(e => e.NormalizedPhoneNumber, "IX_Students_NormalizedPhoneNumber").HasFilter("([NormalizedPhoneNumber] IS NOT NULL)");
+
             entity.HasIndex(e => e.ParentUserId, "IX_Students_ParentUserId");
+
+            entity.HasIndex(e => new { e.ParentUserId, e.IsDeleted }, "IX_Students_ParentUserId_IsDeleted");
 
             entity.HasIndex(e => e.StudentCode, "IX_Students_StudentCode");
 
-            entity.HasIndex(e => e.StudentCode, "UQ__Students__1FC8860421D6BBDD").IsUnique();
+            entity.HasIndex(e => new { e.CenterId, e.StudentCode }, "UX_Students_CenterId_StudentCode_NotDeleted")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
 
             entity.Property(e => e.Address).HasMaxLength(255);
+            entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Email).HasMaxLength(150);
+            entity.Property(e => e.Ethnicity).HasMaxLength(50);
             entity.Property(e => e.FullName).HasMaxLength(100);
             entity.Property(e => e.Gender).HasMaxLength(10);
+            entity.Property(e => e.Hometown).HasMaxLength(150);
+            entity.Property(e => e.IdentityIssuedPlace).HasMaxLength(150);
+            entity.Property(e => e.IdentityNumber).HasMaxLength(20);
+            entity.Property(e => e.NormalizedPhoneNumber).HasMaxLength(20);
+            entity.Property(e => e.PermanentAddress).HasMaxLength(255);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(20);
+            entity.Property(e => e.PlaceOfBirth).HasMaxLength(150);
+            entity.Property(e => e.Religion).HasMaxLength(50);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
@@ -405,17 +639,51 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Students_Users");
         });
 
+        modelBuilder.Entity<StudyShift>(entity =>
+        {
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.ShiftCode, e.ShiftName }, "IX_StudyShifts_CenterId_IsDeleted_Search");
+
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.Status, e.StudyShiftId }, "IX_StudyShifts_CenterId_IsDeleted_Status").IsDescending(false, false, false, true);
+
+            entity.HasIndex(e => new { e.CenterId, e.ShiftCode }, "UX_StudyShifts_CenterId_ShiftCode_NotDeleted")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.EndTime).HasPrecision(0);
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.ShiftCode).HasMaxLength(30);
+            entity.Property(e => e.ShiftName).HasMaxLength(100);
+            entity.Property(e => e.StartTime).HasPrecision(0);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
+
+            entity.HasOne(d => d.Center).WithMany(p => p.StudyShifts)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StudyShifts_Centers");
+
+            entity.HasOne(d => d.DeletedByUser).WithMany(p => p.StudyShifts)
+                .HasForeignKey(d => d.DeletedByUserId)
+                .HasConstraintName("FK_StudyShifts_DeletedByUser");
+        });
+
         modelBuilder.Entity<Teacher>(entity =>
         {
             entity.HasKey(e => e.TeacherId).HasName("PK__Teachers__EDF2596449654B6C");
 
             entity.HasIndex(e => e.CenterId, "IX_Teachers_CenterId");
 
+            entity.HasIndex(e => new { e.CenterId, e.IsDeleted, e.Status }, "IX_Teachers_CenterId_IsDeleted_Status");
+
             entity.HasIndex(e => new { e.CenterId, e.TeacherCode }, "IX_Teachers_CenterId_TeacherCode");
 
             entity.HasIndex(e => e.UserId, "IX_Teachers_UserId");
 
-            entity.HasIndex(e => e.TeacherCode, "UQ_Teachers_TeacherCode").IsUnique();
+            entity.HasIndex(e => new { e.CenterId, e.TeacherCode }, "UQ_Teachers_CenterId_TeacherCode")
+                .IsUnique()
+                .HasFilter("([IsDeleted]=(0))");
 
             entity.HasIndex(e => e.UserId, "UQ__Teachers__1788CC4DD5305503").IsUnique();
 
@@ -452,21 +720,23 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4CB36B485D");
 
+            entity.HasIndex(e => new { e.IsDeleted, e.Status, e.RoleId }, "IX_Users_IsDeleted_Status_RoleId");
+
             entity.HasIndex(e => e.NormalizedPhoneNumber, "IX_Users_NormalizedPhoneNumber");
 
             entity.HasIndex(e => new { e.RoleId, e.Status }, "IX_Users_RoleId_Status");
 
             entity.HasIndex(e => e.Email, "UX_Users_Email_NotNull")
                 .IsUnique()
-                .HasFilter("([Email] IS NOT NULL)");
+                .HasFilter("([Email] IS NOT NULL AND [IsDeleted]=(0))");
 
             entity.HasIndex(e => e.IdentityNumber, "UX_Users_IdentityNumber_NotNull")
                 .IsUnique()
-                .HasFilter("([IdentityNumber] IS NOT NULL)");
+                .HasFilter("([IdentityNumber] IS NOT NULL AND [IsDeleted]=(0))");
 
             entity.HasIndex(e => e.NormalizedPhoneNumber, "UX_Users_NormalizedPhoneNumber_NotNull")
                 .IsUnique()
-                .HasFilter("([NormalizedPhoneNumber] IS NOT NULL)");
+                .HasFilter("([NormalizedPhoneNumber] IS NOT NULL AND [IsDeleted]=(0))");
 
             entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
@@ -531,18 +801,55 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.RevenueAmount).HasColumnType("decimal(38, 2)");
         });
 
+        modelBuilder.Entity<VwRoomOverview>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_RoomOverview");
+
+            entity.Property(e => e.LatestClassName).HasMaxLength(150);
+            entity.Property(e => e.LatestScheduleText).HasMaxLength(255);
+            entity.Property(e => e.Location).HasMaxLength(150);
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.RoomCode).HasMaxLength(30);
+            entity.Property(e => e.RoomName).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(20);
+        });
+
         modelBuilder.Entity<VwStudentOverview>(entity =>
         {
             entity
                 .HasNoKey()
                 .ToView("vw_StudentOverview");
 
+            entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CenterName).HasMaxLength(150);
+            entity.Property(e => e.CurrentClassCode).HasMaxLength(30);
+            entity.Property(e => e.CurrentClassName).HasMaxLength(150);
+            entity.Property(e => e.CurrentCourseName).HasMaxLength(150);
+            entity.Property(e => e.Gender).HasMaxLength(10);
+            entity.Property(e => e.ParentEmail).HasMaxLength(150);
             entity.Property(e => e.ParentName).HasMaxLength(100);
             entity.Property(e => e.ParentPhone).HasMaxLength(20);
             entity.Property(e => e.Status).HasMaxLength(20);
             entity.Property(e => e.StudentCode).HasMaxLength(30);
+            entity.Property(e => e.StudentEmail).HasMaxLength(150);
             entity.Property(e => e.StudentName).HasMaxLength(100);
+            entity.Property(e => e.StudentPhone).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<VwStudyShiftOverview>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_StudyShiftOverview");
+
+            entity.Property(e => e.EndTime).HasPrecision(0);
+            entity.Property(e => e.Note).HasMaxLength(255);
+            entity.Property(e => e.ShiftCode).HasMaxLength(30);
+            entity.Property(e => e.ShiftName).HasMaxLength(100);
+            entity.Property(e => e.StartTime).HasPrecision(0);
+            entity.Property(e => e.Status).HasMaxLength(20);
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -8,3 +8,11 @@ obj/
 appsettings.Development.json
 
 node_modules/
+
+App_Data/DataProtection-Keys/
+bin/
+obj/
+artifacts/
+*.user
+*.log
+.vscode/

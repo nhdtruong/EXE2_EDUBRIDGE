@@ -18,4 +18,6 @@ public partial class ClassSchedule
     public DateTime CreatedAt { get; set; }
 
     public virtual Class Class { get; set; } = null!;
+
+    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 }

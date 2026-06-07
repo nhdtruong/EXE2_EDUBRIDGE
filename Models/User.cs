@@ -53,7 +53,27 @@ public partial class User
 
     public string? PlaceOfBirth { get; set; }
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
+    public virtual ICollection<CenterUser> CenterUsers { get; set; } = new List<CenterUser>();
+
     public virtual ICollection<Center> Centers { get; set; } = new List<Center>();
+
+    public virtual ICollection<Class> ClassClosedByUsers { get; set; } = new List<Class>();
+
+    public virtual ICollection<Class> ClassDeletedByUsers { get; set; } = new List<Class>();
+
+    public virtual ICollection<Class> ClassUpdatedByUsers { get; set; } = new List<Class>();
+
+    public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
+
+    public virtual ICollection<EnrollmentHistory> EnrollmentHistories { get; set; } = new List<EnrollmentHistory>();
+
+    public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
     public virtual ICollection<Message> MessageReceiverUsers { get; set; } = new List<Message>();
 
@@ -63,7 +83,11 @@ public partial class User
 
     public virtual Role Role { get; set; } = null!;
 
+    public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
+
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
+
+    public virtual ICollection<StudyShift> StudyShifts { get; set; } = new List<StudyShift>();
 
     public virtual Teacher? Teacher { get; set; }
 }

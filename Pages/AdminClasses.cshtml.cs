@@ -1,27 +1,34 @@
 using System.ComponentModel.DataAnnotations;
-using System.Data;
 using System.Security.Claims;
-using System.Text.RegularExpressions;
-using EduBridge.Data;
-using EduBridge.Models;
+using EduBridge.Contracts.Classes;
+using EduBridge.Contracts.Rooms;
+using EduBridge.Contracts.Shifts;
+using EduBridge.Services.Classes;
+using EduBridge.Services.Rooms;
+using EduBridge.Services.Shifts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Pages
 {
     [Authorize(Policy = "AdminOnly")]
     public class AdminClassesModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IClassManagementService _classManagementService;
+        private readonly IRoomManagementService _roomManagementService;
+        private readonly IShiftManagementService _shiftManagementService;
         private readonly ILogger<AdminClassesModel> _logger;
 
         public AdminClassesModel(
-            AppDbContext context,
+            IClassManagementService classManagementService,
+            IRoomManagementService roomManagementService,
+            IShiftManagementService shiftManagementService,
             ILogger<AdminClassesModel> logger)
         {
-            _context = context;
+            _classManagementService = classManagementService;
+            _roomManagementService = roomManagementService;
+            _shiftManagementService = shiftManagementService;
             _logger = logger;
         }
 
@@ -29,14 +36,131 @@ namespace EduBridge.Pages
         [MaxLength(150)]
         public string? Search { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        [MaxLength(150)]
+        public string? ClassTeacherSearch { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int? ClassCourseId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? ClassStatusFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public DateOnly? ClassStartDateFrom { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public DateOnly? ClassStartDateTo { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public DateOnly? ClassEndDateFrom { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public DateOnly? ClassEndDateTo { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int? ClassRoomId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int ClassPageNumber { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public int ClassPageSize { get; set; } = 20;
+
+        [BindProperty(SupportsGet = true)]
+        public string? Tab { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        [MaxLength(150)]
+        public string? RoomSearch { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? RoomStatusFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int RoomPageNumber { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public int RoomPageSize { get; set; } = 20;
+
+        [BindProperty(SupportsGet = true)]
+        [MaxLength(150)]
+        public string? ShiftSearch { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string? ShiftStatusFilter { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public int ShiftPageNumber { get; set; } = 1;
+
+        [BindProperty(SupportsGet = true)]
+        public int ShiftPageSize { get; set; } = 20;
+
         [BindProperty]
-        public ClassInput Input { get; set; } = new();
+        public SaveRoomRequest CreateRoomInput { get; set; } = new("", "", null, null, "Active");
 
-        public List<ClassListItem> Classes { get; private set; } = new();
+        [BindProperty]
+        public RoomEditInput EditRoomInput { get; set; } = new();
 
-        public List<CourseOption> CourseOptions { get; private set; } = new();
+        [BindProperty]
+        public SaveShiftRequest CreateShiftInput { get; set; } = new("", "", default, default, "Active", null);
 
-        public List<TeacherOption> TeacherOptions { get; private set; } = new();
+        [BindProperty]
+        public ShiftEditInput EditShiftInput { get; set; } = new();
+
+        public List<ClassListItemDto> Classes { get; private set; } = new();
+
+        public List<RoomListItemDto> Rooms { get; private set; } = new();
+
+        public List<ShiftListItemDto> StudyShifts { get; private set; } = new();
+
+        public List<CourseOptionDto> CourseOptions { get; private set; } = new();
+
+        public List<TeacherOptionDto> TeacherOptions { get; private set; } = new();
+
+        public List<RoomOptionDto> RoomOptions { get; private set; } = new();
+
+        public bool IsRoomsTab => string.Equals(Tab, "rooms", StringComparison.OrdinalIgnoreCase);
+
+        public bool IsShiftsTab => string.Equals(Tab, "shifts", StringComparison.OrdinalIgnoreCase);
+
+        public int[] ClassPageSizeOptions { get; } = { 10, 20, 50, 100, 200, 500 };
+
+        public int TotalClasses { get; private set; }
+
+        public int TotalClassPages { get; private set; }
+
+        public int FirstClassItemNumber => TotalClasses == 0
+            ? 0
+            : (ClassPageNumber - 1) * ClassPageSize + 1;
+
+        public int[] RoomPageSizeOptions { get; } = { 10, 20, 50, 100, 200, 500 };
+
+        public int TotalRooms { get; private set; }
+
+        public int TotalRoomPages { get; private set; }
+
+        public int FirstRoomItemNumber => TotalRooms == 0
+            ? 0
+            : (RoomPageNumber - 1) * RoomPageSize + 1;
+
+        public int[] ShiftPageSizeOptions { get; } = { 10, 20, 50, 100, 200, 500 };
+
+        public int TotalStudyShifts { get; private set; }
+
+        public int TotalShiftPages { get; private set; }
+
+        public int FirstShiftItemNumber => TotalStudyShifts == 0
+            ? 0
+            : (ShiftPageNumber - 1) * ShiftPageSize + 1;
+
+        public bool OpenCreateRoomModal { get; private set; }
+
+        public bool OpenEditRoomModal { get; private set; }
+
+        public bool OpenCreateShiftModal { get; private set; }
+
+        public bool OpenEditShiftModal { get; private set; }
 
         public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
         {
@@ -47,553 +171,354 @@ namespace EduBridge.Pages
                 return RedirectToPage("/Login");
             }
 
-            var centerId = await GetOwnerCenterIdAsync(ownerUserId.Value, cancellationToken);
-
-            if (centerId == null)
-            {
-                _logger.LogWarning(
-                    "Owner user {OwnerUserId} has no active center for class management.",
-                    ownerUserId.Value);
-
-                Classes = new();
-                return Page();
-            }
-
-            await LoadClassOptionsAsync(centerId.Value, cancellationToken);
-            var query = _context.Classes
-                .AsNoTracking()
-                .Where(c => c.CenterId == centerId.Value);
-
-            if (!string.IsNullOrWhiteSpace(Search))
-            {
-                var keyword = Search.Trim();
-
-                query = query.Where(c =>
-                    c.ClassCode.Contains(keyword) ||
-                    c.ClassName.Contains(keyword) ||
-                    c.Course.CourseName.Contains(keyword) ||
-                    c.Teacher.User.FullName.Contains(keyword));
-            }
-
-            Classes = await query
-                .OrderBy(c => c.Status == "Active" ? 0 : 1)
-                .ThenByDescending(c => c.StartDate)
-                .ThenByDescending(c => c.ClassId)
-                .Select(c => new ClassListItem
-                {
-                    ClassId = c.ClassId,
-                    ClassCode = c.ClassCode,
-                    ClassName = c.ClassName,
-                    CourseName = c.Course.CourseName,
-                    TeacherName = c.Teacher.User.FullName,
-                    TotalStudents = c.Enrollments.Count(e => e.Status == "Đang học"),
-                    ScheduleText = c.ScheduleText ?? string.Empty,
-                    Room = c.Room ?? string.Empty,
-                    Status = c.Status
-                })
-                .Take(100)
-                .ToListAsync(cancellationToken);
+            NormalizeTabsAndSearch();
+            await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
 
             return Page();
         }
 
-        public async Task<IActionResult> OnPostCreateAsync(CancellationToken cancellationToken)
+        public async Task<IActionResult> OnPostCloseClassAsync(int classId, CancellationToken cancellationToken)
         {
             var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
 
-            if (ownerUserId == null)
-            {
-                return RedirectToPage("/Login");
-            }
+            var result = await _classManagementService.CloseAsync(ownerUserId.Value, classId, cancellationToken);
+            SetToast(result.IsSuccess ? "Thành công" : "Thất bại", result.Message, result.IsSuccess ? "success" : "error");
+            return RedirectToClassesTab();
+        }
 
-            var centerId = await GetOwnerCenterIdAsync(ownerUserId.Value, cancellationToken);
+        public async Task<IActionResult> OnPostDeleteClassAsync(int classId, CancellationToken cancellationToken)
+        {
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
 
-            if (centerId == null)
-            {
-                ModelState.AddModelError(string.Empty, "Không tìm thấy trung tâm đang hoạt động.");
-                await LoadPageDataAsync(null, cancellationToken);
-                return Page();
-            }
+            var result = await _classManagementService.SoftDeleteAsync(ownerUserId.Value, classId, cancellationToken);
+            SetToast(result.IsSuccess ? "Thành công" : "Thất bại", result.Message, result.IsSuccess ? "success" : "error");
+            return RedirectToClassesTab();
+        }
 
-            await ValidateClassInputAsync(centerId.Value, cancellationToken);
+        public async Task<IActionResult> OnPostCreateRoomAsync(CancellationToken cancellationToken)
+        {
+            RemoveModelStatePrefix("Input");
+            RemoveModelStatePrefix(nameof(EditRoomInput));
+            Tab = "rooms";
+            NormalizeTabsAndSearch();
+
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
 
             if (!ModelState.IsValid)
             {
-                await LoadPageDataAsync(centerId.Value, cancellationToken);
+                OpenCreateRoomModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
             }
 
-            var schedules = ParseScheduleText(Input.ScheduleText!);
+            var result = await _roomManagementService.CreateAsync(ownerUserId.Value, CreateRoomInput, cancellationToken);
 
-            var classEntity = new Class
+            if (!result.IsSuccess)
             {
-                CenterId = centerId.Value,
-                CourseId = Input.CourseId,
-                TeacherId = Input.TeacherId,
-                ClassCode = string.Empty,
-                ClassName = Input.ClassName.Trim(),
-                Room = NormalizeNullable(Input.Room),
-                ScheduleText = NormalizeNullable(Input.ScheduleText),
-                StartDate = Input.StartDate!.Value,
-                EndDate = Input.EndDate!.Value,
-                Status = "Active"
-            };
-
-            try
-            {
-                await using var transaction = await _context.Database.BeginTransactionAsync(
-                    IsolationLevel.Serializable,
-                    cancellationToken);
-
-                classEntity.ClassCode = await GenerateClassCodeAsync(
-                    centerId.Value,
-                    cancellationToken);
-
-                foreach (var schedule in schedules)
-                {
-                    classEntity.ClassSchedules.Add(new ClassSchedule
-                    {
-                        DayOfWeek = schedule.DayOfWeek,
-                        StartTime = schedule.StartTime,
-                        EndTime = schedule.EndTime
-                    });
-                }
-
-                _context.Classes.Add(classEntity);
-                await _context.SaveChangesAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-            }
-            catch (DbUpdateException ex)
-            {
-                _logger.LogWarning(ex, "Could not create class {ClassName}.", Input.ClassName);
-                ModelState.AddModelError(string.Empty, "Không thể tạo lớp học. Vui lòng kiểm tra lại dữ liệu.");
-                await LoadPageDataAsync(centerId.Value, cancellationToken);
+                ModelState.AddModelError(string.Empty, result.Message);
+                OpenCreateRoomModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
             }
 
-            TempData["ToastMessage"] = "Thêm lớp học thành công.";
-            return RedirectToPage("/AdminClasses");
+            SetToast("Thành công", result.Message, "success");
+            return RedirectToRoomsTab();
         }
 
-        private async Task LoadPageDataAsync(
-            int? centerId,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> OnPostUpdateRoomAsync(CancellationToken cancellationToken)
         {
-            if (centerId == null)
+            RemoveModelStatePrefix("Input");
+            RemoveModelStatePrefix(nameof(CreateRoomInput));
+            Tab = "rooms";
+            NormalizeTabsAndSearch();
+
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
+
+            if (!ModelState.IsValid)
             {
-                Classes = new();
-                CourseOptions = new();
-                TeacherOptions = new();
-                return;
+                OpenEditRoomModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
+                return Page();
             }
 
-            await LoadClassOptionsAsync(centerId.Value, cancellationToken);
+            var request = new SaveRoomRequest(
+                EditRoomInput.RoomCode,
+                EditRoomInput.RoomName,
+                EditRoomInput.Capacity,
+                EditRoomInput.Location,
+                EditRoomInput.Status);
 
-            Classes = await _context.Classes
-                .AsNoTracking()
-                .Where(c => c.CenterId == centerId.Value)
-                .OrderBy(c => c.Status == "Active" ? 0 : 1)
-                .ThenByDescending(c => c.StartDate)
-                .ThenByDescending(c => c.ClassId)
-                .Select(c => new ClassListItem
-                {
-                    ClassId = c.ClassId,
-                    ClassCode = c.ClassCode,
-                    ClassName = c.ClassName,
-                    CourseName = c.Course.CourseName,
-                    TeacherName = c.Teacher.User.FullName,
-                    TotalStudents = c.Enrollments.Count(e => e.Status == "Đang học"),
-                    ScheduleText = c.ScheduleText ?? string.Empty,
-                    Room = c.Room ?? string.Empty,
-                    Status = c.Status
-                })
-                .Take(100)
-                .ToListAsync(cancellationToken);
+            var result = await _roomManagementService.UpdateAsync(ownerUserId.Value, EditRoomInput.RoomId, request, cancellationToken);
+
+            if (!result.IsSuccess)
+            {
+                ModelState.AddModelError(string.Empty, result.Message);
+                OpenEditRoomModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
+                return Page();
+            }
+
+            SetToast("Thành công", result.Message, "success");
+            return RedirectToRoomsTab();
         }
 
-        private async Task LoadClassOptionsAsync(
-            int centerId,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> OnPostChangeRoomStatusAsync(int roomId, string status, CancellationToken cancellationToken)
         {
-            CourseOptions = await _context.Courses
-                .AsNoTracking()
-                .Where(c => c.CenterId == centerId && c.Status == "Active")
-                .OrderBy(c => c.CourseName)
-                .Select(c => new CourseOption
-                {
-                    CourseId = c.CourseId,
-                    CourseName = c.CourseName
-                })
-                .ToListAsync(cancellationToken);
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
 
-            TeacherOptions = await _context.Teachers
-                .AsNoTracking()
-                .Where(t => t.CenterId == centerId && t.Status == "Active")
-                .OrderBy(t => t.User.FullName)
-                .Select(t => new TeacherOption
-                {
-                    TeacherId = t.TeacherId,
-                    TeacherName = t.User.FullName
-                })
-                .ToListAsync(cancellationToken);
+            var result = await _roomManagementService.SetStatusAsync(ownerUserId.Value, roomId, status, cancellationToken);
+            SetToast(result.IsSuccess ? "Thành công" : "Thất bại", result.Message, result.IsSuccess ? "success" : "error");
+            return RedirectToRoomsTab();
         }
 
-        private async Task ValidateClassInputAsync(
-            int centerId,
-            CancellationToken cancellationToken)
+        public async Task<IActionResult> OnPostDeleteRoomAsync(int roomId, CancellationToken cancellationToken)
         {
-            Input.ClassName = Input.ClassName.Trim();
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
 
-            if (Input.StartDate == null)
+            var result = await _roomManagementService.DeleteRoomAsync(ownerUserId.Value, roomId, cancellationToken);
+            SetToast(result.IsSuccess ? "Thành công" : "Thất bại", result.Message, result.IsSuccess ? "success" : "error");
+            return RedirectToRoomsTab();
+        }
+
+        public async Task<IActionResult> OnPostCreateShiftAsync(CancellationToken cancellationToken)
+        {
+            RemoveModelStatePrefix("Input");
+            RemoveModelStatePrefix(nameof(CreateRoomInput));
+            RemoveModelStatePrefix(nameof(EditRoomInput));
+            RemoveModelStatePrefix(nameof(EditShiftInput));
+            Tab = "shifts";
+            NormalizeTabsAndSearch();
+
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
+
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("Input.StartDate", "Vui lòng chọn ngày bắt đầu.");
+                OpenCreateShiftModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
+                return Page();
             }
 
-            if (Input.EndDate == null)
+            var result = await _shiftManagementService.CreateAsync(ownerUserId.Value, CreateShiftInput, cancellationToken);
+
+            if (!result.IsSuccess)
             {
-                ModelState.AddModelError("Input.EndDate", "Vui lòng chọn ngày kết thúc.");
+                ModelState.AddModelError(string.Empty, result.Message);
+                OpenCreateShiftModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
+                return Page();
             }
 
-            if (Input.StartDate != null && Input.EndDate != null && Input.StartDate > Input.EndDate)
+            SetToast("Thành công", result.Message, "success");
+            return RedirectToShiftsTab();
+        }
+
+        public async Task<IActionResult> OnPostUpdateShiftAsync(CancellationToken cancellationToken)
+        {
+            RemoveModelStatePrefix("Input");
+            RemoveModelStatePrefix(nameof(CreateRoomInput));
+            RemoveModelStatePrefix(nameof(EditRoomInput));
+            RemoveModelStatePrefix(nameof(CreateShiftInput));
+            Tab = "shifts";
+            NormalizeTabsAndSearch();
+
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
+
+            if (!ModelState.IsValid)
             {
-                ModelState.AddModelError("Input.EndDate", "Ngày kết thúc phải sau ngày bắt đầu.");
+                OpenEditShiftModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
+                return Page();
             }
 
-            if (string.IsNullOrWhiteSpace(Input.ScheduleText))
-            {
-                ModelState.AddModelError("Input.ScheduleText", "Vui lòng chọn ít nhất một ngày học.");
-            }
-            else if (!IsValidScheduleText(Input.ScheduleText))
-            {
-                ModelState.AddModelError("Input.ScheduleText", "Ngày học hoặc khung giờ không hợp lệ.");
-            }
-            else if (HasDuplicateSchedule(Input.ScheduleText))
-            {
-                ModelState.AddModelError("Input.ScheduleText", "Ngày học bị trùng khung giờ.");
-            }
+            var request = new SaveShiftRequest(
+                EditShiftInput.ShiftCode,
+                EditShiftInput.ShiftName,
+                EditShiftInput.StartTime,
+                EditShiftInput.EndTime,
+                EditShiftInput.Status,
+                EditShiftInput.Note);
 
-            var courseExists = await _context.Courses
-                .AsNoTracking()
-                .AnyAsync(
-                    c =>
-                        c.CourseId == Input.CourseId &&
-                        c.CenterId == centerId &&
-                        c.Status == "Active",
-                    cancellationToken);
+            var result = await _shiftManagementService.UpdateAsync(ownerUserId.Value, EditShiftInput.StudyShiftId, request, cancellationToken);
 
-            if (!courseExists)
+            if (!result.IsSuccess)
             {
-                ModelState.AddModelError("Input.CourseId", "Khóa học không hợp lệ.");
+                ModelState.AddModelError(string.Empty, result.Message);
+                OpenEditShiftModal = true;
+                await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
+                return Page();
             }
 
-            var teacherExists = await _context.Teachers
-                .AsNoTracking()
-                .AnyAsync(
-                    t =>
-                        t.TeacherId == Input.TeacherId &&
-                        t.CenterId == centerId &&
-                        t.Status == "Active",
-                    cancellationToken);
+            SetToast("Thành công", result.Message, "success");
+            return RedirectToShiftsTab();
+        }
 
-            if (!teacherExists)
+        public async Task<IActionResult> OnPostChangeShiftStatusAsync(int studyShiftId, string status, CancellationToken cancellationToken)
+        {
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
+
+            var result = await _shiftManagementService.SetStatusAsync(ownerUserId.Value, studyShiftId, status, cancellationToken);
+            SetToast(result.IsSuccess ? "Thành công" : "Thất bại", result.Message, result.IsSuccess ? "success" : "error");
+            return RedirectToShiftsTab();
+        }
+
+        public async Task<IActionResult> OnPostDeleteShiftAsync(int studyShiftId, CancellationToken cancellationToken)
+        {
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
+
+            var result = await _shiftManagementService.DeleteShiftAsync(ownerUserId.Value, studyShiftId, cancellationToken);
+            SetToast(result.IsSuccess ? "Thành công" : "Thất bại", result.Message, result.IsSuccess ? "success" : "error");
+            return RedirectToShiftsTab();
+        }
+
+        private async Task LoadPageDataAsync(int ownerUserId, CancellationToken cancellationToken)
+        {
+            var optionsResult = await _classManagementService.GetClassOptionsAsync(ownerUserId, cancellationToken);
+            if (optionsResult.IsSuccess && optionsResult.Value != null)
             {
-                ModelState.AddModelError("Input.TeacherId", "Giáo viên không hợp lệ.");
+                CourseOptions = optionsResult.Value.Courses.ToList();
+                TeacherOptions = optionsResult.Value.Teachers.ToList();
+                RoomOptions = optionsResult.Value.Rooms.ToList();
             }
 
+            var classesResult = await _classManagementService.GetClassesAsync(
+                ownerUserId,
+                new ClassQuery(Search, ClassStatusFilter, ClassCourseId, ClassTeacherSearch == null ? null : default(int?), ClassPageNumber, ClassPageSize),
+                cancellationToken);
+            if (classesResult.IsSuccess && classesResult.Value != null)
+            {
+                Classes = classesResult.Value.Items.ToList();
+                TotalClasses = classesResult.Value.TotalItems;
+                TotalClassPages = classesResult.Value.TotalPages;
+            }
+
+            var roomsResult = await _roomManagementService.GetRoomsAsync(
+                ownerUserId,
+                new RoomQuery(RoomSearch, RoomStatusFilter, RoomPageNumber, RoomPageSize),
+                cancellationToken);
+            if (roomsResult.IsSuccess && roomsResult.Value != null)
+            {
+                Rooms = roomsResult.Value.Items.ToList();
+                TotalRooms = roomsResult.Value.TotalItems;
+                TotalRoomPages = roomsResult.Value.TotalPages;
+            }
+
+            var shiftsResult = await _shiftManagementService.GetShiftsAsync(
+                ownerUserId,
+                new ShiftQuery(ShiftSearch, ShiftStatusFilter, ShiftPageNumber, ShiftPageSize),
+                cancellationToken);
+            if (shiftsResult.IsSuccess && shiftsResult.Value != null)
+            {
+                StudyShifts = shiftsResult.Value.Items.ToList();
+                TotalStudyShifts = shiftsResult.Value.TotalItems;
+                TotalShiftPages = shiftsResult.Value.TotalPages;
+            }
         }
 
         private int? GetCurrentUserId()
         {
-            var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            return int.TryParse(value, out var userId)
-                ? userId
-                : null;
-        }
-
-        private async Task<int?> GetOwnerCenterIdAsync(
-            int ownerUserId,
-            CancellationToken cancellationToken)
-        {
-            return await _context.Centers
-                .AsNoTracking()
-                .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-                .Select(c => (int?)c.CenterId)
-                .FirstOrDefaultAsync(cancellationToken);
-        }
-
-        private static string? NormalizeNullable(string? value)
-        {
-            return string.IsNullOrWhiteSpace(value)
-                ? null
-                : value.Trim();
-        }
-
-        private static bool IsValidScheduleText(string scheduleText)
-        {
-            var allowedDays = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            if (int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             {
-                "Thứ 2",
-                "Thứ 3",
-                "Thứ 4",
-                "Thứ 5",
-                "Thứ 6",
-                "Thứ 7",
-                "Chủ nhật"
-            };
-
-            var items = scheduleText
-                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            if (items.Length == 0)
-            {
-                return false;
+                return userId;
             }
-
-            foreach (var item in items)
-            {
-                var match = Regex.Match(
-                    item,
-                    @"^(?<day>Thứ [2-7]|Chủ nhật) - (?<start>[0-2]\d:[0-5]\d) - (?<end>[0-2]\d:[0-5]\d)$");
-
-                if (!match.Success)
-                {
-                    return false;
-                }
-
-                var day = match.Groups["day"].Value;
-
-                if (!allowedDays.Contains(day))
-                {
-                    return false;
-                }
-
-                if (!TimeOnly.TryParse(match.Groups["start"].Value, out var startTime) ||
-                    !TimeOnly.TryParse(match.Groups["end"].Value, out var endTime))
-                {
-                    return false;
-                }
-
-                if (endTime <= startTime)
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return null;
         }
 
-        private async Task<string> GenerateClassCodeAsync(
-            int centerId,
-            CancellationToken cancellationToken)
+        private void SetToast(string title, string message, string type = "success")
         {
-            var yearMonth = DateTime.UtcNow.ToString("yyyyMM");
-            var counter = await _context.ClassCodeCounters
-                .FirstOrDefaultAsync(
-                    c => c.CenterId == centerId && c.YearMonth == yearMonth,
-                    cancellationToken);
-
-            if (counter == null)
-            {
-                var prefix = $"CLS-{centerId}-{yearMonth}-";
-                var lastExistingCode = await _context.Classes
-                    .AsNoTracking()
-                    .Where(c =>
-                        c.CenterId == centerId &&
-                        c.ClassCode.StartsWith(prefix))
-                    .OrderByDescending(c => c.ClassCode)
-                    .Select(c => c.ClassCode)
-                    .FirstOrDefaultAsync(cancellationToken);
-
-                counter = new ClassCodeCounter
-                {
-                    CenterId = centerId,
-                    YearMonth = yearMonth,
-                    LastNumber = GetClassCodeSequence(lastExistingCode)
-                };
-
-                _context.ClassCodeCounters.Add(counter);
-            }
-
-            counter.LastNumber += 1;
-
-            return $"CLS-{centerId}-{yearMonth}-{counter.LastNumber:0000}";
+            TempData["ToastTitle"] = title;
+            TempData["ToastMessage"] = message;
+            TempData["ToastType"] = type;
         }
 
-        private static int GetClassCodeSequence(string? classCode)
+        private IActionResult RedirectToClassesTab()
         {
-            if (string.IsNullOrWhiteSpace(classCode))
-            {
-                return 0;
-            }
-
-            var lastPart = classCode.Split('-').LastOrDefault();
-
-            return int.TryParse(lastPart, out var sequence)
-                ? sequence
-                : 0;
+            return RedirectToPage(new { Tab = "classes" });
         }
 
-        private static bool HasDuplicateSchedule(string scheduleText)
+        private IActionResult RedirectToRoomsTab()
         {
-            var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var schedule in ParseScheduleText(scheduleText))
-            {
-                var key = $"{schedule.DayOfWeek}:{schedule.StartTime:HH:mm}:{schedule.EndTime:HH:mm}";
-
-                if (!keys.Add(key))
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return RedirectToPage(new { Tab = "rooms" });
         }
 
-        private static List<ParsedClassSchedule> ParseScheduleText(string scheduleText)
+        private IActionResult RedirectToShiftsTab()
         {
-            return scheduleText
-                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(item =>
-                {
-                    var match = Regex.Match(
-                        item,
-                        @"^(?<day>Thứ [2-7]|Chủ nhật) - (?<start>[0-2]\d:[0-5]\d) - (?<end>[0-2]\d:[0-5]\d)$");
-
-                    return new ParsedClassSchedule
-                    {
-                        DayOfWeek = MapDayOfWeek(match.Groups["day"].Value),
-                        StartTime = TimeOnly.Parse(match.Groups["start"].Value),
-                        EndTime = TimeOnly.Parse(match.Groups["end"].Value)
-                    };
-                })
-                .ToList();
+            return RedirectToPage(new { Tab = "shifts" });
         }
 
-        private static byte MapDayOfWeek(string day)
+        private void NormalizeTabsAndSearch()
         {
-            return day switch
-            {
-                "Thứ 2" => 1,
-                "Thứ 3" => 2,
-                "Thứ 4" => 3,
-                "Thứ 5" => 4,
-                "Thứ 6" => 5,
-                "Thứ 7" => 6,
-                "Chủ nhật" => 7,
-                _ => 0
-            };
+            Tab = string.IsNullOrWhiteSpace(Tab) ? "classes" : Tab.Trim().ToLowerInvariant();
+
+            if (!ClassPageSizeOptions.Contains(ClassPageSize)) ClassPageSize = 20;
+            if (ClassPageNumber < 1) ClassPageNumber = 1;
+
+            if (!RoomPageSizeOptions.Contains(RoomPageSize)) RoomPageSize = 20;
+            if (RoomPageNumber < 1) RoomPageNumber = 1;
+
+            if (!ShiftPageSizeOptions.Contains(ShiftPageSize)) ShiftPageSize = 20;
+            if (ShiftPageNumber < 1) ShiftPageNumber = 1;
+
+            Search = Search?.Trim();
+            ClassTeacherSearch = ClassTeacherSearch?.Trim();
+            ClassStatusFilter = string.IsNullOrWhiteSpace(ClassStatusFilter) ? string.Empty : ClassStatusFilter.Trim();
+
+            RoomSearch = RoomSearch?.Trim();
+            RoomStatusFilter = string.IsNullOrWhiteSpace(RoomStatusFilter) ? string.Empty : RoomStatusFilter.Trim();
+
+            ShiftSearch = ShiftSearch?.Trim();
+            ShiftStatusFilter = string.IsNullOrWhiteSpace(ShiftStatusFilter) ? string.Empty : ShiftStatusFilter.Trim();
         }
-    }
 
-    public sealed class ParsedClassSchedule
-    {
-        public byte DayOfWeek { get; set; }
-
-        public TimeOnly StartTime { get; set; }
-
-        public TimeOnly EndTime { get; set; }
-    }
-
-    public sealed class ClassInput
-    {
-        [Required(ErrorMessage = "Vui lòng nhập tên lớp.")]
-        [MaxLength(150, ErrorMessage = "Tên lớp tối đa 150 ký tự.")]
-        public string ClassName { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng chọn khóa học.")]
-        public int CourseId { get; set; }
-
-        [Required(ErrorMessage = "Vui lòng chọn giáo viên.")]
-        public int TeacherId { get; set; }
-
-        [MaxLength(50, ErrorMessage = "Phòng học tối đa 50 ký tự.")]
-        public string? Room { get; set; }
-
-        [MaxLength(255, ErrorMessage = "Lịch học tối đa 255 ký tự.")]
-        public string? ScheduleText { get; set; }
-
-        public DateOnly? StartDate { get; set; }
-
-        public DateOnly? EndDate { get; set; }
-    }
-
-    public sealed class CourseOption
-    {
-        public int CourseId { get; set; }
-
-        public string CourseName { get; set; } = string.Empty;
-    }
-
-    public sealed class TeacherOption
-    {
-        public int TeacherId { get; set; }
-
-        public string TeacherName { get; set; } = string.Empty;
-    }
-
-    public sealed class ClassListItem
-    {
-        public int ClassId { get; set; }
-
-        public string ClassCode { get; set; } = string.Empty;
-
-        public string ClassName { get; set; } = string.Empty;
-
-        public string CourseName { get; set; } = string.Empty;
-
-        public string TeacherName { get; set; } = string.Empty;
-
-        public int TotalStudents { get; set; }
-
-        public string ScheduleText { get; set; } = string.Empty;
-
-        public IReadOnlyList<string> ScheduleLines => string.IsNullOrWhiteSpace(ScheduleText)
-            ? new[] { "-" }
-            : ScheduleText
-                .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-        public string Room { get; set; } = string.Empty;
-
-        public string DisplayRoom => string.IsNullOrWhiteSpace(Room)
-            ? "-"
-            : Room;
-
-        public string Status { get; set; } = string.Empty;
-
-        public string DisplaySchedule
+        private void RemoveModelStatePrefix(string prefix)
         {
-            get
+            var keys = ModelState.Keys.Where(k => k.StartsWith(prefix + ".") || k == prefix).ToList();
+            foreach (var key in keys)
             {
-                if (string.IsNullOrWhiteSpace(Room))
-                {
-                    return ScheduleText;
-                }
-
-                if (string.IsNullOrWhiteSpace(ScheduleText))
-                {
-                    return Room;
-                }
-
-                return $"{ScheduleText} - {Room}";
+                ModelState.Remove(key);
             }
         }
 
-        public string StatusText => Status.ToUpperInvariant() switch
+        public class RoomEditInput
         {
-            "ACTIVE" => "Đang hoạt động",
-            "INACTIVE" => "Tạm dừng",
-            "CLOSED" => "Đã đóng",
-            _ => "Không xác định"
-        };
+            public int RoomId { get; set; }
+            [Required(ErrorMessage = "Vui lòng nhập mã phòng.")]
+            [MaxLength(50)]
+            public string RoomCode { get; set; } = string.Empty;
+            [Required(ErrorMessage = "Vui lòng nhập tên phòng.")]
+            [MaxLength(100)]
+            public string RoomName { get; set; } = string.Empty;
+            public int? Capacity { get; set; }
+            [MaxLength(200)]
+            public string? Location { get; set; }
+            [Required]
+            public string Status { get; set; } = "Active";
+        }
 
-        public string StatusBadgeClass => Status.ToUpperInvariant() switch
+        public class ShiftEditInput
         {
-            "ACTIVE" => "bg-green-100 text-green-700",
-            "INACTIVE" => "bg-yellow-100 text-yellow-700",
-            "CLOSED" => "bg-gray-200 text-gray-700",
-            _ => "bg-red-100 text-red-700"
-        };
+            public int StudyShiftId { get; set; }
+            [Required(ErrorMessage = "Vui lòng nhập mã ca.")]
+            [MaxLength(50)]
+            public string ShiftCode { get; set; } = string.Empty;
+            [Required(ErrorMessage = "Vui lòng nhập tên ca.")]
+            [MaxLength(100)]
+            public string ShiftName { get; set; } = string.Empty;
+            public TimeOnly StartTime { get; set; }
+            public TimeOnly EndTime { get; set; }
+            [Required]
+            public string Status { get; set; } = "Active";
+            [MaxLength(255)]
+            public string? Note { get; set; }
+        }
     }
 }

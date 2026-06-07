@@ -164,3 +164,37 @@ button {
 .table-custom tr:hover, .grades-table tbody tr:hover, .attendance-table tbody tr:hover {
     background-color: #f1f5f9;
 }
+
+/* Status Badges */
+.badge-warning {
+    background-color: #fef3c7;
+    color: #d97706;
+    border-radius: 12px;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-danger {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border-radius: 12px;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.badge-info {
+    background-color: #e0f2fe;
+    color: #0284c7;
+    border-radius: 12px;
+    padding: 4px 10px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}

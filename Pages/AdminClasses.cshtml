@@ -4,6 +4,32 @@
     ViewData["Title"] = "Quản lý lớp học";
     Layout = "_AdminLayout";
     ViewData["ActivePage"] = "AdminClasses";
+    var selectedRoomStatusText = Model.RoomStatusFilter switch
+    {
+        "Active" => "Đang sử dụng",
+        "Inactive" => "Tạm dừng",
+        "Maintenance" => "Bảo trì",
+        _ => "Trạng thái"
+    };
+    var selectedShiftStatusText = Model.ShiftStatusFilter switch
+    {
+        "Active" => "Đang sử dụng",
+        "Inactive" => "Tạm dừng",
+        _ => "Trạng thái"
+    };
+    var selectedClassCourseText = Model.ClassCourseId is > 0
+        ? Model.CourseOptions.FirstOrDefault(course => course.CourseId == Model.ClassCourseId)?.CourseName ?? "Môn học"
+        : "Môn học";
+    var selectedClassStatusText = Model.ClassStatusFilter switch
+    {
+        "Active" => "Đang hoạt động",
+        "Inactive" => "Tạm dừng",
+        "Closed" => "Đã đóng",
+        _ => "Trạng thái"
+    };
+    var selectedClassRoomText = Model.ClassRoomId is > 0
+        ? Model.RoomOptions.FirstOrDefault(room => room.RoomId == Model.ClassRoomId)?.DisplayName ?? "Phòng học"
+        : "Phòng học";
 }
 
 <div class="space-y-6 pb-20">
@@ -13,64 +39,486 @@
             <h1 class="text-3xl font-bold text-gray-900">Quản lý lớp học</h1>
             <p class="text-gray-500 mt-1">Quản lý thông tin các lớp học</p>
         </div>
-        <button type="button" onclick="openAddClassModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Thêm lớp mới
-        </button>
+    </div>
+
+    <div class="flex gap-2 border-b border-gray-200">
+        <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageSize="@Model.ClassPageSize" class="border-b-2 px-4 py-3 text-sm font-semibold transition-colors @(!Model.IsRoomsTab && !Model.IsShiftsTab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")">
+            Danh sách lớp học
+        </a>
+        <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomPageSize="@Model.RoomPageSize" class="border-b-2 px-4 py-3 text-sm font-semibold transition-colors @(Model.IsRoomsTab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")">
+            Quản lý phòng học
+        </a>
+        <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftPageSize="@Model.ShiftPageSize" class="border-b-2 px-4 py-3 text-sm font-semibold transition-colors @(Model.IsShiftsTab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-900")">
+            Quản lý ca học
+        </a>
     </div>
 
     <!-- Main Card -->
-    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-blue-100 flex justify-between items-center bg-blue-50/60">
-            <h3 class="text-base font-bold text-gray-900">Danh sách lớp học</h3>
-            <form method="get" class="relative w-64">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-                <input type="text" name="Search" value="@Model.Search" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition-colors" placeholder="Tìm kiếm lớp học...">
-            </form>
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="rounded-t-2xl border-b border-blue-100 bg-blue-50/60 p-6">
+            <h3 class="text-base font-bold text-gray-900">@(Model.IsRoomsTab ? "Quản lý phòng học" : Model.IsShiftsTab ? "Quản lý ca học" : "Danh sách lớp học")</h3>
+            @if (Model.IsRoomsTab)
+            {
+                <form method="get" class="mt-5">
+                    <input type="hidden" name="Tab" value="rooms" />
+                    <input type="hidden" name="RoomPageNumber" value="1" />
+                    <input type="hidden" name="RoomPageSize" value="@Model.RoomPageSize" />
+                    <div class="flex flex-col gap-3">
+                        <div class="flex flex-wrap items-start gap-3">
+                            <input type="text" name="RoomSearch" value="@Model.RoomSearch" maxlength="150" class="block h-12 w-full max-w-80 rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm mã phòng, tên phòng">
+                            <div class="relative w-full max-w-80" data-search-dropdown>
+                                <input type="hidden" name="RoomStatusFilter" value="@Model.RoomStatusFilter" data-filter-value="room-status" />
+                                <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <span data-dropdown-label>@selectedRoomStatusText</span>
+                                    <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                                    <div class="relative p-2">
+                                        <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </div>
+                                    <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
+                                    <button type="button" data-dropdown-option data-value="Active" data-label="Đang sử dụng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang sử dụng</button>
+                                    <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                                    <button type="button" data-dropdown-option data-value="Maintenance" data-label="Bảo trì" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Bảo trì</button>
+                                </div>
+                            </div>
+                            <div class="ml-auto flex flex-wrap items-start gap-3">
+                                <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomPageSize="@Model.RoomPageSize" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">Làm mới bộ lọc</a>
+                                <button type="submit" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    Tìm kiếm
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" onclick="openCreateRoomModal()" class="mt-3 inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Thêm phòng học
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else if (Model.IsShiftsTab)
+            {
+                <form method="get" class="mt-5">
+                    <input type="hidden" name="Tab" value="shifts" />
+                    <input type="hidden" name="ShiftPageNumber" value="1" />
+                    <input type="hidden" name="ShiftPageSize" value="@Model.ShiftPageSize" />
+                    <div class="flex flex-col gap-3">
+                        <div class="flex flex-wrap items-start gap-3">
+                            <input type="text" name="ShiftSearch" value="@Model.ShiftSearch" maxlength="150" class="block h-12 w-full max-w-80 rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm mã ca, tên ca">
+                            <div class="relative w-full max-w-80" data-search-dropdown>
+                                <input type="hidden" name="ShiftStatusFilter" value="@Model.ShiftStatusFilter" data-filter-value="shift-status" />
+                                <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <span data-dropdown-label>@selectedShiftStatusText</span>
+                                    <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </button>
+                                <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                                    <div class="relative p-2">
+                                        <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                        <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    </div>
+                                    <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
+                                    <button type="button" data-dropdown-option data-value="Active" data-label="Đang sử dụng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang sử dụng</button>
+                                    <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                                </div>
+                            </div>
+                            <div class="ml-auto flex flex-wrap items-start gap-3">
+                                <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftPageSize="@Model.ShiftPageSize" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">Làm mới bộ lọc</a>
+                                <button type="submit" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                                    <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    Tìm kiếm
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <button type="button" onclick="openCreateShiftModal()" class="mt-3 inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Thêm ca học
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <form method="get" class="mt-5">
+                    <input type="hidden" name="Tab" value="classes" />
+                    <input type="hidden" name="ClassPageNumber" value="1" />
+                    <input type="hidden" name="ClassPageSize" value="@Model.ClassPageSize" />
+                    <div class="space-y-3">
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                        <input type="text" name="Search" value="@Model.Search" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm tên/mã lớp">
+                        <input type="text" name="ClassTeacherSearch" value="@Model.ClassTeacherSearch" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tên giáo viên">
+                        <div class="relative w-full" data-search-dropdown>
+                            <input type="hidden" name="ClassCourseId" value="@Model.ClassCourseId" data-filter-value="class-course" />
+                            <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <span data-dropdown-label>@selectedClassCourseText</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                                <div class="relative p-2">
+                                    <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <button type="button" data-dropdown-option data-value="" data-label="Môn học" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả môn học</button>
+                                @foreach (var course in Model.CourseOptions)
+                                {
+                                    <button type="button" data-dropdown-option data-value="@course.CourseId" data-label="@course.CourseName" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">@course.CourseName</button>
+                                }
+                            </div>
+                        </div>
+                        <div class="relative w-full" data-search-dropdown>
+                            <input type="hidden" name="ClassRoomId" value="@Model.ClassRoomId" data-filter-value="class-room" />
+                            <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <span data-dropdown-label>@selectedClassRoomText</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                                <div class="relative p-2">
+                                    <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <button type="button" data-dropdown-option data-value="" data-label="Phòng học" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả phòng học</button>
+                                @foreach (var room in Model.RoomOptions)
+                                {
+                                    <button type="button" data-dropdown-option data-value="@room.RoomId" data-label="@room.DisplayName" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">@room.DisplayName</button>
+                                }
+                            </div>
+                        </div>
+                        <div class="relative w-full" data-search-dropdown>
+                            <input type="hidden" name="ClassStatusFilter" value="@Model.ClassStatusFilter" data-filter-value="class-status" />
+                            <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <span data-dropdown-label>@selectedClassStatusText</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                                <div class="relative p-2">
+                                    <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả trạng thái</button>
+                                <button type="button" data-dropdown-option data-value="Active" data-label="Đang hoạt động" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang hoạt động</button>
+                                <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                                <button type="button" data-dropdown-option data-value="Closed" data-label="Đã đóng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đã đóng</button>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+                            <div class="relative w-full min-w-0" data-date-range>
+                                <input type="hidden" name="ClassStartDateFrom" value="@Model.ClassStartDateFrom?.ToString("yyyy-MM-dd")" data-range-from />
+                                <input type="hidden" name="ClassStartDateTo" value="@Model.ClassStartDateTo?.ToString("yyyy-MM-dd")" data-range-to />
+                                <button type="button" data-range-toggle class="flex w-full overflow-hidden rounded border border-gray-300 bg-white text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <span data-range-label data-placeholder="Ngày khai giảng" class="flex min-w-0 flex-1 items-center truncate px-4">Ngày khai giảng</span>
+                                    <span class="flex h-full shrink-0 items-center justify-center bg-sky-600 text-white">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
+                                    </span>
+                                </button>
+                            </div>
+                            <div class="relative w-full min-w-0" data-date-range>
+                                <input type="hidden" name="ClassEndDateFrom" value="@Model.ClassEndDateFrom?.ToString("yyyy-MM-dd")" data-range-from />
+                                <input type="hidden" name="ClassEndDateTo" value="@Model.ClassEndDateTo?.ToString("yyyy-MM-dd")" data-range-to />
+                                <button type="button" data-range-toggle class="flex w-full overflow-hidden rounded border border-gray-300 bg-white text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <span data-range-label data-placeholder="Ngày kết thúc" class="flex min-w-0 flex-1 items-center truncate px-4">Ngày kết thúc</span>
+                                    <span class="flex h-full shrink-0 items-center justify-center bg-sky-600 text-white">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <a asp-page="/AdminClasses/Create" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                Thêm lớp mới
+                            </a>
+                            <div class="ml-auto flex flex-wrap items-start gap-3">
+                            <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-classPageSize="@Model.ClassPageSize" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">Làm mới bộ lọc</a>
+                            <button type="submit" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                Tìm kiếm
+                            </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            }
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
+            @if (Model.IsRoomsTab)
+            {
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                            <th class="py-4 px-4 text-center font-bold border-r border-slate-200">STT</th>
+                            <th class="py-4 px-4 text-center font-bold border-r border-slate-200">ID</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Mã phòng</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Tên phòng</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Sức chứa</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Vị trí</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Số lớp</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Lịch sử dụng</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Trạng thái</th>
+                            <th class="py-4 px-6 font-bold text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100">
+                        @if (Model.Rooms.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="10" class="py-10 px-6 text-center text-gray-500">
+                                    Chưa có phòng học phù hợp.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @for (var index = 0; index < Model.Rooms.Count; index++)
+                            {
+                                var room = Model.Rooms[index];
+                                <tr class="group hover:bg-slate-100 transition-colors">
+                                    <td class="py-5 px-4 text-center font-medium text-gray-700 border-r border-gray-200">@(Model.FirstRoomItemNumber + index)</td>
+                                    <td class="py-5 px-4 text-center font-medium text-gray-900 border-r border-gray-200">@room.RoomId</td>
+                                    <td class="py-5 px-6 font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@room.RoomCode</td>
+                                    <td class="py-5 px-6 font-semibold text-gray-900 border-r border-gray-200">@room.RoomName</td>
+                                    <td class="py-5 px-6 text-gray-700 border-r border-gray-200">@room.DisplayCapacity</td>
+                                    <td class="py-5 px-6 text-gray-700 border-r border-gray-200">@room.DisplayLocation</td>
+                                    <td class="py-5 px-6 text-gray-700 border-r border-gray-200">
+                                        <div class="font-semibold text-gray-900">@room.ActiveClasses đang hoạt động</div>
+                                        <div class="mt-1 text-xs text-gray-500">Tổng @room.TotalClasses lớp</div>
+                                    </td>
+                                    <td class="py-5 px-6 text-gray-600 border-r border-gray-200">
+                                        <div class="space-y-3">
+                                            @foreach (var schedule in room.ScheduleItems)
+                                            {
+                                                <div>
+                                                    <div class="font-semibold text-gray-900">@schedule.ClassName</div>
+                                                    <div class="mt-1 space-y-1">
+                                                        @foreach (var line in schedule.ScheduleLines)
+                                                        {
+                                                            <div class="whitespace-nowrap text-gray-600">@line</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+                                            @if (room.ScheduleItems.Count == 0)
+                                            {
+                                                <span class="text-gray-400">Chưa có lịch hoạt động</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="py-5 px-6 border-r border-gray-200">
+                                        <form method="post" asp-page-handler="ChangeRoomStatus" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@Model.RoomPageNumber" asp-route-roomPageSize="@Model.RoomPageSize" class="space-y-2">
+                                            <input type="hidden" name="roomId" value="@room.RoomId" />
+                                            <select name="status" onchange="this.form.submit()" class="block h-10 w-40 rounded-full border border-gray-200 bg-white px-3 text-xs font-semibold @room.StatusBadgeClass focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" title="Đổi trạng thái phòng">
+                                                <option value="Active" selected="@(room.Status == "Active")">Đang sử dụng</option>
+                                                <option value="Inactive" selected="@(room.Status == "Inactive")">Tạm dừng</option>
+                                                <option value="Maintenance" selected="@(room.Status == "Maintenance")">Bảo trì</option>
+                                            </select>
+                                        </form>
+                                    </td>
+                                    <td class="py-5 px-6 text-center">
+                                        <div class="flex items-center justify-center gap-3">
+                                            <button type="button" onclick="openEditRoomModal(this)" data-room-id="@room.RoomId" data-room-code="@room.RoomCode" data-room-name="@room.RoomName" data-room-capacity="@room.Capacity" data-room-location="@room.Location" data-room-status="@room.Status" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                            </button>
+                                            <button type="button" onclick="openDeleteRoomConfirm(this)" data-room-id="@room.RoomId" data-room-name="@room.RoomName" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+                <div class="flex flex-wrap items-center justify-center gap-6 rounded-b-2xl border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">
+                    <div class="flex items-center gap-1">
+                        <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="1" asp-route-roomPageSize="@Model.RoomPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600">«</a>
+                        <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@(Math.Max(1, Model.RoomPageNumber - 1))" asp-route-roomPageSize="@Model.RoomPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600">‹</a>
+                        @{
+                            var roomStartPage = Math.Max(1, Model.RoomPageNumber - 2);
+                            var roomEndPage = Math.Min(Model.TotalRoomPages, Model.RoomPageNumber + 2);
+                        }
+                        @for (var roomPage = roomStartPage; roomPage <= roomEndPage; roomPage++)
+                        {
+                            <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@roomPage" asp-route-roomPageSize="@Model.RoomPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded @(roomPage == Model.RoomPageNumber ? "bg-blue-100 text-blue-700 font-semibold" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">@roomPage</a>
+                        }
+                        <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@(Math.Min(Model.TotalRoomPages, Model.RoomPageNumber + 1))" asp-route-roomPageSize="@Model.RoomPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600">›</a>
+                        <a asp-page="/AdminClasses" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@Model.TotalRoomPages" asp-route-roomPageSize="@Model.RoomPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600">»</a>
+                    </div>
+                    <div class="font-medium text-gray-600">Tổng số: @Model.TotalRooms bản ghi</div>
+                    <form method="get" class="flex items-center">
+                        <input type="hidden" name="Tab" value="rooms" />
+                        <input type="hidden" name="RoomSearch" value="@Model.RoomSearch" />
+                        <input type="hidden" name="RoomStatusFilter" value="@Model.RoomStatusFilter" />
+                        <input type="hidden" name="RoomPageNumber" value="1" />
+                        <select name="RoomPageSize" onchange="this.form.submit()" class="h-10 rounded border border-blue-300 bg-white px-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            @foreach (var size in Model.RoomPageSizeOptions)
+                            {
+                                <option value="@size" selected="@(size == Model.RoomPageSize)">@size</option>
+                            }
+                        </select>
+                    </form>
+                </div>
+            }
+            else if (Model.IsShiftsTab)
+            {
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                            <th class="py-4 px-4 text-center font-bold border-r border-slate-200">STT</th>
+                            <th class="py-4 px-4 text-center font-bold border-r border-slate-200">ID</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Mã ca</th>
+                            <th class="py-4 px-6 font-bold border-r border-slate-200">Tên ca</th>
+                            <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Giờ bắt đầu</th>
+                            <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Giờ kết thúc</th>
+                            <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Số lớp đang dùng</th>
+                            <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Trạng thái</th>
+                            <th class="py-4 px-6 font-bold text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-gray-100">
+                        @if (Model.StudyShifts.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="9" class="py-10 px-6 text-center text-gray-500">
+                                    Chưa có ca học phù hợp.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @for (var index = 0; index < Model.StudyShifts.Count; index++)
+                            {
+                                var shift = Model.StudyShifts[index];
+                                <tr class="group hover:bg-slate-100 transition-colors">
+                                    <td class="py-5 px-4 text-center font-medium text-gray-700 border-r border-gray-200">@(Model.FirstShiftItemNumber + index)</td>
+                                    <td class="py-5 px-4 text-center font-semibold text-gray-900 border-r border-gray-200">@shift.StudyShiftId</td>
+                                    <td class="py-5 px-6 font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@shift.ShiftCode</td>
+                                    <td class="py-5 px-6 font-semibold text-gray-900 border-r border-gray-200">@shift.ShiftName</td>
+                                    <td class="py-5 px-6 text-center font-medium text-gray-700 border-r border-gray-200">@shift.StartTimeText</td>
+                                    <td class="py-5 px-6 text-center font-medium text-gray-700 border-r border-gray-200">@shift.EndTimeText</td>
+                                    <td class="py-5 px-6 text-center text-gray-700 border-r border-gray-200">
+                                        <div class="font-semibold text-gray-900">@shift.ActiveClassCount đang hoạt động</div>
+                                        <div class="mt-1 text-xs text-gray-500">Tổng @shift.TotalClassCount lớp</div>
+                                    </td>
+                                    <td class="py-5 px-6 border-r border-gray-200">
+                                        <form method="post" asp-page-handler="ChangeShiftStatus" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@Model.ShiftPageNumber" asp-route-shiftPageSize="@Model.ShiftPageSize" class="flex justify-center">
+                                            <input type="hidden" name="studyShiftId" value="@shift.StudyShiftId" />
+                                            <input type="hidden" name="status" value="@(shift.IsActive ? "Inactive" : "Active")" />
+                                            <button type="submit" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(shift.IsActive ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200")" title="Đổi trạng thái ca học">
+                                                <span class="relative h-6 w-11 rounded-full transition-colors @(shift.IsActive ? "bg-green-500" : "bg-gray-300")">
+                                                    <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(shift.IsActive ? "left-5" : "left-0.5")"></span>
+                                                </span>
+                                                <span class="min-w-24 text-left text-xs font-semibold">@shift.StatusText</span>
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td class="py-5 px-6 text-center">
+                                        <div class="flex items-center justify-center gap-3">
+                                            <button type="button"
+                                                    onclick="openEditShiftModal(this)"
+                                                    data-shift-id="@shift.StudyShiftId"
+                                                    data-shift-code="@shift.ShiftCode"
+                                                    data-shift-name="@shift.ShiftName"
+                                                    data-shift-start="@shift.StartTimeText"
+                                                    data-shift-end="@shift.EndTimeText"
+                                                    data-shift-status="@shift.Status"
+                                                    data-shift-note="@shift.Note"
+                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
+                                                    title="Xem/Sửa">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                            </button>
+                                            <button type="button" onclick="openDeleteShiftConfirm(this)" data-shift-id="@shift.StudyShiftId" data-shift-name="@shift.ShiftName" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+                <div class="flex flex-wrap items-center justify-center gap-6 rounded-b-2xl border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">
+                    <div class="flex items-center gap-1">
+                        <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="1" asp-route-shiftPageSize="@Model.ShiftPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600">«</a>
+                        <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@(Math.Max(1, Model.ShiftPageNumber - 1))" asp-route-shiftPageSize="@Model.ShiftPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600">‹</a>
+                        @{
+                            var shiftStartPage = Math.Max(1, Model.ShiftPageNumber - 2);
+                            var shiftEndPage = Math.Min(Model.TotalShiftPages, Model.ShiftPageNumber + 2);
+                        }
+                        @for (var shiftPage = shiftStartPage; shiftPage <= shiftEndPage; shiftPage++)
+                        {
+                            <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@shiftPage" asp-route-shiftPageSize="@Model.ShiftPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded @(shiftPage == Model.ShiftPageNumber ? "bg-blue-100 text-blue-700 font-semibold" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">@shiftPage</a>
+                        }
+                        <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@(Math.Min(Model.TotalShiftPages, Model.ShiftPageNumber + 1))" asp-route-shiftPageSize="@Model.ShiftPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600">›</a>
+                        <a asp-page="/AdminClasses" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@Model.TotalShiftPages" asp-route-shiftPageSize="@Model.ShiftPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600">»</a>
+                    </div>
+                    <div class="font-medium text-gray-600">Tổng số: @Model.TotalStudyShifts bản ghi</div>
+                    <form method="get" class="flex items-center">
+                        <input type="hidden" name="Tab" value="shifts" />
+                        <input type="hidden" name="ShiftSearch" value="@Model.ShiftSearch" />
+                        <input type="hidden" name="ShiftStatusFilter" value="@Model.ShiftStatusFilter" />
+                        <input type="hidden" name="ShiftPageNumber" value="1" />
+                        <select name="ShiftPageSize" onchange="this.form.submit()" class="h-10 rounded border border-blue-300 bg-white px-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            @foreach (var size in Model.ShiftPageSizeOptions)
+                            {
+                                <option value="@size" selected="@(size == Model.ShiftPageSize)">@size</option>
+                            }
+                        </select>
+                    </form>
+                </div>
+            }
+            else
+            {
+            <table class="min-w-[1560px] w-full text-left border-collapse">
                 <thead>
                     <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Mã lớp</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Tên lớp</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Môn học</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Giáo viên</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Sĩ số</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Lịch học</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Phòng</th>
-                        <th class="py-4 px-6 font-bold border-r border-slate-200">Trạng thái</th>
-                        <th class="py-4 px-6 font-bold text-right">Thao tác</th>
+                        <th class="py-3 px-3 text-center font-bold border-r border-slate-200">STT</th>
+                        <th class="py-3 px-3 text-center font-bold border-r border-slate-200">ID</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Mã lớp</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Tên lớp</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Môn học</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Giáo viên</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Sĩ số</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Lịch học</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Thời gian học</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Phòng</th>
+                        <th class="py-3 px-4 font-bold border-r border-slate-200">Trạng thái</th>
+                        <th class="py-3 px-4 font-bold text-right">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody class="text-sm divide-y divide-gray-100">
+                <tbody class="text-xs divide-y divide-gray-100">
                     @if (Model.Classes.Count == 0)
                     {
                         <tr>
-                            <td colspan="9" class="py-10 px-6 text-center text-gray-500">
+                            <td colspan="12" class="py-10 px-6 text-center text-gray-500">
                                 Chưa có lớp học phù hợp.
                             </td>
                         </tr>
                     }
                     else
                     {
-                        @foreach (var cls in Model.Classes)
+                        @for (var index = 0; index < Model.Classes.Count; index++)
                         {
+                            var cls = Model.Classes[index];
                             <tr class="group hover:bg-slate-100 transition-colors">
-                                <td class="py-5 px-6 font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@cls.ClassCode</td>
-                                <td class="py-5 px-6 font-semibold text-gray-900 border-r border-gray-200">@cls.ClassName</td>
-                                <td class="py-5 px-6 text-gray-600 border-r border-gray-200">@cls.CourseName</td>
-                                <td class="py-5 px-6 text-gray-600 border-r border-gray-200">@cls.TeacherName</td>
-                                <td class="py-5 px-6 text-gray-600 border-r border-gray-200">
+                                <td class="py-4 px-3 text-center font-medium text-gray-700 border-r border-gray-200">@(Model.FirstClassItemNumber + index)</td>
+                                <td class="py-4 px-3 text-center font-medium text-gray-900 border-r border-gray-200">@cls.ClassId</td>
+                                <td class="py-4 px-4 font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@cls.ClassCode</td>
+                                <td class="py-4 px-4 font-semibold text-gray-900 border-r border-gray-200">@cls.ClassName</td>
+                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">@cls.CourseName</td>
+                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">@cls.TeacherName</td>
+                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">
                                     <div class="flex items-center">
                                         <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                         @cls.TotalStudents
                                     </div>
                                 </td>
-                                <td class="py-5 px-6 text-gray-600 border-r border-gray-200">
+                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">
                                     <div class="space-y-1">
                                         @foreach (var schedule in cls.ScheduleLines)
                                         {
@@ -78,116 +526,373 @@
                                         }
                                     </div>
                                 </td>
-                                <td class="py-5 px-6 text-gray-600 border-r border-gray-200">@cls.DisplayRoom</td>
-                                <td class="py-5 px-6 border-r border-gray-200">
+                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200 whitespace-nowrap">@cls.StudyPeriod</td>
+                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">@cls.DisplayRoom</td>
+                                <td class="py-4 px-4 border-r border-gray-200">
                                     <span class="inline-flex min-w-28 justify-center rounded-full px-3 py-1 text-xs font-semibold @cls.StatusBadgeClass">
                                         @cls.StatusText
                                     </span>
                                 </td>
-                                <td class="py-5 px-6 text-right">
-                                    <button class="text-gray-800 hover:text-blue-600 transition-colors mr-3" title="Sửa">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                    </button>
-                                    <button class="text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
+                                <td class="py-4 px-4 text-center">
+                                    <div class="flex items-center justify-center gap-3">
+                                        <a asp-page="/AdminClasses/Edit" asp-route-classId="@cls.ClassId" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                        </a>
+                                        @if (cls.Status != "Closed")
+                                        {
+                                            <button type="button" onclick="openCloseClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-amber-500 bg-amber-50 text-amber-600 transition-colors hover:bg-amber-100" title="Đóng lớp">
+                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            </button>
+                                        }
+                                        <button type="button" onclick="openDeleteClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
                     }
                 </tbody>
             </table>
+            <div class="flex flex-wrap items-center justify-center gap-6 rounded-b-2xl border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">
+                <div class="flex items-center gap-1">
+                    <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="1" asp-route-classPageSize="@Model.ClassPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600">«</a>
+                    <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="@(Math.Max(1, Model.ClassPageNumber - 1))" asp-route-classPageSize="@Model.ClassPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600">‹</a>
+                    @{
+                        var classStartPage = Math.Max(1, Model.ClassPageNumber - 2);
+                        var classEndPage = Math.Min(Model.TotalClassPages, Model.ClassPageNumber + 2);
+                    }
+                    @for (var classPage = classStartPage; classPage <= classEndPage; classPage++)
+                    {
+                        <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="@classPage" asp-route-classPageSize="@Model.ClassPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded @(classPage == Model.ClassPageNumber ? "bg-blue-100 text-blue-700 font-semibold" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">@classPage</a>
+                    }
+                    <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="@(Math.Min(Model.TotalClassPages, Model.ClassPageNumber + 1))" asp-route-classPageSize="@Model.ClassPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600">›</a>
+                    <a asp-page="/AdminClasses" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="@Model.TotalClassPages" asp-route-classPageSize="@Model.ClassPageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600">»</a>
+                </div>
+                <div class="font-medium text-gray-600">Tổng số: @Model.TotalClasses bản ghi</div>
+                <form method="get" class="flex items-center">
+                    <input type="hidden" name="Tab" value="classes" />
+                    <input type="hidden" name="Search" value="@Model.Search" />
+                    <input type="hidden" name="ClassTeacherSearch" value="@Model.ClassTeacherSearch" />
+                    <input type="hidden" name="ClassCourseId" value="@Model.ClassCourseId" />
+                    <input type="hidden" name="ClassStatusFilter" value="@Model.ClassStatusFilter" />
+                    <input type="hidden" name="ClassStartDateFrom" value="@Model.ClassStartDateFrom?.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="ClassStartDateTo" value="@Model.ClassStartDateTo?.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="ClassEndDateFrom" value="@Model.ClassEndDateFrom?.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="ClassEndDateTo" value="@Model.ClassEndDateTo?.ToString("yyyy-MM-dd")" />
+                    <input type="hidden" name="ClassRoomId" value="@Model.ClassRoomId" />
+                    <input type="hidden" name="ClassPageNumber" value="1" />
+                    <select name="ClassPageSize" onchange="this.form.submit()" class="h-10 rounded border border-blue-300 bg-white px-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        @foreach (var size in Model.ClassPageSizeOptions)
+                        {
+                            <option value="@size" selected="@(size == Model.ClassPageSize)">@size</option>
+                        }
+                    </select>
+                </form>
+            </div>
+            }
         </div>
     </div>
 </div>
 
-<div id="addClassModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
-    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+<div id="createShiftModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
         <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-            <h3 class="text-lg font-bold text-gray-900">Thêm lớp mới</h3>
-            <button type="button" onclick="closeAddClassModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            <h2 class="text-xl font-bold text-gray-900">Thêm ca học</h2>
+            <button type="button" onclick="closeCreateShiftModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
-
-        <form id="addClassForm" method="post" asp-page-handler="Create" class="space-y-5 px-6 py-5" onsubmit="buildScheduleText()">
+        <form id="createShiftForm" method="post" asp-page-handler="CreateShift" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@Model.ShiftPageNumber" asp-route-shiftPageSize="@Model.ShiftPageSize" class="space-y-5 p-6" novalidate>
             <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
-
-            <div class="grid gap-4 md:grid-cols-2">
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div>
-                    <label asp-for="Input.ClassName" class="block text-sm font-semibold text-gray-700">Tên lớp</label>
-                    <input asp-for="Input.ClassName" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Kids English A1" />
-                    <span asp-validation-for="Input.ClassName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    <label asp-for="CreateShiftInput.ShiftCode" class="block text-sm font-semibold text-gray-700">Mã ca (*)</label>
+                    <input asp-for="CreateShiftInput.ShiftCode" maxlength="30" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: CA01" />
+                    <span asp-validation-for="CreateShiftInput.ShiftCode" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
-
                 <div>
-                    <label asp-for="Input.CourseId" class="block text-sm font-semibold text-gray-700">Khóa học</label>
-                    <select asp-for="Input.CourseId" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="0">Chọn khóa học</option>
-                        @foreach (var course in Model.CourseOptions)
-                        {
-                            <option value="@course.CourseId">@course.CourseName</option>
-                        }
-                    </select>
-                    <span asp-validation-for="Input.CourseId" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    <label asp-for="CreateShiftInput.ShiftName" class="block text-sm font-semibold text-gray-700">Tên ca (*)</label>
+                    <input asp-for="CreateShiftInput.ShiftName" maxlength="100" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Ca tối 1" />
+                    <span asp-validation-for="CreateShiftInput.ShiftName" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
-
                 <div>
-                    <label asp-for="Input.TeacherId" class="block text-sm font-semibold text-gray-700">Giáo viên</label>
-                    <select asp-for="Input.TeacherId" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="0">Chọn giáo viên</option>
-                        @foreach (var teacher in Model.TeacherOptions)
-                        {
-                            <option value="@teacher.TeacherId">@teacher.TeacherName</option>
-                        }
-                    </select>
-                    <span asp-validation-for="Input.TeacherId" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    <label asp-for="CreateShiftInput.StartTime" class="block text-sm font-semibold text-gray-700">Giờ bắt đầu (*)</label>
+                    <input asp-for="CreateShiftInput.StartTime" type="time" step="60" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="CreateShiftInput.StartTime" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
-
                 <div>
-                    <label asp-for="Input.StartDate" class="block text-sm font-semibold text-gray-700">Ngày bắt đầu</label>
-                    <input asp-for="Input.StartDate" type="date" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="Input.StartDate" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    <label asp-for="CreateShiftInput.EndTime" class="block text-sm font-semibold text-gray-700">Giờ kết thúc (*)</label>
+                    <input asp-for="CreateShiftInput.EndTime" type="time" step="60" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="CreateShiftInput.EndTime" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
-
-                <div>
-                    <label asp-for="Input.EndDate" class="block text-sm font-semibold text-gray-700">Ngày kết thúc</label>
-                    <input asp-for="Input.EndDate" type="date" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="Input.EndDate" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="Input.Room" class="block text-sm font-semibold text-gray-700">Phòng học</label>
-                    <input asp-for="Input.Room" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Phòng 201" />
-                    <span asp-validation-for="Input.Room" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-            </div>
-
-            <div>
-                <div class="mb-3 flex items-center justify-between">
-                    <label asp-for="Input.ScheduleText" class="block text-sm font-semibold text-gray-700">Ngày học</label>
-                    <button type="button" onclick="addScheduleRow()" class="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">
-                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Thêm ngày
+                <div class="md:col-span-2">
+                    <label asp-for="CreateShiftInput.Status" class="block text-sm font-semibold text-gray-700">Trạng thái (*)</label>
+                    <input asp-for="CreateShiftInput.Status" type="hidden" />
+                    <button type="button" id="createShiftStatusToggle" class="mt-1 inline-flex items-center gap-3 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-green-700 transition-colors hover:bg-green-100">
+                        <span id="createShiftStatusTrack" class="relative h-6 w-11 rounded-full bg-green-500 transition-colors">
+                            <span id="createShiftStatusKnob" class="absolute left-5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"></span>
+                        </span>
+                        <span id="createShiftStatusText" class="min-w-24 text-left text-xs font-semibold">Đang sử dụng</span>
                     </button>
+                    <span asp-validation-for="CreateShiftInput.Status" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
-
-                <input asp-for="Input.ScheduleText" type="hidden" />
-
-                <div class="overflow-hidden rounded-xl border border-gray-200">
-                    <div class="grid grid-cols-[1fr_1.35fr_72px] bg-gray-50 text-sm font-semibold text-gray-700">
-                        <div class="px-4 py-3">Thứ</div>
-                        <div class="px-4 py-3">Ca</div>
-                        <div class="px-4 py-3 text-center">Thao tác</div>
-                    </div>
-                    <div id="scheduleRows" class="divide-y divide-gray-100"></div>
+                <div class="md:col-span-2">
+                    <label asp-for="CreateShiftInput.Note" class="block text-sm font-semibold text-gray-700">Ghi chú</label>
+                    <textarea asp-for="CreateShiftInput.Note" maxlength="255" rows="3" class="mt-1 block w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập ghi chú nếu có"></textarea>
+                    <span asp-validation-for="CreateShiftInput.Note" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
-                <span asp-validation-for="Input.ScheduleText" class="mt-1 block text-xs font-medium text-red-600"></span>
             </div>
-
             <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
-                <button type="button" onclick="closeAddClassModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu lớp học</button>
+                <button type="button" onclick="closeCreateShiftModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button id="createShiftSubmitButton" type="submit" formnovalidate class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu ca học</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editShiftModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Xem/Sửa ca học</h2>
+            <button type="button" onclick="closeEditShiftModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="editShiftForm" method="post" asp-page-handler="UpdateShift" asp-route-tab="shifts" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@Model.ShiftPageNumber" asp-route-shiftPageSize="@Model.ShiftPageSize" class="space-y-5 p-6" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
+            <input asp-for="EditShiftInput.StudyShiftId" type="hidden" />
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                    <label asp-for="EditShiftInput.ShiftCode" class="block text-sm font-semibold text-gray-700">Mã ca (*)</label>
+                    <input asp-for="EditShiftInput.ShiftCode" maxlength="30" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditShiftInput.ShiftCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="EditShiftInput.ShiftName" class="block text-sm font-semibold text-gray-700">Tên ca (*)</label>
+                    <input asp-for="EditShiftInput.ShiftName" maxlength="100" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditShiftInput.ShiftName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="EditShiftInput.StartTime" class="block text-sm font-semibold text-gray-700">Giờ bắt đầu (*)</label>
+                    <input asp-for="EditShiftInput.StartTime" type="time" step="60" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditShiftInput.StartTime" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="EditShiftInput.EndTime" class="block text-sm font-semibold text-gray-700">Giờ kết thúc (*)</label>
+                    <input asp-for="EditShiftInput.EndTime" type="time" step="60" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditShiftInput.EndTime" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div class="md:col-span-2">
+                    <label asp-for="EditShiftInput.Status" class="block text-sm font-semibold text-gray-700">Trạng thái (*)</label>
+                    <input asp-for="EditShiftInput.Status" type="hidden" />
+                    <button type="button" id="editShiftStatusToggle" class="mt-1 inline-flex items-center gap-3 rounded-full border border-green-200 bg-green-50 px-3 py-1.5 text-green-700 transition-colors hover:bg-green-100">
+                        <span id="editShiftStatusTrack" class="relative h-6 w-11 rounded-full bg-green-500 transition-colors">
+                            <span id="editShiftStatusKnob" class="absolute left-5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"></span>
+                        </span>
+                        <span id="editShiftStatusText" class="min-w-24 text-left text-xs font-semibold">Đang sử dụng</span>
+                    </button>
+                    <span asp-validation-for="EditShiftInput.Status" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div class="md:col-span-2">
+                    <label asp-for="EditShiftInput.Note" class="block text-sm font-semibold text-gray-700">Ghi chú</label>
+                    <textarea asp-for="EditShiftInput.Note" maxlength="255" rows="3" class="mt-1 block w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập ghi chú nếu có"></textarea>
+                    <span asp-validation-for="EditShiftInput.Note" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                <button type="button" onclick="closeEditShiftModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button id="editShiftSubmitButton" type="submit" formnovalidate class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="deleteShiftConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Xóa ca học</h2>
+            <button type="button" onclick="closeDeleteShiftConfirm()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="px-6 py-5">
+            <p class="text-sm text-gray-600">Bạn có chắc chắn muốn xóa ca học này?</p>
+            <p id="deleteShiftName" class="mt-1 text-sm font-semibold text-gray-900"></p>
+            <p class="mt-3 text-xs text-gray-500">Chỉ ca học tạm dừng và không còn lớp đang hoạt động sử dụng mới được xóa.</p>
+        </div>
+        <form id="deleteShiftForm" method="post" asp-page-handler="DeleteShift" asp-route-shiftSearch="@Model.ShiftSearch" asp-route-shiftStatusFilter="@Model.ShiftStatusFilter" asp-route-shiftPageNumber="@Model.ShiftPageNumber" asp-route-shiftPageSize="@Model.ShiftPageSize">
+            <input id="deleteShiftId" type="hidden" name="studyShiftId" />
+            <div class="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button type="button" onclick="closeDeleteShiftConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
+                <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700">Xóa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="createRoomModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Thêm phòng học</h2>
+            <button type="button" onclick="closeCreateRoomModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="createRoomForm" method="post" asp-page-handler="CreateRoom" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@Model.RoomPageNumber" asp-route-roomPageSize="@Model.RoomPageSize" class="space-y-5 p-6" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
+                @* Remove hidden RoomId for Create model *@
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                    <label asp-for="CreateRoomInput.RoomCode" class="block text-sm font-semibold text-gray-700">Mã phòng (*)</label>
+                    <input asp-for="CreateRoomInput.RoomCode" maxlength="30" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: P101" />
+                    <span asp-validation-for="CreateRoomInput.RoomCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="CreateRoomInput.RoomName" class="block text-sm font-semibold text-gray-700">Tên phòng (*)</label>
+                    <input asp-for="CreateRoomInput.RoomName" maxlength="100" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Phòng 101" />
+                    <span asp-validation-for="CreateRoomInput.RoomName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="CreateRoomInput.Capacity" class="block text-sm font-semibold text-gray-700">Sức chứa</label>
+                    <input asp-for="CreateRoomInput.Capacity" type="number" min="1" max="10000" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 30" />
+                    <span asp-validation-for="CreateRoomInput.Capacity" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="CreateRoomInput.Location" class="block text-sm font-semibold text-gray-700">Tầng</label>
+                    <input asp-for="CreateRoomInput.Location" maxlength="150" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Tầng 2" />
+                    <span asp-validation-for="CreateRoomInput.Location" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div class="md:col-span-2">
+                    <label asp-for="CreateRoomInput.Status" class="block text-sm font-semibold text-gray-700">Trạng thái</label>
+                    <select asp-for="CreateRoomInput.Status" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="Active">Đang sử dụng</option>
+                        <option value="Inactive">Tạm dừng</option>
+                        <option value="Maintenance">Bảo trì</option>
+                    </select>
+                    <span asp-validation-for="CreateRoomInput.Status" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                <button type="button" onclick="closeCreateRoomModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button id="createRoomSubmitButton" type="submit" formnovalidate class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu phòng học</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editRoomModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Xem/Sửa phòng học</h2>
+            <button type="button" onclick="closeEditRoomModal()" class="text-gray-400 hover:text-gray-600">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <form id="editRoomForm" method="post" asp-page-handler="UpdateRoom" asp-route-tab="rooms" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@Model.RoomPageNumber" asp-route-roomPageSize="@Model.RoomPageSize" class="space-y-5 p-6" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
+            <input asp-for="EditRoomInput.RoomId" type="hidden" />
+            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div>
+                    <label asp-for="EditRoomInput.RoomCode" class="block text-sm font-semibold text-gray-700">Mã phòng (*)</label>
+                    <input asp-for="EditRoomInput.RoomCode" maxlength="30" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditRoomInput.RoomCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="EditRoomInput.RoomName" class="block text-sm font-semibold text-gray-700">Tên phòng (*)</label>
+                    <input asp-for="EditRoomInput.RoomName" maxlength="100" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                    <span asp-validation-for="EditRoomInput.RoomName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="EditRoomInput.Capacity" class="block text-sm font-semibold text-gray-700">Sức chứa</label>
+                    <input asp-for="EditRoomInput.Capacity" type="number" min="1" max="10000" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 30" />
+                    <span asp-validation-for="EditRoomInput.Capacity" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div>
+                    <label asp-for="EditRoomInput.Location" class="block text-sm font-semibold text-gray-700">Tầng</label>
+                    <input asp-for="EditRoomInput.Location" maxlength="150" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Tầng 2" />
+                    <span asp-validation-for="EditRoomInput.Location" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                <div class="md:col-span-2">
+                    <label asp-for="EditRoomInput.Status" class="block text-sm font-semibold text-gray-700">Trạng thái</label>
+                    <select asp-for="EditRoomInput.Status" class="mt-1 block h-12 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="Active">Đang sử dụng</option>
+                        <option value="Inactive">Tạm dừng</option>
+                        <option value="Maintenance">Bảo trì</option>
+                    </select>
+                    <span asp-validation-for="EditRoomInput.Status" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
+                <button type="button" onclick="closeEditRoomModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
+                <button id="editRoomSubmitButton" type="submit" formnovalidate class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="deleteRoomConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Xóa phòng học</h2>
+            <button type="button" onclick="closeDeleteRoomConfirm()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="px-6 py-5">
+            <p class="text-sm text-gray-600">Bạn có chắc chắn muốn xóa phòng học này?</p>
+            <p id="deleteRoomName" class="mt-1 text-sm font-semibold text-gray-900"></p>
+            <p class="mt-3 text-xs text-gray-500">Chỉ phòng tạm dừng và chưa từng liên kết lớp học mới được xóa.</p>
+        </div>
+        <form id="deleteRoomForm" method="post" asp-page-handler="DeleteRoom" asp-route-roomSearch="@Model.RoomSearch" asp-route-roomStatusFilter="@Model.RoomStatusFilter" asp-route-roomPageNumber="@Model.RoomPageNumber" asp-route-roomPageSize="@Model.RoomPageSize">
+            <input id="deleteRoomId" type="hidden" name="roomId" />
+            <div class="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button type="button" onclick="closeDeleteRoomConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
+                <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700">Xóa</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="closeClassConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Đóng lớp học</h2>
+            <button type="button" onclick="closeCloseClassConfirm()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="px-6 py-5">
+            <p class="text-sm text-gray-600">Bạn có chắc muốn đóng lớp <span id="closeClassCode" class="font-semibold text-gray-900"></span>?</p>
+            <p class="mt-3 text-xs text-gray-500">Các buổi học trong tương lai sẽ bị hủy và lớp sẽ chuyển sang trạng thái đã đóng.</p>
+        </div>
+        <form id="closeClassForm" method="post" asp-page-handler="CloseClass" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="@Model.ClassPageNumber" asp-route-classPageSize="@Model.ClassPageSize">
+            <input id="closeClassId" type="hidden" name="classId" />
+            <div class="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button type="button" onclick="closeCloseClassConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
+                <button type="submit" class="rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700">Đóng lớp</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="deleteClassConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-md rounded-2xl bg-white shadow-xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-xl font-bold text-gray-900">Xóa lớp học</h2>
+            <button type="button" onclick="closeDeleteClassConfirm()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="px-6 py-5">
+            <p class="text-sm text-gray-600">Bạn có chắc chắn muốn xóa lớp <span id="deleteClassCode" class="font-semibold text-gray-900"></span>?</p>
+            <p class="mt-3 text-xs text-gray-500">Chỉ lớp chưa phát sinh dữ liệu (chưa có học sinh, buổi học) mới có thể xóa được. Hành động này không thể hoàn tác.</p>
+        </div>
+        <form id="deleteClassForm" method="post" asp-page-handler="DeleteClass" asp-route-tab="classes" asp-route-search="@Model.Search" asp-route-classTeacherSearch="@Model.ClassTeacherSearch" asp-route-classCourseId="@Model.ClassCourseId" asp-route-classStatusFilter="@Model.ClassStatusFilter" asp-route-classStartDateFrom="@Model.ClassStartDateFrom" asp-route-classStartDateTo="@Model.ClassStartDateTo" asp-route-classEndDateFrom="@Model.ClassEndDateFrom" asp-route-classEndDateTo="@Model.ClassEndDateTo" asp-route-classRoomId="@Model.ClassRoomId" asp-route-classPageNumber="@Model.ClassPageNumber" asp-route-classPageSize="@Model.ClassPageSize">
+            <input id="deleteClassId" type="hidden" name="classId" />
+            <div class="flex justify-end gap-3 border-t border-gray-100 px-6 py-4">
+                <button type="button" onclick="closeDeleteClassConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
+                <button type="submit" class="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700">Xóa</button>
             </div>
         </form>
     </div>
@@ -196,249 +901,320 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        function openAddClassModal() {
-            const modal = document.getElementById('addClassModal');
+        function openCreateRoomModal() {
+            clearRoomValidation('createRoomForm');
+            document.getElementById('CreateRoomInput_RoomId').value = 0;
+            document.getElementById('CreateRoomInput_RoomCode').value = '';
+            document.getElementById('CreateRoomInput_RoomName').value = '';
+            document.getElementById('CreateRoomInput_Capacity').value = '';
+            document.getElementById('CreateRoomInput_Location').value = '';
+            document.getElementById('CreateRoomInput_Status').value = 'Active';
+
+            const modal = document.getElementById('createRoomModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-
-            if (document.querySelectorAll('.schedule-row').length === 0) {
-                hydrateScheduleRows();
-            }
         }
 
-        function closeAddClassModal() {
-            const modal = document.getElementById('addClassModal');
+        function closeCreateRoomModal() {
+            const modal = document.getElementById('createRoomModal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }
 
-        function addScheduleRow(day = '', startTime = '', endTime = '') {
-            const row = document.createElement('div');
-            row.className = 'schedule-row grid grid-cols-[1fr_1.35fr_72px] items-center gap-4 px-3 py-2';
-            row.innerHTML = `
-                <select class="schedule-day block w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option value="">Chọn thứ</option>
-                    <option value="Thứ 2">Thứ 2</option>
-                    <option value="Thứ 3">Thứ 3</option>
-                    <option value="Thứ 4">Thứ 4</option>
-                    <option value="Thứ 5">Thứ 5</option>
-                    <option value="Thứ 6">Thứ 6</option>
-                    <option value="Thứ 7">Thứ 7</option>
-                    <option value="Chủ nhật">Chủ nhật</option>
-                </select>
-                <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
-                    <div class="time-picker relative">
-                        <button type="button" onclick="openTimePicker(this, 'start')" class="flex w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-left text-sm text-gray-900 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
-                            <span class="schedule-start-display flex-1 px-3 py-2.5 text-gray-500">Bắt đầu</span>
-                            <span class="bg-blue-600 px-3 py-2.5 text-white">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
-                            </span>
-                        </button>
-                        <input type="hidden" class="schedule-start-value" />
-                    </div>
-                    <span class="text-sm font-medium text-gray-400">đến</span>
-                    <div class="time-picker relative">
-                        <button type="button" onclick="openTimePicker(this, 'end')" class="flex w-full overflow-hidden rounded-lg border border-gray-200 bg-white text-left text-sm text-gray-900 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
-                            <span class="schedule-end-display flex-1 px-3 py-2.5 text-gray-500">Kết thúc</span>
-                            <span class="bg-blue-600 px-3 py-2.5 text-white">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
-                            </span>
-                        </button>
-                        <input type="hidden" class="schedule-end-value" />
-                    </div>
-                </div>
-                <button type="button" onclick="removeScheduleRow(this)" class="mx-auto text-red-500 hover:text-red-700 transition-colors" title="Xóa">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                </button>
-            `;
+        function openCreateShiftModal() {
+            clearRoomValidation('createShiftForm');
+            document.getElementById('CreateShiftInput_ShiftCode').value = '';
+            document.getElementById('CreateShiftInput_ShiftName').value = '';
+            document.getElementById('CreateShiftInput_StartTime').value = '';
+            document.getElementById('CreateShiftInput_EndTime').value = '';
+            setCreateShiftStatus('Active');
+            document.getElementById('CreateShiftInput_Note').value = '';
 
-            document.getElementById('scheduleRows').appendChild(row);
-            row.querySelector('.schedule-day').value = day;
-            setTimeValue(row, 'start', startTime);
-            setTimeValue(row, 'end', endTime);
+            const modal = document.getElementById('createShiftModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
-        function closeTimePickers() {
-            document.querySelectorAll('.time-picker-panel').forEach(panel => panel.remove());
+        function closeCreateShiftModal() {
+            const modal = document.getElementById('createShiftModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
-        function openTimePicker(button, prefix) {
-            closeTimePickers();
+        const createShiftStatusInput = document.getElementById('CreateShiftInput_Status');
+        const createShiftStatusToggle = document.getElementById('createShiftStatusToggle');
+        const createShiftStatusTrack = document.getElementById('createShiftStatusTrack');
+        const createShiftStatusKnob = document.getElementById('createShiftStatusKnob');
+        const createShiftStatusText = document.getElementById('createShiftStatusText');
 
-            const picker = button.closest('.time-picker');
-            const current = picker.querySelector(`.schedule-${prefix}-value`).value || '08:00';
-            const [currentHour, currentMinute] = current.split(':', 2).map(Number);
-            const rect = button.getBoundingClientRect();
-            const panel = document.createElement('div');
-            panel.className = 'time-picker-panel fixed z-[9999] w-[280px] rounded-xl border border-gray-200 bg-white p-4 shadow-2xl';
-            panel.dataset.rowId = ensureScheduleRowId(button.closest('.schedule-row'));
-            panel.dataset.prefix = prefix;
-            panel.dataset.hour = String(Number.isNaN(currentHour) ? 8 : currentHour);
-            panel.dataset.minute = String(Number.isNaN(currentMinute) ? 0 : currentMinute);
-            panel.innerHTML = `
-                <div class="grid grid-cols-[1fr_auto_1fr] items-center text-center">
-                    <button type="button" onclick="stepTime(this, 'hour', 1)" class="mx-auto text-gray-500 hover:text-blue-600">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-                    </button>
-                    <span></span>
-                    <button type="button" onclick="stepTime(this, 'minute', 1)" class="mx-auto text-gray-500 hover:text-blue-600">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-                    </button>
-                    <div class="time-hour py-3 text-2xl font-semibold text-gray-800"></div>
-                    <div class="text-2xl font-semibold text-gray-500">:</div>
-                    <div class="time-minute py-3 text-2xl font-semibold text-gray-800"></div>
-                    <button type="button" onclick="stepTime(this, 'hour', -1)" class="mx-auto text-gray-500 hover:text-blue-600">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <span></span>
-                    <button type="button" onclick="stepTime(this, 'minute', -1)" class="mx-auto text-gray-500 hover:text-blue-600">
-                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                </div>
-                <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-                    <button type="button" onclick="clearTimePicker(this, '${prefix}')" class="text-sm font-semibold text-gray-500 hover:text-gray-800">Xóa</button>
-                    <button type="button" onclick="applyTimePicker(this, '${prefix}')" class="rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700">Chọn</button>
-                </div>
-            `;
+        function setCreateShiftStatus(status) {
+            const isActive = status !== 'Inactive';
 
-            document.body.appendChild(panel);
-            positionTimePickerPanel(panel, rect);
-            renderTimePicker(panel);
-        }
-
-        function ensureScheduleRowId(row) {
-            if (!row.dataset.scheduleRowId) {
-                row.dataset.scheduleRowId = crypto.randomUUID();
+            if (createShiftStatusInput) {
+                createShiftStatusInput.value = isActive ? 'Active' : 'Inactive';
             }
 
-            return row.dataset.scheduleRowId;
-        }
+            createShiftStatusToggle?.classList.toggle('border-green-200', isActive);
+            createShiftStatusToggle?.classList.toggle('bg-green-50', isActive);
+            createShiftStatusToggle?.classList.toggle('text-green-700', isActive);
+            createShiftStatusToggle?.classList.toggle('hover:bg-green-100', isActive);
+            createShiftStatusToggle?.classList.toggle('border-gray-200', !isActive);
+            createShiftStatusToggle?.classList.toggle('bg-gray-100', !isActive);
+            createShiftStatusToggle?.classList.toggle('text-gray-600', !isActive);
+            createShiftStatusToggle?.classList.toggle('hover:bg-gray-200', !isActive);
+            createShiftStatusTrack?.classList.toggle('bg-green-500', isActive);
+            createShiftStatusTrack?.classList.toggle('bg-gray-300', !isActive);
+            createShiftStatusKnob?.classList.toggle('left-5', isActive);
+            createShiftStatusKnob?.classList.toggle('left-0.5', !isActive);
 
-        function positionTimePickerPanel(panel, rect) {
-            const margin = 8;
-            const panelWidth = 280;
-            const panelHeight = 190;
-            let left = rect.left;
-            let top = rect.bottom + margin;
-
-            if (left + panelWidth > window.innerWidth - margin) {
-                left = window.innerWidth - panelWidth - margin;
+            if (createShiftStatusText) {
+                createShiftStatusText.textContent = isActive ? 'Đang sử dụng' : 'Tạm dừng';
             }
-
-            if (top + panelHeight > window.innerHeight - margin) {
-                top = rect.top - panelHeight - margin;
-            }
-
-            panel.style.left = `${Math.max(margin, left)}px`;
-            panel.style.top = `${Math.max(margin, top)}px`;
         }
 
-        function renderTimePicker(panel) {
-            panel.querySelector('.time-hour').textContent = String(Number(panel.dataset.hour)).padStart(2, '0');
-            panel.querySelector('.time-minute').textContent = String(Number(panel.dataset.minute)).padStart(2, '0');
-        }
-
-        function stepTime(button, part, delta) {
-            const panel = button.closest('.time-picker-panel');
-
-            if (part === 'hour') {
-                panel.dataset.hour = String((Number(panel.dataset.hour) + delta + 24) % 24);
-            } else {
-                panel.dataset.minute = String((Number(panel.dataset.minute) + delta + 60) % 60);
-            }
-
-            renderTimePicker(panel);
-        }
-
-        function applyTimePicker(button, prefix) {
-            const panel = button.closest('.time-picker-panel');
-            const row = document.querySelector(`[data-schedule-row-id="${panel.dataset.rowId}"]`);
-            const value = `${String(Number(panel.dataset.hour)).padStart(2, '0')}:${String(Number(panel.dataset.minute)).padStart(2, '0')}`;
-            setTimeValue(row, prefix, value);
-            closeTimePickers();
-        }
-
-        function clearTimePicker(button, prefix) {
-            const panel = button.closest('.time-picker-panel');
-            const row = document.querySelector(`[data-schedule-row-id="${panel.dataset.rowId}"]`);
-            setTimeValue(row, prefix, '');
-            closeTimePickers();
-        }
-
-        function setTimeValue(row, prefix, value) {
-            const input = row.querySelector(`.schedule-${prefix}-value`);
-            const display = row.querySelector(`.schedule-${prefix}-display`);
-            input.value = value || '';
-            display.textContent = value || (prefix === 'start' ? 'Bắt đầu' : 'Kết thúc');
-            display.classList.toggle('text-gray-500', !value);
-            display.classList.toggle('text-gray-900', Boolean(value));
-        }
-
-        function getTimeParts(row, prefix) {
-            return row.querySelector(`.schedule-${prefix}-value`).value;
-        }
-
-        document.addEventListener('click', function (event) {
-            if (!event.target.closest('.time-picker') && !event.target.closest('.time-picker-panel')) {
-                closeTimePickers();
-            }
+        createShiftStatusToggle?.addEventListener('click', () => {
+            setCreateShiftStatus(createShiftStatusInput?.value === 'Active' ? 'Inactive' : 'Active');
         });
 
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                closeTimePickers();
+        setCreateShiftStatus(createShiftStatusInput?.value || 'Active');
+
+        const editShiftStatusInput = document.getElementById('EditShiftInput_Status');
+        const editShiftStatusToggle = document.getElementById('editShiftStatusToggle');
+        const editShiftStatusTrack = document.getElementById('editShiftStatusTrack');
+        const editShiftStatusKnob = document.getElementById('editShiftStatusKnob');
+        const editShiftStatusText = document.getElementById('editShiftStatusText');
+
+        function setEditShiftStatus(status) {
+            const isActive = status !== 'Inactive';
+
+            if (editShiftStatusInput) {
+                editShiftStatusInput.value = isActive ? 'Active' : 'Inactive';
             }
+
+            editShiftStatusToggle?.classList.toggle('border-green-200', isActive);
+            editShiftStatusToggle?.classList.toggle('bg-green-50', isActive);
+            editShiftStatusToggle?.classList.toggle('text-green-700', isActive);
+            editShiftStatusToggle?.classList.toggle('hover:bg-green-100', isActive);
+            editShiftStatusToggle?.classList.toggle('border-gray-200', !isActive);
+            editShiftStatusToggle?.classList.toggle('bg-gray-100', !isActive);
+            editShiftStatusToggle?.classList.toggle('text-gray-600', !isActive);
+            editShiftStatusToggle?.classList.toggle('hover:bg-gray-200', !isActive);
+            editShiftStatusTrack?.classList.toggle('bg-green-500', isActive);
+            editShiftStatusTrack?.classList.toggle('bg-gray-300', !isActive);
+            editShiftStatusKnob?.classList.toggle('left-5', isActive);
+            editShiftStatusKnob?.classList.toggle('left-0.5', !isActive);
+
+            if (editShiftStatusText) {
+                editShiftStatusText.textContent = isActive ? 'Đang sử dụng' : 'Tạm dừng';
+            }
+        }
+
+        editShiftStatusToggle?.addEventListener('click', () => {
+            setEditShiftStatus(editShiftStatusInput?.value === 'Active' ? 'Inactive' : 'Active');
         });
 
-        function removeScheduleRow(button) {
-            button.closest('.schedule-row').remove();
+        setEditShiftStatus(editShiftStatusInput?.value || 'Active');
 
-            if (document.querySelectorAll('.schedule-row').length === 0) {
-                addScheduleRow();
-            }
+        function openEditShiftModal(button) {
+            clearRoomValidation('editShiftForm');
+            document.getElementById('EditShiftInput_StudyShiftId').value = button.dataset.shiftId || 0;
+            document.getElementById('EditShiftInput_ShiftCode').value = button.dataset.shiftCode || '';
+            document.getElementById('EditShiftInput_ShiftName').value = button.dataset.shiftName || '';
+            document.getElementById('EditShiftInput_StartTime').value = button.dataset.shiftStart || '';
+            document.getElementById('EditShiftInput_EndTime').value = button.dataset.shiftEnd || '';
+            document.getElementById('EditShiftInput_Note').value = button.dataset.shiftNote || '';
+            setEditShiftStatus(button.dataset.shiftStatus || 'Active');
+
+            const modal = document.getElementById('editShiftModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
-        function buildScheduleText() {
-            const items = Array.from(document.querySelectorAll('.schedule-row'))
-                .map(row => {
-                    const day = row.querySelector('.schedule-day').value;
-                    const startTime = getTimeParts(row, 'start');
-                    const endTime = getTimeParts(row, 'end');
-                    return day && startTime && endTime ? `${day} - ${startTime} - ${endTime}` : '';
-                })
-                .filter(Boolean);
-
-            document.getElementById('Input_ScheduleText').value = items.join('; ');
+        function closeEditShiftModal() {
+            const modal = document.getElementById('editShiftModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
-        function hydrateScheduleRows() {
-            const value = document.getElementById('Input_ScheduleText').value;
+        function openEditRoomModal(button) {
+            clearRoomValidation('editRoomForm');
+            document.getElementById('EditRoomInput_RoomId').value = button.dataset.roomId || 0;
+            document.getElementById('EditRoomInput_RoomCode').value = button.dataset.roomCode || '';
+            document.getElementById('EditRoomInput_RoomName').value = button.dataset.roomName || '';
+            document.getElementById('EditRoomInput_Capacity').value = button.dataset.roomCapacity || '';
+            document.getElementById('EditRoomInput_Location').value = button.dataset.roomLocation || '';
+            document.getElementById('EditRoomInput_Status').value = button.dataset.roomStatus || 'Active';
 
-            if (!value) {
-                addScheduleRow();
-                return;
-            }
+            const modal = document.getElementById('editRoomModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
 
-            const items = value.split(';').map(item => item.trim()).filter(Boolean);
+        function closeEditRoomModal() {
+            const modal = document.getElementById('editRoomModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
 
-            if (items.length === 0) {
-                addScheduleRow();
-                return;
-            }
-
-            items.forEach(item => {
-                const separatorIndex = item.indexOf(' - ');
-                const day = separatorIndex >= 0 ? item.slice(0, separatorIndex) : '';
-                const timeRange = separatorIndex >= 0 ? item.slice(separatorIndex + 3) : '';
-                const [startTime, endTime] = timeRange.split(' - ', 2).map(value => value.trim());
-                addScheduleRow(day, startTime || '', endTime || '');
+        function clearRoomValidation(formId) {
+            document.querySelectorAll(`#${formId} [data-valmsg-for]`).forEach(item => {
+                item.textContent = '';
+                item.classList.remove('field-validation-error');
+                item.classList.add('field-validation-valid');
+            });
+            document.querySelectorAll(`#${formId} .validation-summary-errors`).forEach(item => {
+                item.innerHTML = '';
+            });
+            document.querySelectorAll(`#${formId} .input-validation-error`).forEach(item => {
+                item.classList.remove('input-validation-error');
             });
         }
 
-        const hasCreateErrors = @Json.Serialize(!ViewData.ModelState.IsValid);
+        function setSubmitting(buttonId, text) {
+            const submitButton = document.getElementById(buttonId);
+            submitButton.disabled = true;
+            submitButton.classList.add('opacity-70', 'cursor-not-allowed');
+            submitButton.textContent = text;
+        }
 
-        if (hasCreateErrors) {
-            openAddClassModal();
+        document.getElementById('createRoomForm')?.addEventListener('submit', () => setSubmitting('createRoomSubmitButton', 'Đang lưu...'));
+        document.getElementById('editRoomForm')?.addEventListener('submit', () => setSubmitting('editRoomSubmitButton', 'Đang lưu...'));
+        document.getElementById('createShiftForm')?.addEventListener('submit', () => setSubmitting('createShiftSubmitButton', 'Đang lưu...'));
+        document.getElementById('editShiftForm')?.addEventListener('submit', () => setSubmitting('editShiftSubmitButton', 'Đang lưu...'));
+
+        function openDeleteShiftConfirm(button) {
+            document.getElementById('deleteShiftId').value = button.dataset.shiftId;
+            document.getElementById('deleteShiftName').textContent = button.dataset.shiftName;
+
+            const modal = document.getElementById('deleteShiftConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteShiftConfirm() {
+            const modal = document.getElementById('deleteShiftConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openDeleteRoomConfirm(button) {
+            document.getElementById('deleteRoomId').value = button.dataset.roomId;
+            document.getElementById('deleteRoomName').textContent = button.dataset.roomName;
+
+            const modal = document.getElementById('deleteRoomConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteRoomConfirm() {
+            const modal = document.getElementById('deleteRoomConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openCloseClassConfirm(button) {
+            document.getElementById('closeClassId').value = button.dataset.classId;
+            document.getElementById('closeClassCode').textContent = button.dataset.classCode;
+
+            const modal = document.getElementById('closeClassConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeCloseClassConfirm() {
+            const modal = document.getElementById('closeClassConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function openDeleteClassConfirm(button) {
+            document.getElementById('deleteClassId').value = button.dataset.classId;
+            document.getElementById('deleteClassCode').textContent = button.dataset.classCode;
+
+            const modal = document.getElementById('deleteClassConfirmModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteClassConfirm() {
+            const modal = document.getElementById('deleteClassConfirmModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+            const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+            const panel = dropdown.querySelector('[data-dropdown-panel]');
+            const label = dropdown.querySelector('[data-dropdown-label]');
+            const hidden = dropdown.querySelector('[data-filter-value]');
+            const search = dropdown.querySelector('[data-dropdown-search]');
+            const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+            if (!toggle || !panel || !label || !hidden) {
+                return;
+            }
+
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                document.querySelectorAll('[data-dropdown-panel]').forEach(item => {
+                    if (item !== panel) {
+                        item.classList.add('hidden');
+                    }
+                });
+                panel.classList.toggle('hidden');
+                search?.focus();
+            });
+
+            search?.addEventListener('input', () => {
+                const keyword = search.value.trim().toLowerCase();
+                options.forEach(option => {
+                    option.classList.toggle('hidden', !option.textContent.toLowerCase().includes(keyword));
+                });
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hidden.value = option.dataset.value || '';
+                    label.textContent = option.dataset.label || option.textContent.trim();
+                    panel.classList.add('hidden');
+                    search.value = '';
+                    options.forEach(item => item.classList.remove('hidden'));
+                });
+            });
+        });
+
+        document.addEventListener('click', event => {
+            if (!event.target.closest('[data-search-dropdown]')) {
+                document.querySelectorAll('[data-dropdown-panel]').forEach(panel => panel.classList.add('hidden'));
+            }
+        });
+        const shouldOpenCreateRoomModal = @Json.Serialize(Model.OpenCreateRoomModal);
+        const shouldOpenEditRoomModal = @Json.Serialize(Model.OpenEditRoomModal);
+        const shouldOpenCreateShiftModal = @Json.Serialize(Model.OpenCreateShiftModal);
+        const shouldOpenEditShiftModal = @Json.Serialize(Model.OpenEditShiftModal);
+if (shouldOpenCreateRoomModal) {
+            const modal = document.getElementById('createRoomModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        if (shouldOpenEditRoomModal) {
+            const modal = document.getElementById('editRoomModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        if (shouldOpenCreateShiftModal) {
+            const modal = document.getElementById('createShiftModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        if (shouldOpenEditShiftModal) {
+            setEditShiftStatus(editShiftStatusInput?.value || 'Active');
+            const modal = document.getElementById('editShiftModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
     </script>
 }

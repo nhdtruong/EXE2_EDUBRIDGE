@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>EduBridge Filter Search Export</title>
+    <link rel="stylesheet" href="../css/design-system.css">
+    <link rel="stylesheet" href="../css/forms.css">
+    <link rel="stylesheet" href="../css/buttons.css">
+    <link rel="stylesheet" href="../css/filters.css">
+</head>
+<body class="ds-page">
+    <h1 class="ds-page-title">Filter / Search</h1>
+    <p class="ds-page-subtitle">EduBridge có search/filter/dropdown search/date range. Chưa thấy sort UI reusable.</p>
+    <section class="ds-card" style="margin-top:24px">
+        <div class="ds-filter-panel">
+            <h2 class="ds-card-title">Danh sách lớp học</h2>
+            <div class="ds-filter-grid">
+                <input class="ds-input" placeholder="Tìm tên/mã lớp">
+                <input class="ds-input" placeholder="Tên giáo viên">
+                <div class="ds-dropdown">
+                    <button class="ds-dropdown-toggle">Trạng thái <span>⌄</span></button>
+                    <div class="ds-dropdown-panel">
+                        <div class="ds-dropdown-search"><input class="ds-input" placeholder="Tìm trạng thái"></div>
+                        <button class="ds-dropdown-option">Tất cả</button>
+                        <button class="ds-dropdown-option">Đang hoạt động</button>
+                        <button class="ds-dropdown-option">Tạm dừng</button>
+                    </div>
+                </div>
+            </div>
+            <div class="ds-filter-grid" style="grid-template-columns:repeat(2,minmax(220px,1fr));max-width:520px">
+                <div class="ds-date-range">
+                    <button class="ds-date-range-toggle"><span class="ds-date-range-label">Ngày khai giảng</span><span class="ds-date-range-icon">▣</span></button>
+                </div>
+                <div class="ds-date-range">
+                    <button class="ds-date-range-toggle"><span class="ds-date-range-label">Ngày kết thúc</span><span class="ds-date-range-icon">▣</span></button>
+                </div>
+            </div>
+            <div class="ds-filter-actions">
+                <button class="ds-btn ds-btn-secondary">Làm mới bộ lọc</button>
+                <button class="ds-btn ds-btn-primary">Tìm kiếm</button>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
+

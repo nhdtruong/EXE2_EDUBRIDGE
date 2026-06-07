@@ -1,0 +1,573 @@
+@page
+@model EduBridge.Pages.AdminCoursesModel
+@{
+    ViewData["Title"] = "Quản lý môn học";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminCourses";
+    var selectedStatusText = Model.StatusFilter switch
+    {
+        "Active" => "Đang sử dụng",
+        "Inactive" => "Tạm dừng",
+        _ => "Trạng thái"
+    };
+}
+
+<div class="space-y-6 pb-20">
+    <div class="flex items-start justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Quản lý môn học</h1>
+            <p class="mt-1 text-gray-500">Quản lý danh sách môn học của trung tâm</p>
+        </div>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="border-b border-blue-100 bg-blue-50/60 p-6">
+            <h3 class="text-base font-bold text-gray-900">Danh sách môn học</h3>
+
+            <form method="get" class="mt-5 space-y-4">
+                <input type="hidden" name="PageNumber" value="1" />
+                <input type="hidden" name="PageSize" value="@Model.PageSize" />
+
+                <div class="flex flex-wrap items-start gap-3">
+                    <div class="w-full max-w-md">
+                        <label for="courseSearch" class="sr-only">Tìm kiếm theo mã hoặc tên môn</label>
+                        <input id="courseSearch" type="text" name="Search" value="@Model.Search" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm mã môn, tên môn">
+                        <span asp-validation-for="Search" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    </div>
+
+                    <div class="w-full max-w-xs">
+                        <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" data-filter-value="course-status" />
+                        <div class="relative" data-search-dropdown>
+                            <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <span data-dropdown-label>@selectedStatusText</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                                <div class="relative p-2">
+                                    <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả trạng thái</button>
+                                <button type="button" data-dropdown-option data-value="Active" data-label="Đang sử dụng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang sử dụng</button>
+                                <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                            </div>
+                        </div>
+                        <span asp-validation-for="StatusFilter" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    </div>
+
+                    <div class="ml-auto flex flex-wrap items-start gap-3">
+                        <a asp-page="/AdminCourses" asp-route-pageSize="@Model.PageSize" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">Làm mới bộ lọc</a>
+                        <button type="submit" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="button" onclick="openAddCourseModal()" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Thêm môn học
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left">
+                <thead>
+                    <tr class="whitespace-nowrap border-b border-slate-200 bg-slate-100 text-sm font-bold text-slate-800">
+                        <th class="border-r border-slate-200 px-4 py-4 text-center font-bold">STT</th>
+                        <th class="border-r border-slate-200 px-4 py-4 text-center font-bold">ID</th>
+                        <th class="border-r border-slate-200 px-6 py-4 font-bold">Mã môn</th>
+                        <th class="border-r border-slate-200 px-6 py-4 font-bold">Tên môn</th>
+                        <th class="border-r border-slate-200 px-6 py-4 text-center font-bold">Thời lượng</th>
+                        <th class="border-r border-slate-200 px-6 py-4 text-center font-bold">Học phí</th>
+                        <th class="border-r border-slate-200 px-6 py-4 text-center font-bold">Trạng thái</th>
+                        <th class="px-6 py-4 text-center font-bold">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-sm">
+                    @if (Model.Courses.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="px-6 py-10 text-center text-gray-500">
+                                Chưa có môn học phù hợp.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @for (var index = 0; index < Model.Courses.Count; index++)
+                        {
+                            var course = Model.Courses[index];
+                            <tr class="group transition-colors hover:bg-slate-100">
+                                <td class="border-r border-gray-200 px-4 py-4 text-center font-medium text-gray-700">
+                                    @(Model.FirstItemNumber + index)
+                                </td>
+                                <td class="border-r border-gray-200 px-4 py-4 text-center font-medium text-gray-900">
+                                    @course.CourseId
+                                </td>
+                                <td class="border-r border-gray-200 px-6 py-4">
+                                    <span class="font-semibold text-blue-700">@course.CourseCode</span>
+                                </td>
+                                <td class="border-r border-gray-200 px-6 py-4">
+                                    <div class="font-semibold text-gray-900 group-hover:text-gray-950">@course.CourseName</div>
+                                    <div class="text-xs text-gray-400">@course.ClassCount lớp đang liên kết</div>
+                                </td>
+                                <td class="border-r border-gray-200 px-6 py-4 text-center font-medium text-gray-700">
+                                    @course.TotalSessions buổi
+                                </td>
+                                <td class="border-r border-gray-200 px-6 py-4 text-center font-medium text-gray-700">
+                                    @course.TuitionFeeText
+                                </td>
+                                <td class="border-r border-gray-200 px-6 py-4">
+                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-courseId="@course.CourseId" asp-route-currentStatus="@course.Status" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="flex justify-center">
+                                        <button type="submit" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(course.IsActive ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200")" title="Đổi trạng thái môn học">
+                                            <span class="relative h-6 w-11 rounded-full transition-colors @(course.IsActive ? "bg-green-500" : "bg-gray-300")">
+                                                <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(course.IsActive ? "left-5" : "left-0.5")"></span>
+                                            </span>
+                                            <span class="min-w-24 text-left text-xs font-semibold">@course.StatusText</span>
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center gap-3">
+                                        <a asp-page="/AdminCourses" asp-page-handler="Edit" asp-route-courseId="@course.CourseId" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                        </a>
+                                        <button type="button" onclick='openDeleteCourseModal(@course.CourseId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(course.CourseName)))' class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-center gap-6 border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">
+            <div class="flex items-center gap-1">
+                <a asp-page="/AdminCourses" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="1" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang đầu">
+                    <span class="text-lg">&laquo;</span>
+                </a>
+                <a asp-page="/AdminCourses" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang trước">
+                    <span class="text-lg">&lsaquo;</span>
+                </a>
+
+                @{
+                    var startPage = Math.Max(1, Model.PageNumber - 2);
+                    var endPage = Math.Min(Model.TotalPages, startPage + 4);
+                    startPage = Math.Max(1, endPage - 4);
+                }
+
+                @for (var pageIndex = startPage; pageIndex <= endPage; pageIndex++)
+                {
+                    <a asp-page="/AdminCourses" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@pageIndex" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 min-w-9 items-center justify-center rounded px-3 font-medium transition-colors @(pageIndex == Model.PageNumber ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">
+                        @pageIndex
+                    </a>
+                }
+
+                <a asp-page="/AdminCourses" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang sau">
+                    <span class="text-lg">&rsaquo;</span>
+                </a>
+                <a asp-page="/AdminCourses" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.TotalPages" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang cuối">
+                    <span class="text-lg">&raquo;</span>
+                </a>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <span>Tổng số: @Model.TotalCourses bản ghi</span>
+                <form method="get" class="flex items-center">
+                    <input type="hidden" name="Search" value="@Model.Search" />
+                    <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                    <input type="hidden" name="PageNumber" value="1" />
+                    <select name="PageSize" onchange="this.form.submit()" class="h-10 rounded border border-blue-400 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        @foreach (var option in Model.PageSizeOptions)
+                        {
+                            <option value="@option" selected="@(Model.PageSize == option)">@option</option>
+                        }
+                    </select>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="deleteCourseModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 px-4 py-6">
+    <div class="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-lg font-bold text-gray-900">Xóa môn học</h2>
+            <button type="button" onclick="closeDeleteCourseModal()" class="text-gray-400 transition-colors hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form method="post" asp-page-handler="Delete" class="px-6 py-5">
+            <input type="hidden" id="deleteCourseId" name="courseId" />
+            <input type="hidden" name="Search" value="@Model.Search" />
+            <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+            <input type="hidden" name="PageNumber" value="@Model.PageNumber" />
+            <input type="hidden" name="PageSize" value="@Model.PageSize" />
+
+            <p class="text-sm text-gray-600">
+                Bạn có chắc muốn xóa môn học <span id="deleteCourseName" class="font-semibold text-gray-900"></span>?
+            </p>
+            <p class="mt-2 text-sm text-gray-500">
+                Môn học sẽ được xóa mềm khỏi danh sách. Chỉ xóa được môn đang tạm dừng và không có lớp đang hoạt động.
+            </p>
+
+            <div class="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-5">
+                <button type="button" onclick="closeDeleteCourseModal()" class="inline-flex h-11 items-center rounded border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">Hủy</button>
+                <button type="submit" class="inline-flex h-11 items-center rounded bg-red-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-red-700">Xóa môn học</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="editCourseModal" class="fixed inset-0 z-50 @(Model.IsEditModalOpen ? "flex" : "hidden") items-center justify-center bg-black/50 px-4 py-6">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-lg font-bold text-gray-900">Xem/Sửa môn học</h2>
+            <button type="button" onclick="closeEditCourseModal()" class="text-gray-400 transition-colors hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form method="post" asp-page-handler="Update" class="space-y-5 px-6 py-5">
+            <input type="hidden" name="Search" value="@Model.Search" />
+            <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+            <input type="hidden" name="PageNumber" value="@Model.PageNumber" />
+            <input type="hidden" name="PageSize" value="@Model.PageSize" />
+            <input asp-for="EditInput.CourseId" type="hidden" />
+            <input asp-for="EditInput.Status" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                    <label asp-for="EditInput.CourseCode" class="mb-1 block text-sm font-semibold text-gray-700">Mã môn (*)</label>
+                    <input asp-for="EditInput.CourseCode" maxlength="30" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: ENG-A1">
+                    <span asp-validation-for="EditInput.CourseCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.CourseName" class="mb-1 block text-sm font-semibold text-gray-700">Tên môn (*)</label>
+                    <input asp-for="EditInput.CourseName" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Kids English A1">
+                    <span asp-validation-for="EditInput.CourseName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.TotalSessions" class="mb-1 block text-sm font-semibold text-gray-700">Tổng số buổi</label>
+                    <input asp-for="EditInput.TotalSessions" type="number" min="1" max="1000" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 24">
+                    <span asp-validation-for="EditInput.TotalSessions" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="EditInput.TuitionFee" class="mb-1 block text-sm font-semibold text-gray-700">Học phí</label>
+                    <input id="EditInput_TuitionFee" name="EditInput.TuitionFee" type="number" min="0" step="1000" value="@(Model.EditInput.TuitionFee?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 7000000">
+                    <span asp-validation-for="EditInput.TuitionFee" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="EditInput.Description" class="mb-1 block text-sm font-semibold text-gray-700">Mô tả</label>
+                    <textarea asp-for="EditInput.Description" maxlength="500" rows="3" class="block w-full resize-none rounded border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập mô tả ngắn về môn học"></textarea>
+                    <span asp-validation-for="EditInput.Description" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="EditInput.Status" class="mb-1 block text-sm font-semibold text-gray-700">Trạng thái</label>
+                    <button type="button" id="editCourseStatusToggle" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(Model.EditInput.Status == "Inactive" ? "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200" : "border-green-200 bg-green-50 text-green-700 hover:bg-green-100")">
+                        <span id="editCourseStatusTrack" class="relative h-6 w-11 rounded-full transition-colors @(Model.EditInput.Status == "Inactive" ? "bg-gray-300" : "bg-green-500")">
+                            <span id="editCourseStatusKnob" class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(Model.EditInput.Status == "Inactive" ? "left-0.5" : "left-5")"></span>
+                        </span>
+                        <span id="editCourseStatusText" class="min-w-24 text-left text-xs font-semibold">@(Model.EditInput.Status == "Inactive" ? "Tạm dừng" : "Đang sử dụng")</span>
+                    </button>
+                    <span asp-validation-for="EditInput.Status" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-5">
+                <button type="button" onclick="closeEditCourseModal()" class="inline-flex h-11 items-center rounded border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">Hủy</button>
+                <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="addCourseModal" class="fixed inset-0 z-50 @(Model.IsCreateModalOpen ? "flex" : "hidden") items-center justify-center bg-black/50 px-4 py-6">
+    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+            <h2 class="text-lg font-bold text-gray-900">Thêm môn học</h2>
+            <button type="button" onclick="closeAddCourseModal()" class="text-gray-400 transition-colors hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+
+        <form method="post" asp-page-handler="Create" class="space-y-5 px-6 py-5">
+            <input type="hidden" name="Search" value="@Model.Search" />
+            <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+            <input type="hidden" name="PageNumber" value="@Model.PageNumber" />
+            <input type="hidden" name="PageSize" value="@Model.PageSize" />
+            <input asp-for="Input.Status" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+
+            <div class="grid gap-4 md:grid-cols-2">
+                <div>
+                    <label asp-for="Input.CourseCode" class="mb-1 block text-sm font-semibold text-gray-700">Mã môn (*)</label>
+                    <input asp-for="Input.CourseCode" maxlength="30" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: ENG-A1">
+                    <span asp-validation-for="Input.CourseCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.CourseName" class="mb-1 block text-sm font-semibold text-gray-700">Tên môn (*)</label>
+                    <input asp-for="Input.CourseName" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: Kids English A1">
+                    <span asp-validation-for="Input.CourseName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.TotalSessions" class="mb-1 block text-sm font-semibold text-gray-700">Tổng số buổi</label>
+                    <input asp-for="Input.TotalSessions" type="number" min="1" max="1000" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 24">
+                    <span asp-validation-for="Input.TotalSessions" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.TuitionFee" class="mb-1 block text-sm font-semibold text-gray-700">Học phí</label>
+                    <input id="Input_TuitionFee" name="Input.TuitionFee" type="number" min="0" step="1000" value="@(Model.Input.TuitionFee?.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 7000000">
+                    <span asp-validation-for="Input.TuitionFee" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="Input.Description" class="mb-1 block text-sm font-semibold text-gray-700">Mô tả</label>
+                    <textarea asp-for="Input.Description" maxlength="500" rows="3" class="block w-full resize-none rounded border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập mô tả ngắn về môn học"></textarea>
+                    <span asp-validation-for="Input.Description" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label asp-for="Input.Status" class="mb-1 block text-sm font-semibold text-gray-700">Trạng thái</label>
+                    <button type="button" id="createCourseStatusToggle" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(Model.Input.Status == "Inactive" ? "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200" : "border-green-200 bg-green-50 text-green-700 hover:bg-green-100")">
+                        <span id="createCourseStatusTrack" class="relative h-6 w-11 rounded-full transition-colors @(Model.Input.Status == "Inactive" ? "bg-gray-300" : "bg-green-500")">
+                            <span id="createCourseStatusKnob" class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(Model.Input.Status == "Inactive" ? "left-0.5" : "left-5")"></span>
+                        </span>
+                        <span id="createCourseStatusText" class="min-w-24 text-left text-xs font-semibold">@(Model.Input.Status == "Inactive" ? "Tạm dừng" : "Đang sử dụng")</span>
+                    </button>
+                    <span asp-validation-for="Input.Status" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 border-t border-gray-100 pt-5">
+                <button type="button" onclick="closeAddCourseModal()" class="inline-flex h-11 items-center rounded border border-gray-300 px-5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">Hủy</button>
+                <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">Lưu môn học</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openAddCourseModal() {
+            const modal = document.getElementById('addCourseModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.querySelector('input[name="Input.CourseCode"]')?.focus();
+        }
+
+        function closeAddCourseModal() {
+            const modal = document.getElementById('addCourseModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.getElementById('addCourseModal')?.addEventListener('click', event => {
+            if (event.target.id === 'addCourseModal') {
+                closeAddCourseModal();
+            }
+        });
+
+        function openDeleteCourseModal(courseId, courseName) {
+            const modal = document.getElementById('deleteCourseModal');
+            const courseIdInput = document.getElementById('deleteCourseId');
+            const courseNameText = document.getElementById('deleteCourseName');
+
+            if (!modal || !courseIdInput || !courseNameText) {
+                return;
+            }
+
+            courseIdInput.value = courseId;
+            courseNameText.textContent = courseName || '';
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeDeleteCourseModal() {
+            const modal = document.getElementById('deleteCourseModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.getElementById('deleteCourseModal')?.addEventListener('click', event => {
+            if (event.target.id === 'deleteCourseModal') {
+                closeDeleteCourseModal();
+            }
+        });
+
+        function closeEditCourseModal() {
+            const modal = document.getElementById('editCourseModal');
+            if (!modal) {
+                return;
+            }
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.getElementById('editCourseModal')?.addEventListener('click', event => {
+            if (event.target.id === 'editCourseModal') {
+                closeEditCourseModal();
+            }
+        });
+
+        const createCourseStatusInput = document.getElementById('Input_Status');
+        const createCourseStatusToggle = document.getElementById('createCourseStatusToggle');
+        const createCourseStatusTrack = document.getElementById('createCourseStatusTrack');
+        const createCourseStatusKnob = document.getElementById('createCourseStatusKnob');
+        const createCourseStatusText = document.getElementById('createCourseStatusText');
+
+        function setCreateCourseStatus(status) {
+            const isActive = status !== 'Inactive';
+
+            if (createCourseStatusInput) {
+                createCourseStatusInput.value = isActive ? 'Active' : 'Inactive';
+            }
+
+            createCourseStatusToggle?.classList.toggle('border-green-200', isActive);
+            createCourseStatusToggle?.classList.toggle('bg-green-50', isActive);
+            createCourseStatusToggle?.classList.toggle('text-green-700', isActive);
+            createCourseStatusToggle?.classList.toggle('hover:bg-green-100', isActive);
+            createCourseStatusToggle?.classList.toggle('border-gray-200', !isActive);
+            createCourseStatusToggle?.classList.toggle('bg-gray-100', !isActive);
+            createCourseStatusToggle?.classList.toggle('text-gray-600', !isActive);
+            createCourseStatusToggle?.classList.toggle('hover:bg-gray-200', !isActive);
+            createCourseStatusTrack?.classList.toggle('bg-green-500', isActive);
+            createCourseStatusTrack?.classList.toggle('bg-gray-300', !isActive);
+            createCourseStatusKnob?.classList.toggle('left-5', isActive);
+            createCourseStatusKnob?.classList.toggle('left-0.5', !isActive);
+
+            if (createCourseStatusText) {
+                createCourseStatusText.textContent = isActive ? 'Đang sử dụng' : 'Tạm dừng';
+            }
+        }
+
+        createCourseStatusToggle?.addEventListener('click', () => {
+            setCreateCourseStatus(createCourseStatusInput?.value === 'Active' ? 'Inactive' : 'Active');
+        });
+
+        setCreateCourseStatus(createCourseStatusInput?.value || 'Active');
+
+        const editCourseStatusInput = document.getElementById('EditInput_Status');
+        const editCourseStatusToggle = document.getElementById('editCourseStatusToggle');
+        const editCourseStatusTrack = document.getElementById('editCourseStatusTrack');
+        const editCourseStatusKnob = document.getElementById('editCourseStatusKnob');
+        const editCourseStatusText = document.getElementById('editCourseStatusText');
+
+        function setEditCourseStatus(status) {
+            const isActive = status !== 'Inactive';
+
+            if (editCourseStatusInput) {
+                editCourseStatusInput.value = isActive ? 'Active' : 'Inactive';
+            }
+
+            editCourseStatusToggle?.classList.toggle('border-green-200', isActive);
+            editCourseStatusToggle?.classList.toggle('bg-green-50', isActive);
+            editCourseStatusToggle?.classList.toggle('text-green-700', isActive);
+            editCourseStatusToggle?.classList.toggle('hover:bg-green-100', isActive);
+            editCourseStatusToggle?.classList.toggle('border-gray-200', !isActive);
+            editCourseStatusToggle?.classList.toggle('bg-gray-100', !isActive);
+            editCourseStatusToggle?.classList.toggle('text-gray-600', !isActive);
+            editCourseStatusToggle?.classList.toggle('hover:bg-gray-200', !isActive);
+            editCourseStatusTrack?.classList.toggle('bg-green-500', isActive);
+            editCourseStatusTrack?.classList.toggle('bg-gray-300', !isActive);
+            editCourseStatusKnob?.classList.toggle('left-5', isActive);
+            editCourseStatusKnob?.classList.toggle('left-0.5', !isActive);
+
+            if (editCourseStatusText) {
+                editCourseStatusText.textContent = isActive ? 'Đang sử dụng' : 'Tạm dừng';
+            }
+        }
+
+        editCourseStatusToggle?.addEventListener('click', () => {
+            setEditCourseStatus(editCourseStatusInput?.value === 'Active' ? 'Inactive' : 'Active');
+        });
+
+        setEditCourseStatus(editCourseStatusInput?.value || 'Active');
+
+        document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+            const container = dropdown.parentElement;
+            const hiddenInput = container.querySelector('[data-filter-value]');
+            const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+            const panel = dropdown.querySelector('[data-dropdown-panel]');
+            const label = dropdown.querySelector('[data-dropdown-label]');
+            const searchInput = dropdown.querySelector('[data-dropdown-search]');
+            const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+            if (!hiddenInput || !toggle || !panel || !label) {
+                return;
+            }
+
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                document.querySelectorAll('[data-dropdown-panel]').forEach(item => {
+                    if (item !== panel) {
+                        item.classList.add('hidden');
+                    }
+                });
+                panel.classList.toggle('hidden');
+
+                if (!panel.classList.contains('hidden') && searchInput) {
+                    searchInput.value = '';
+                    options.forEach(option => option.classList.remove('hidden'));
+                    searchInput.focus();
+                }
+            });
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hiddenInput.value = option.dataset.value || '';
+                    label.textContent = option.dataset.label || option.textContent.trim();
+                    panel.classList.add('hidden');
+                });
+            });
+
+            searchInput?.addEventListener('input', () => {
+                const keyword = searchInput.value.trim().toLowerCase();
+                options.forEach(option => {
+                    option.classList.toggle(
+                        'hidden',
+                        keyword.length > 0 && !option.textContent.toLowerCase().includes(keyword)
+                    );
+                });
+            });
+        });
+
+        document.addEventListener('click', event => {
+            if (!event.target.closest('[data-search-dropdown]')) {
+                document.querySelectorAll('[data-dropdown-panel]').forEach(panel => panel.classList.add('hidden'));
+            }
+        });
+    </script>
+}

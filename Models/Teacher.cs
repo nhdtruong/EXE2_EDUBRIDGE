@@ -19,6 +19,12 @@ public partial class Teacher
 
     public string TeacherCode { get; set; } = null!;
 
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedAt { get; set; }
+
+    public int? DeletedByUserId { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();

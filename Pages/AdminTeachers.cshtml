@@ -4,18 +4,18 @@
     ViewData["Title"] = "Quản lý giáo viên";
     Layout = "_AdminLayout";
     ViewData["ActivePage"] = "AdminTeachers";
+    var selectedStatusText = Model.StatusFilter switch
+    {
+        "Active" => "Đang dạy",
+        "Inactive" => "Tạm dừng",
+        _ => "Trạng thái"
+    };
 }
 
 <div class="space-y-6 pb-20">
-    <div class="flex justify-between items-start">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">Quản lý giáo viên</h1>
-            <p class="text-gray-500 mt-1">Quản lý thông tin giáo viên và phân công</p>
-        </div>
-        <a asp-page="/AdminTeachers/Create" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl flex items-center transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Thêm giáo viên
-        </a>
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Quản lý giáo viên</h1>
+        <p class="text-gray-500 mt-1">Quản lý thông tin giáo viên và phân công</p>
     </div>
 
     <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -39,24 +39,40 @@
                     </div>
 
                     <div>
-                        <label for="teacherStatusFilter" class="sr-only">Trạng thái</label>
-                        <select id="teacherStatusFilter" name="StatusFilter" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                            <option value="">Trạng thái</option>
-                            <option value="Active" selected="@(Model.StatusFilter == "Active")">Đang dạy</option>
-                            <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Tạm dừng</option>
-                        </select>
+                        <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" data-filter-value="status" />
+                        <div class="relative" data-search-dropdown>
+                            <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <span data-dropdown-label>@selectedStatusText</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                                <div class="relative p-2">
+                                    <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                    <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
+                                <button type="button" data-dropdown-option data-value="Active" data-label="Đang dạy" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang dạy</button>
+                                <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                            </div>
+                        </div>
                         <span asp-validation-for="StatusFilter" class="mt-1 block text-xs font-medium text-red-600"></span>
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-3">
-                    <a asp-page="/AdminTeachers" class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
-                        Làm mới bộ lọc
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <a asp-page="/AdminTeachers/Create" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Thêm giáo viên
                     </a>
-                    <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
-                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        Tìm kiếm
-                    </button>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <a asp-page="/AdminTeachers" class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
+                            Làm mới bộ lọc
+                        </a>
+                        <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            Tìm kiếm
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -66,6 +82,7 @@
                 <thead>
                     <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
                         <th class="py-4 px-4 text-center font-bold border-r border-slate-200">STT</th>
+                        <th class="py-4 px-4 text-center font-bold border-r border-slate-200">ID</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Giáo viên</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Liên hệ</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Số lớp</th>
@@ -78,7 +95,7 @@
                     @if (Model.Teachers.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="py-10 px-6 text-center text-gray-500">
+                            <td colspan="8" class="py-10 px-6 text-center text-gray-500">
                                 Chưa có giáo viên phù hợp.
                             </td>
                         </tr>
@@ -92,6 +109,9 @@
                                 <td class="py-4 px-4 text-center font-medium text-gray-700 border-r border-gray-200">
                                     @(Model.FirstItemNumber + index)
                                 </td>
+                                <td class="py-4 px-4 text-center font-medium text-gray-900 border-r border-gray-200">
+                                    @teacher.TeacherId
+                                </td>
                                 <td class="py-4 px-6 border-r border-gray-200">
                                     <div class="flex items-center">
                                         @if (!string.IsNullOrWhiteSpace(teacher.AvatarUrl))
@@ -104,7 +124,7 @@
                                         }
                                         <div>
                                             <div class="font-semibold text-gray-900 group-hover:text-gray-950">@teacher.FullName</div>
-                                            <div class="text-xs text-gray-400">ID: @teacher.TeacherCode</div>
+                                            <div class="text-xs text-gray-400">Mã: @teacher.TeacherCode</div>
                                         </div>
                                     </div>
                                 </td>
@@ -208,196 +228,6 @@
     </div>
 </div>
 
-<div id="addTeacherModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
-    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
-        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-            <h3 class="text-lg font-bold text-gray-900">Thêm giáo viên mới</h3>
-            <button type="button" onclick="closeAddTeacherModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-
-        <form id="addTeacherForm" method="post" asp-page-handler="Create" enctype="multipart/form-data" class="space-y-5 px-6 py-5">
-            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
-
-            <div class="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-5">
-                <label class="mb-3 block text-lg font-bold text-gray-900">Ảnh đại diện</label>
-                <div class="mb-4 flex h-36 w-44 items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white">
-                    <img id="avatarPreview" alt="Ảnh đại diện" class="hidden h-full w-full object-contain" />
-                    <svg id="avatarPlaceholder" class="h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
-                        <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
-                        <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
-                        <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
-                    </svg>
-                </div>
-                <input asp-for="Input.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="clearAvatar()" class="inline-flex h-12 w-14 items-center justify-center rounded bg-sky-600 text-white transition-colors hover:bg-sky-700" title="Xóa ảnh">
-                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
-                    </button>
-                    <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-12 rounded bg-sky-600 px-6 text-base font-semibold text-white transition-colors hover:bg-sky-700">Chọn</button>
-                </div>
-                <span asp-validation-for="Input.AvatarFile" class="mt-2 block text-xs font-medium text-red-600"></span>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                    <label asp-for="Input.TeacherCode" class="block text-sm font-semibold text-gray-700">Mã giáo viên (*)</label>
-                    <input asp-for="Input.TeacherCode" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: GV-1-0002" />
-                    <span asp-validation-for="Input.TeacherCode" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="Input.FullName" class="block text-sm font-semibold text-gray-700">Họ và tên (*)</label>
-                    <input asp-for="Input.FullName" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập họ và tên" />
-                    <span asp-validation-for="Input.FullName" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="Input.DateOfBirth" class="block text-sm font-semibold text-gray-700">Ngày tháng năm sinh</label>
-                    <input asp-for="Input.DateOfBirth" type="date" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="Input.DateOfBirth" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="Input.PhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại (*)</label>
-                    <input asp-for="Input.PhoneNumber" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="VD: 0901234567" />
-                    <span asp-validation-for="Input.PhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="Input.Email" class="block text-sm font-semibold text-gray-700">Email</label>
-                    <input asp-for="Input.Email" type="email" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="email@example.com" />
-                    <span asp-validation-for="Input.Email" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="Input.Gender" class="block text-sm font-semibold text-gray-700">Giới tính</label>
-                    <div class="mt-1 grid grid-cols-2 gap-3">
-                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
-                            <input asp-for="Input.Gender" type="radio" value="Nam" checked="@(Model.Input.Gender == "Nam")" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
-                            <span class="ml-2">Nam</span>
-                        </label>
-                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
-                            <input asp-for="Input.Gender" type="radio" value="Nữ" checked="@(Model.Input.Gender == "Nữ")" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
-                            <span class="ml-2">Nữ</span>
-                        </label>
-                    </div>
-                    <span asp-validation-for="Input.Gender" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label asp-for="Input.Address" class="block text-sm font-semibold text-gray-700">Địa chỉ</label>
-                    <input asp-for="Input.Address" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập địa chỉ" />
-                    <span asp-validation-for="Input.Address" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
-                <button type="button" onclick="closeAddTeacherModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu giáo viên</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<div id="editTeacherModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50 px-4">
-    <div class="w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
-        <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-            <h3 class="text-lg font-bold text-gray-900">Xem/Sửa giáo viên</h3>
-            <button type="button" onclick="closeEditTeacherModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-        </div>
-
-        <form id="editTeacherForm" method="post" asp-page-handler="Update" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" enctype="multipart/form-data" class="space-y-5 px-6 py-5">
-            <div asp-validation-summary="ModelOnly" class="text-sm font-medium text-red-600"></div>
-            <input asp-for="EditInput.TeacherId" type="hidden" />
-            <input asp-for="EditInput.RemoveAvatar" type="hidden" value="false" />
-
-            <div class="flex flex-col items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-5">
-                <label class="mb-3 block text-lg font-bold text-gray-900">Ảnh đại diện</label>
-                <div class="mb-4 flex h-36 w-44 items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white">
-                    <img id="editAvatarPreview" alt="Ảnh đại diện" class="hidden h-full w-full object-contain" />
-                    <svg id="editAvatarPlaceholder" class="h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
-                        <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
-                        <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
-                        <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
-                        <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
-                    </svg>
-                </div>
-                <input asp-for="EditInput.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="editAvatarFileInput" onchange="previewEditAvatar(this)" />
-                <div class="flex items-center gap-3">
-                    <button type="button" onclick="clearEditAvatar()" class="inline-flex h-12 w-14 items-center justify-center rounded bg-sky-600 text-white transition-colors hover:bg-sky-700" title="Xóa ảnh">
-                        <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
-                    </button>
-                    <button type="button" onclick="document.getElementById('editAvatarFileInput').click()" class="h-12 rounded bg-sky-600 px-6 text-base font-semibold text-white transition-colors hover:bg-sky-700">Chọn</button>
-                </div>
-                <span asp-validation-for="EditInput.AvatarFile" class="mt-2 block text-xs font-medium text-red-600"></span>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-                <div>
-                    <label asp-for="EditInput.TeacherCode" class="block text-sm font-semibold text-gray-700">Mã giáo viên (*)</label>
-                    <input asp-for="EditInput.TeacherCode" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 uppercase focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="EditInput.TeacherCode" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="EditInput.FullName" class="block text-sm font-semibold text-gray-700">Họ và tên (*)</label>
-                    <input asp-for="EditInput.FullName" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="EditInput.FullName" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="EditInput.DateOfBirth" class="block text-sm font-semibold text-gray-700">Ngày tháng năm sinh</label>
-                    <input asp-for="EditInput.DateOfBirth" type="date" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="EditInput.DateOfBirth" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="EditInput.PhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại (*)</label>
-                    <input asp-for="EditInput.PhoneNumber" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="EditInput.PhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="EditInput.Email" class="block text-sm font-semibold text-gray-700">Email</label>
-                    <input asp-for="EditInput.Email" type="email" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="EditInput.Email" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div>
-                    <label asp-for="EditInput.Gender" class="block text-sm font-semibold text-gray-700">Giới tính</label>
-                    <div class="mt-1 grid grid-cols-2 gap-3">
-                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
-                            <input asp-for="EditInput.Gender" type="radio" value="Nam" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
-                            <span class="ml-2">Nam</span>
-                        </label>
-                        <label class="flex cursor-pointer items-center rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-white">
-                            <input asp-for="EditInput.Gender" type="radio" value="Nữ" class="h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500" />
-                            <span class="ml-2">Nữ</span>
-                        </label>
-                    </div>
-                    <span asp-validation-for="EditInput.Gender" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-
-                <div class="md:col-span-2">
-                    <label asp-for="EditInput.Address" class="block text-sm font-semibold text-gray-700">Địa chỉ</label>
-                    <input asp-for="EditInput.Address" class="mt-1 block w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                    <span asp-validation-for="EditInput.Address" class="mt-1 block text-xs font-medium text-red-600"></span>
-                </div>
-            </div>
-
-            <div class="flex justify-end gap-3 border-t border-gray-100 pt-4">
-                <button type="button" onclick="closeEditTeacherModal()" class="rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Lưu thay đổi</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <div id="resetPasswordConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
     <div class="w-full max-w-xl rounded bg-white shadow-2xl">
         <div class="flex items-center justify-end border-b border-gray-100 px-5 py-4">
@@ -472,120 +302,68 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        function openAddTeacherModal() {
-            const modal = document.getElementById('addTeacherModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
+        document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+            const container = dropdown.parentElement;
+            const hiddenInput = container.querySelector('[data-filter-value]');
+            const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+            const panel = dropdown.querySelector('[data-dropdown-panel]');
+            const label = dropdown.querySelector('[data-dropdown-label]');
+            const searchInput = dropdown.querySelector('[data-dropdown-search]');
+            const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
 
-        function closeAddTeacherModal() {
-            const modal = document.getElementById('addTeacherModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function previewAvatar(input) {
-            const file = input.files && input.files[0];
-            const preview = document.getElementById('avatarPreview');
-            const placeholder = document.getElementById('avatarPlaceholder');
-
-            if (!file) {
-                clearAvatar();
-                return;
+            function close() {
+                panel.classList.add('hidden');
             }
 
-            preview.src = URL.createObjectURL(file);
-            preview.classList.remove('hidden');
-            placeholder.classList.add('hidden');
-        }
+            function open() {
+                document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                panel.classList.remove('hidden');
+                searchInput.value = '';
+                filterOptions('');
+                searchInput.focus();
+            }
 
-        function clearAvatar() {
-            const input = document.getElementById('avatarFileInput');
-            const preview = document.getElementById('avatarPreview');
-            const placeholder = document.getElementById('avatarPlaceholder');
+            function filterOptions(keyword) {
+                const normalizedKeyword = keyword.trim().toLowerCase();
 
-            input.value = '';
-            preview.removeAttribute('src');
-            preview.classList.add('hidden');
-            placeholder.classList.remove('hidden');
-        }
+                options.forEach(option => {
+                    const text = option.textContent.trim().toLowerCase();
+                    const labelText = (option.dataset.label || '').toLowerCase();
+                    const visible = !normalizedKeyword ||
+                        text.includes(normalizedKeyword) ||
+                        labelText.includes(normalizedKeyword);
 
-        async function openEditTeacherModal(teacherId) {
-            const response = await fetch(`?handler=Detail&teacherId=${encodeURIComponent(teacherId)}`, {
-                headers: {
-                    'Accept': 'application/json'
+                    option.classList.toggle('hidden', !visible);
+                });
+            }
+
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+
+                if (panel.classList.contains('hidden')) {
+                    open();
+                } else {
+                    close();
                 }
             });
 
-            if (!response.ok) {
-                return;
-            }
+            searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+            searchInput.addEventListener('click', event => event.stopPropagation());
 
-            const teacher = await response.json();
-            fillEditTeacherForm(teacher);
-
-            const modal = document.getElementById('editTeacherModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeEditTeacherModal() {
-            const modal = document.getElementById('editTeacherModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function fillEditTeacherForm(teacher) {
-            document.getElementById('EditInput_TeacherId').value = teacher.teacherId ?? '';
-            document.getElementById('EditInput_TeacherCode').value = teacher.teacherCode ?? '';
-            document.getElementById('EditInput_FullName').value = teacher.fullName ?? '';
-            document.getElementById('EditInput_DateOfBirth').value = teacher.dateOfBirth ?? '';
-            document.getElementById('EditInput_PhoneNumber').value = teacher.phoneNumber ?? '';
-            document.getElementById('EditInput_Email').value = teacher.email ?? '';
-            document.getElementById('EditInput_Address').value = teacher.address ?? '';
-            document.getElementById('EditInput_RemoveAvatar').value = 'false';
-
-            const gender = teacher.gender === 'Nữ' ? 'Nữ' : 'Nam';
-            document.querySelectorAll('input[name="EditInput.Gender"]').forEach(input => {
-                input.checked = input.value === gender;
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hiddenInput.value = option.dataset.value || '';
+                    label.textContent = option.dataset.label || option.textContent.trim();
+                    close();
+                });
             });
 
-            setEditAvatarPreview(teacher.avatarUrl);
-            document.getElementById('editAvatarFileInput').value = '';
-        }
-
-        function previewEditAvatar(input) {
-            const file = input.files && input.files[0];
-
-            if (!file) {
-                return;
-            }
-
-            document.getElementById('EditInput_RemoveAvatar').value = 'false';
-            setEditAvatarPreview(URL.createObjectURL(file));
-        }
-
-        function clearEditAvatar() {
-            document.getElementById('editAvatarFileInput').value = '';
-            document.getElementById('EditInput_RemoveAvatar').value = 'true';
-            setEditAvatarPreview(null);
-        }
-
-        function setEditAvatarPreview(src) {
-            const preview = document.getElementById('editAvatarPreview');
-            const placeholder = document.getElementById('editAvatarPlaceholder');
-
-            if (src) {
-                preview.src = src;
-                preview.classList.remove('hidden');
-                placeholder.classList.add('hidden');
-                return;
-            }
-
-            preview.removeAttribute('src');
-            preview.classList.add('hidden');
-            placeholder.classList.remove('hidden');
-        }
+            document.addEventListener('click', event => {
+                if (!dropdown.contains(event.target)) {
+                    close();
+                }
+            });
+        });
 
         function openResetPasswordConfirm(button) {
             const teacherId = button.dataset.teacherId;
@@ -635,20 +413,7 @@
             modal.classList.remove('flex');
         }
 
-        const postedHandler = @Json.Serialize(Request.Query["handler"].ToString());
-        const hasCreateErrors = @Json.Serialize(Request.Method == "POST" && !ViewData.ModelState.IsValid) && postedHandler === 'Create';
-        const hasEditErrors = @Json.Serialize(Request.Method == "POST" && !ViewData.ModelState.IsValid) && postedHandler === 'Update';
         const hasResetPasswordValue = @Json.Serialize(!string.IsNullOrWhiteSpace(Model.ResetPasswordValue));
-
-        if (hasCreateErrors) {
-            openAddTeacherModal();
-        }
-
-        if (hasEditErrors) {
-            const modal = document.getElementById('editTeacherModal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
 
         if (hasResetPasswordValue) {
             openResetPasswordResult();

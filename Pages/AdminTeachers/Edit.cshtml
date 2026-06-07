@@ -23,23 +23,23 @@
             <div class="flex flex-col items-center">
                 <label class="mb-4 text-base font-bold text-gray-900">Ảnh đại diện</label>
                 <div class="flex h-36 w-44 items-center justify-center overflow-hidden border border-dashed border-gray-300 bg-white">
-                    <img id="avatarPreview" src="@Model.CurrentAvatarUrl" alt="Ảnh đại diện" class="@(string.IsNullOrWhiteSpace(Model.CurrentAvatarUrl) ? "hidden" : "") h-full w-full object-contain" />
-                    <svg id="avatarPlaceholder" class="@(string.IsNullOrWhiteSpace(Model.CurrentAvatarUrl) ? "" : "hidden") h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
+                    <img id="avatarPreview" src="@Model.ExistingAvatarUrl" alt="Ảnh đại diện" class="@(string.IsNullOrWhiteSpace(Model.ExistingAvatarUrl) ? "hidden" : "") h-full w-full object-contain" />
+                    <svg id="avatarPlaceholder" class="@(string.IsNullOrWhiteSpace(Model.ExistingAvatarUrl) ? "" : "hidden") h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
                         <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
                         <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
                         <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
                         <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
                     </svg>
                 </div>
-                <input asp-for="Input.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
-                <input asp-for="Input.RemoveAvatar" type="hidden" />
+                <input asp-for="AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
+                <input asp-for="RemoveAvatar" type="hidden" />
                 <div class="mt-4 flex gap-2">
                     <button type="button" onclick="clearAvatar(true)" class="inline-flex h-9 w-9 items-center justify-center rounded bg-sky-600 text-white hover:bg-sky-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
                     </button>
                     <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-9 rounded bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700">Chọn</button>
                 </div>
-                <span asp-validation-for="Input.AvatarFile" class="mt-2 text-xs font-medium text-red-600"></span>
+                <span asp-validation-for="AvatarFile" class="mt-2 text-xs font-medium text-red-600"></span>
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">

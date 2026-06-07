@@ -56,20 +56,24 @@ namespace EduBridge.Controllers.Api
                 .Distinct()
                 .CountAsync();
 
-            // Lịch dạy hôm nay (Simplified: Lấy vài lịch dạy của các lớp này)
-            // Ghi chú: Thực tế cần filter theo ClassSchedule.DayOfWeek
-            var schedules = await _context.ClassSchedules
-                .Include(cs => cs.Class)
-                .Where(cs => classIds.Contains(cs.ClassId))
+            // Lịch dạy hôm nay theo buổi học (Lesson) thực tế trong ngày hôm nay
+            var todayDate = DateOnly.FromDateTime(DateTime.Now);
+            var todayLessons = await _context.Lessons
+                .Include(l => l.Class)
+                .Where(l => classIds.Contains(l.ClassId) && l.LessonDate == todayDate)
+                .OrderBy(l => l.StartTime)
+                .Take(5)
                 .ToListAsync();
 
-            var todaySchedulesDto = schedules.Take(5).Select(s => new ScheduleDto
+            var todaySchedulesDto = todayLessons.Select(l => new ScheduleDto
             {
-                ClassId = s.ClassId,
-                ClassName = s.Class.ClassName,
-                Topic = "Bài giảng", // Có thể join với Course để lấy tên bài
-                TimeRange = $"{s.StartTime} - {s.EndTime}",
-                Room = s.Class.Room ?? string.Empty
+                ClassId = l.ClassId,
+                ClassName = l.Class.ClassName,
+                Topic = l.LessonTitle,
+                TimeRange = (l.StartTime.HasValue && l.EndTime.HasValue)
+                    ? $"{l.StartTime.Value.ToString("HH:mm")} - {l.EndTime.Value.ToString("HH:mm")}"
+                    : "Chưa cấu hình giờ học",
+                Room = l.Class.Room ?? string.Empty
             }).ToList();
 
             // Bài tập gần đây (Homeworks thuộc các Lesson của các Lớp này)

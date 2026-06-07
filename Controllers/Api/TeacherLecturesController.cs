@@ -1,117 +1,68 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using EduBridge.Data;
-using EduBridge.Models;
+using System.Threading.Tasks;
 using EduBridge.Models.DTOs.TeacherLectures;
+using EduBridge.Services.Lectures;
+using EduBridge.Contracts.Classes;
 
 namespace EduBridge.Controllers.Api
 {
-    [Route("api/teacher/lectures")]
+    [Route("api/v1/teacher/lectures")]
     [ApiController]
     [Authorize(Policy = "TeacherOnly")]
     public class TeacherLecturesController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ILectureService _lectureService;
 
-        public TeacherLecturesController(AppDbContext context)
+        public TeacherLecturesController(ILectureService lectureService)
         {
-            _context = context;
+            _lectureService = lectureService;
         }
 
         [HttpGet]
-        public async Task<ActionResult<LecturesResponseDto>> GetLecturesData()
+        public async Task<ActionResult<ApiResponse<LecturesResponseDto>>> GetLecturesData()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId))
             {
-                return Unauthorized(new { message = "Không tìm thấy thông tin đăng nhập" });
+                return Unauthorized(new ApiResponse<LecturesResponseDto>(false, "Không tìm thấy thông tin đăng nhập", null));
             }
 
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null)
-            {
-                return NotFound(new { message = "Không tìm thấy hồ sơ giáo viên" });
-            }
-
-            var teacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active")
-                .ToListAsync();
-            
-            var classIds = teacherClasses.Select(c => c.ClassId).ToList();
-
-            var classProgresses = new List<ClassProgressDto>();
-            foreach (var c in teacherClasses)
-            {
-                var totalLessons = 20; 
-                var completedLessons = await _context.Lessons.CountAsync(l => l.ClassId == c.ClassId);
-                
-                classProgresses.Add(new ClassProgressDto
-                {
-                    ClassId = c.ClassId,
-                    ClassName = c.ClassName,
-                    CompletedLessons = completedLessons,
-                    TotalLessons = totalLessons
-                });
-            }
-
-            var lessons = await _context.Lessons
-                .Include(l => l.Class)
-                .Where(l => classIds.Contains(l.ClassId))
-                .OrderByDescending(l => l.CreatedAt)
-                .Take(20)
-                .ToListAsync();
-
-            var lectureHistories = lessons.Select(l => new LectureHistoryDto
-            {
-                LessonId = l.LessonId,
-                DateString = l.CreatedAt.ToString("dd/MM/yyyy"),
-                ClassName = l.Class.ClassName,
-                Topic = l.LessonTitle,
-                Content = l.LessonContent ?? "Không có nội dung",
-                Status = "Hoàn thành",
-                CreatedAt = l.CreatedAt
-            }).ToList();
-
-            var response = new LecturesResponseDto
-            {
-                ClassProgresses = classProgresses,
-                LectureHistories = lectureHistories
-            };
-
-            return Ok(response);
+            var response = await _lectureService.GetLecturesDataAsync(userId);
+            return Ok(new ApiResponse<LecturesResponseDto>(true, "Success", response));
         }
 
         [HttpPost("note")]
-        public async Task<IActionResult> AddLectureNote([FromBody] AddLectureNoteRequest request)
+        public async Task<ActionResult<ApiResponse<bool>>> AddLectureNote([FromBody] AddLectureNoteRequest request)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId))
-                return Unauthorized();
+                return Unauthorized(new ApiResponse<bool>(false, "Chưa đăng nhập", false));
 
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null) return NotFound();
-
-            var classExists = await _context.Classes.AnyAsync(c => c.ClassId == request.ClassId && c.TeacherId == teacher.TeacherId);
-            if (!classExists)
+            var result = await _lectureService.AddLectureNoteAsync(userId, request);
+            if (!result)
             {
-                return Forbid();
+                return BadRequest(new ApiResponse<bool>(false, "Không thể thêm ghi chú bài giảng", false));
             }
 
-            var lesson = new Lesson
+            return Ok(new ApiResponse<bool>(true, "Thêm ghi chú thành công", true));
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse<bool>>> EditLectureNote(int id, [FromBody] EditLectureNoteRequest request)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId))
+                return Unauthorized(new ApiResponse<bool>(false, "Chưa đăng nhập", false));
+
+            var result = await _lectureService.EditLectureNoteAsync(userId, id, request);
+            if (!result)
             {
-                ClassId = request.ClassId,
-                LessonTitle = request.Topic,
-                LessonContent = request.Content,
-                LessonDate = DateOnly.FromDateTime(DateTime.Now),
-                CreatedAt = DateTime.Now
-            };
+                return BadRequest(new ApiResponse<bool>(false, "Không thể cập nhật ghi chú bài giảng", false));
+            }
 
-            _context.Lessons.Add(lesson);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Thêm ghi chú thành công", lessonId = lesson.LessonId });
+            return Ok(new ApiResponse<bool>(true, "Cập nhật ghi chú thành công", true));
         }
     }
 }

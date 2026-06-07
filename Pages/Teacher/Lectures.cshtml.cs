@@ -1,20 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using EduBridge.Data;
 using EduBridge.Models;
-using System.ComponentModel.DataAnnotations;
+using EduBridge.Services.Lectures;
+using EduBridge.Models.DTOs.TeacherLectures;
 
 namespace EduBridge.Pages.Teacher
 {
     public class LecturesModel : PageModel
     {
         private readonly AppDbContext _context;
+        private readonly ILectureService _lectureService;
 
-        public LecturesModel(AppDbContext context)
+        public LecturesModel(AppDbContext context, ILectureService lectureService)
         {
             _context = context;
+            _lectureService = lectureService;
         }
 
         public List<ClassProgressViewModel> ClassesProgress { get; set; } = new();
@@ -33,47 +40,28 @@ namespace EduBridge.Pages.Teacher
             if (teacher == null) return RedirectToPage("/Login");
 
             TeacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active")
+                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
                 .ToListAsync();
 
-            var classIds = TeacherClasses.Select(c => c.ClassId).ToList();
+            var serviceData = await _lectureService.GetLecturesDataAsync(userId);
 
-            // Tính tiến độ: DurationWeeks từ Course là tổng số tuần → ước tính tổng bài
-            var classesWithCourse = await _context.Classes
-                .Include(c => c.Course)
-                .Where(c => classIds.Contains(c.ClassId))
-                .ToListAsync();
-
-            foreach (var c in classesWithCourse)
+            ClassesProgress = serviceData.ClassProgresses.Select(cp => new ClassProgressViewModel
             {
-                var completedLessons = await _context.Lessons.CountAsync(l => l.ClassId == c.ClassId);
-                // Dùng DurationWeeks của Course nếu có, mặc định 20 nếu không
-                var totalLessons = c.Course?.DurationWeeks ?? 20;
+                ClassId = cp.ClassId,
+                ClassName = cp.ClassName,
+                CompletedLessons = cp.CompletedLessons,
+                TotalLessons = cp.TotalLessons
+            }).ToList();
 
-                ClassesProgress.Add(new ClassProgressViewModel
-                {
-                    ClassName = c.ClassName,
-                    CompletedLessons = completedLessons,
-                    TotalLessons = totalLessons
-                });
-            }
-
-            // Lịch sử bài giảng - lấy về in-memory để format
-            var rawLessons = await _context.Lessons
-                .Include(l => l.Class)
-                .Where(l => classIds.Contains(l.ClassId))
-                .OrderByDescending(l => l.CreatedAt)
-                .Take(20)
-                .ToListAsync();
-
-            LectureHistories = rawLessons.Select(l => new LectureHistoryViewModel
+            LectureHistories = serviceData.LectureHistories.Select(lh => new LectureHistoryViewModel
             {
-                LessonId = l.LessonId,
-                DateString = l.LessonDate.ToString("dd/MM/yyyy"),
-                ClassName = l.Class.ClassName,
-                Topic = l.LessonTitle,
-                Content = l.LessonContent ?? "Không có nội dung",
-                Status = "Hoàn thành"
+                LessonId = lh.LessonId,
+                ClassId = lh.ClassId,
+                DateString = lh.DateString,
+                ClassName = lh.ClassName,
+                Topic = lh.Topic,
+                Content = lh.Content,
+                Status = lh.Status
             }).ToList();
 
             return Page();
@@ -84,10 +72,6 @@ namespace EduBridge.Pages.Teacher
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
 
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null) return RedirectToPage("/Login");
-
-            // Validate thủ công: ClassId phải > 0
             if (Input.ClassId <= 0)
             {
                 TempData["ErrorMessage"] = "Vui lòng chọn lớp học.";
@@ -106,35 +90,70 @@ namespace EduBridge.Pages.Teacher
                 return RedirectToPage();
             }
 
-            // Kiểm tra lớp học có thuộc giáo viên này không
-            var classExists = await _context.Classes
-                .AnyAsync(c => c.ClassId == Input.ClassId && c.TeacherId == teacher.TeacherId);
+            var request = new AddLectureNoteRequest
+            {
+                ClassId = Input.ClassId,
+                Topic = Input.Topic,
+                Content = Input.Content,
+                Status = string.IsNullOrWhiteSpace(Input.Status) ? "Scheduled" : Input.Status
+            };
 
-            if (!classExists)
+            var success = await _lectureService.AddLectureNoteAsync(userId, request);
+            if (!success)
             {
                 TempData["ErrorMessage"] = "Lớp học không hợp lệ hoặc bạn không có quyền ghi chú lớp này.";
                 return RedirectToPage();
             }
 
-            var lesson = new Lesson
+            TempData["ToastMessage"] = "Thêm ghi chú bài giảng thành công!";
+            return RedirectToPage();
+        }
+
+        public async Task<IActionResult> OnPostEditNoteAsync()
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
+
+            if (Input.LessonId <= 0)
             {
-                ClassId = Input.ClassId,
-                LessonTitle = Input.Topic.Trim(),
-                LessonContent = Input.Content.Trim(),
-                LessonDate = DateOnly.FromDateTime(DateTime.Now),
-                CreatedAt = DateTime.Now
+                TempData["ErrorMessage"] = "Không xác định được bài giảng cần sửa.";
+                return RedirectToPage();
+            }
+
+            if (string.IsNullOrWhiteSpace(Input.Topic))
+            {
+                TempData["ErrorMessage"] = "Vui lòng nhập chủ đề bài giảng.";
+                return RedirectToPage();
+            }
+
+            if (string.IsNullOrWhiteSpace(Input.Content))
+            {
+                TempData["ErrorMessage"] = "Vui lòng nhập nội dung ghi chú.";
+                return RedirectToPage();
+            }
+
+            var request = new EditLectureNoteRequest
+            {
+                Topic = Input.Topic,
+                Content = Input.Content,
+                Status = string.IsNullOrWhiteSpace(Input.Status) ? "Scheduled" : Input.Status
             };
 
-            _context.Lessons.Add(lesson);
-            await _context.SaveChangesAsync();
+            var success = await _lectureService.EditLectureNoteAsync(userId, Input.LessonId, request);
+            if (!success)
+            {
+                TempData["ErrorMessage"] = "Không thể cập nhật bài giảng. Bài giảng không tồn tại hoặc bạn không có quyền sửa.";
+                return RedirectToPage();
+            }
 
-            TempData["ToastMessage"] = "Thêm ghi chú bài giảng thành công!";
+            TempData["ToastMessage"] = "Cập nhật bài giảng thành công!";
             return RedirectToPage();
         }
     }
 
     public class ClassProgressViewModel
     {
+        public int ClassId { get; set; }
         public string ClassName { get; set; } = string.Empty;
         public int CompletedLessons { get; set; }
         public int TotalLessons { get; set; }
@@ -144,6 +163,7 @@ namespace EduBridge.Pages.Teacher
     public class LectureHistoryViewModel
     {
         public int LessonId { get; set; }
+        public int ClassId { get; set; }
         public string DateString { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
         public string Topic { get; set; } = string.Empty;
@@ -153,8 +173,10 @@ namespace EduBridge.Pages.Teacher
 
     public class AddNoteInputModel
     {
+        public int LessonId { get; set; }
         public int ClassId { get; set; }
         public string Topic { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
+        public string Status { get; set; } = "Scheduled";
     }
 }

@@ -1,0 +1,200 @@
+@page
+@model EduBridge.Pages.AdminClasses.CreateModel
+@{
+    ViewData["Title"] = "Thêm lớp học";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminClasses";
+}
+
+<form method="post" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200">
+    <input asp-for="Input.CenterId" type="hidden" />
+
+    <div class="border-b border-gray-200 pb-3">
+        <h1 class="text-lg font-bold text-gray-900">Thêm lớp học</h1>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+
+    <section class="border border-gray-200">
+        <div class="border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Thông tin lớp học</h2>
+        </div>
+
+        <div class="grid gap-5 p-5 lg:grid-cols-2">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Mã lớp</label>
+                <input value="@Model.Options.SuggestedClassCode" readonly class="mt-1 h-11 w-full border border-gray-300 bg-gray-100 px-3 text-sm text-gray-600" />
+                <p class="mt-1 text-xs text-gray-500">Hệ thống cấp mã chính thức khi lưu lớp.</p>
+            </div>
+
+            <div>
+                <label asp-for="Input.ClassName" class="block text-sm font-semibold text-gray-700">Tên lớp (*)</label>
+                <input asp-for="Input.ClassName" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tên lớp" />
+                <span asp-validation-for="Input.ClassName" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.CourseId" class="block text-sm font-semibold text-gray-700">Môn học (*)</label>
+                <select asp-for="Input.CourseId" id="classCourse" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none">
+                    <option value="0">Chọn môn học</option>
+                    @foreach (var course in Model.Options.Courses)
+                    {
+                        <option value="@course.CourseId" data-total-sessions="@course.TotalSessions">@course.CourseCode - @course.CourseName</option>
+                    }
+                </select>
+                <span asp-validation-for="Input.CourseId" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.TotalSessions" class="block text-sm font-semibold text-gray-700">Tổng số buổi (*)</label>
+                <input asp-for="Input.TotalSessions" id="classTotalSessions" type="number" min="1" max="1000" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Theo môn học" />
+                <span asp-validation-for="Input.TotalSessions" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.TeacherId" class="block text-sm font-semibold text-gray-700">Giáo viên (*)</label>
+                <select asp-for="Input.TeacherId" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none">
+                    <option value="0">Chọn giáo viên</option>
+                    @foreach (var teacher in Model.Options.Teachers)
+                    {
+                        <option value="@teacher.TeacherId">@teacher.TeacherCode - @teacher.TeacherName</option>
+                    }
+                </select>
+                <span asp-validation-for="Input.TeacherId" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.RoomId" class="block text-sm font-semibold text-gray-700">Phòng học (*)</label>
+                <select asp-for="Input.RoomId" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none">
+                    <option value="0">Chọn phòng học</option>
+                    @foreach (var room in Model.Options.Rooms)
+                    {
+                        <option value="@room.RoomId">@room.RoomCode - @room.RoomName</option>
+                    }
+                </select>
+                <span asp-validation-for="Input.RoomId" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.StartDate" class="block text-sm font-semibold text-gray-700">Ngày khai giảng (*)</label>
+                <div class="relative mt-1">
+                    <input name="Input.StartDate" id="Input_StartDate" type="hidden" data-date-hidden="class-create-start" value="@Model.Input.StartDate?.ToString("yyyy-MM-dd")" />
+                    <input type="text" data-date-display="class-create-start" value="@Model.Input.StartDate?.ToString("dd/MM/yyyy")" autocomplete="off" class="h-11 w-full border border-gray-300 px-3 pr-12 text-sm focus:border-blue-500 focus:outline-none" placeholder="dd/mm/yyyy" />
+                    <button type="button" data-date-toggle="class-create-start" class="absolute right-0 top-0 flex h-11 w-11 items-center justify-center bg-sky-600 text-white">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+                    </button>
+                </div>
+                <span asp-validation-for="Input.StartDate" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Ngày kết thúc dự kiến</label>
+                <input id="classEndDatePreview" readonly class="mt-1 h-11 w-full border border-gray-300 bg-gray-100 px-3 text-sm text-gray-600" placeholder="Tự tính theo lịch học" />
+            </div>
+        </div>
+    </section>
+
+    <section class="border border-gray-200">
+        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Lịch học</h2>
+            <button id="addScheduleButton" type="button" class="inline-flex h-9 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">
+                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Thêm lịch
+            </button>
+        </div>
+
+        <div class="overflow-x-auto p-5">
+            <div class="min-w-[850px] border border-gray-200">
+                <div class="grid grid-cols-[1fr_1.4fr_1fr_1fr_64px] bg-gray-50 text-sm font-semibold text-gray-700">
+                    <div class="px-3 py-3">Thứ (*)</div>
+                    <div class="px-3 py-3">Ca học gợi ý</div>
+                    <div class="px-3 py-3">Giờ bắt đầu (*)</div>
+                    <div class="px-3 py-3">Giờ kết thúc (*)</div>
+                    <div class="px-3 py-3 text-center">Xóa</div>
+                </div>
+                <div id="scheduleRows" class="divide-y divide-gray-200">
+                    @for (var index = 0; index < Model.Input.Schedules.Count; index++)
+                    {
+                        <div class="schedule-row grid grid-cols-[1fr_1.4fr_1fr_1fr_64px] items-start gap-3 px-3 py-3">
+                            <div>
+                                <select name="Input.Schedules[@index].DayOfWeek" class="schedule-day h-11 w-full border border-gray-300 px-3 text-sm">
+                                    <option value="0">Chọn thứ</option>
+                                    @for (byte day = 1; day <= 7; day++)
+                                    {
+                                        <option value="@day" selected="@(Model.Input.Schedules[index].DayOfWeek == day)">@GetDayLabel(day)</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Input.Schedules[index].DayOfWeek" class="mt-1 block text-xs font-medium text-red-600"></span>
+                            </div>
+                            <select name="Input.Schedules[@index].StudyShiftId" class="schedule-shift h-11 w-full border border-gray-300 px-3 text-sm">
+                                <option value="">Tự chọn giờ</option>
+                                @foreach (var shift in Model.Options.StudyShifts)
+                                {
+                                    <option value="@shift.StudyShiftId" data-start="@shift.StartTime.ToString("HH:mm")" data-end="@shift.EndTime.ToString("HH:mm")" selected="@(Model.Input.Schedules[index].StudyShiftId == shift.StudyShiftId)">@shift.ShiftCode - @shift.ShiftName (@shift.StartTime.ToString("HH:mm")-@shift.EndTime.ToString("HH:mm"))</option>
+                                }
+                            </select>
+                            <div>
+                                <input name="Input.Schedules[@index].StartTime" type="time" value="@Model.Input.Schedules[index].StartTime?.ToString("HH:mm")" class="schedule-start h-11 w-full border border-gray-300 px-3 text-sm" />
+                                <span asp-validation-for="Input.Schedules[index].StartTime" class="mt-1 block text-xs font-medium text-red-600"></span>
+                            </div>
+                            <div>
+                                <input name="Input.Schedules[@index].EndTime" type="time" value="@Model.Input.Schedules[index].EndTime?.ToString("HH:mm")" class="schedule-end h-11 w-full border border-gray-300 px-3 text-sm" />
+                                <span asp-validation-for="Input.Schedules[index].EndTime" class="mt-1 block text-xs font-medium text-red-600"></span>
+                            </div>
+                            <button type="button" class="remove-schedule mt-1 flex h-9 w-9 items-center justify-center rounded border border-red-400 text-red-500 hover:bg-red-50" title="Xóa lịch">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12m-10 0l1 13h6l1-13m-6 0V4h4v3"></path></svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+            <span asp-validation-for="Input.Schedules" class="mt-2 block text-xs font-medium text-red-600"></span>
+        </div>
+    </section>
+
+    <div class="flex justify-end gap-3">
+        <a asp-page="/AdminClasses" class="rounded border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Hủy</a>
+        <button type="submit" class="rounded bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Lưu lớp học</button>
+    </div>
+</form>
+
+<template id="scheduleRowTemplate">
+    <div class="schedule-row grid grid-cols-[1fr_1.4fr_1fr_1fr_64px] items-start gap-3 px-3 py-3">
+        <select data-field="DayOfWeek" class="schedule-day h-11 w-full border border-gray-300 px-3 text-sm">
+            <option value="0">Chọn thứ</option>
+            <option value="1">Thứ 2</option><option value="2">Thứ 3</option><option value="3">Thứ 4</option>
+            <option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option><option value="7">Chủ nhật</option>
+        </select>
+        <select data-field="StudyShiftId" class="schedule-shift h-11 w-full border border-gray-300 px-3 text-sm">
+            <option value="">Tự chọn giờ</option>
+            @foreach (var shift in Model.Options.StudyShifts)
+            {
+                <option value="@shift.StudyShiftId" data-start="@shift.StartTime.ToString("HH:mm")" data-end="@shift.EndTime.ToString("HH:mm")">@shift.ShiftCode - @shift.ShiftName (@shift.StartTime.ToString("HH:mm")-@shift.EndTime.ToString("HH:mm"))</option>
+            }
+        </select>
+        <input data-field="StartTime" type="time" class="schedule-start h-11 w-full border border-gray-300 px-3 text-sm" />
+        <input data-field="EndTime" type="time" class="schedule-end h-11 w-full border border-gray-300 px-3 text-sm" />
+        <button type="button" class="remove-schedule mt-1 flex h-9 w-9 items-center justify-center rounded border border-red-400 text-red-500 hover:bg-red-50" title="Xóa lịch">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12m-10 0l1 13h6l1-13m-6 0V4h4v3"></path></svg>
+        </button>
+    </div>
+</template>
+
+@functions {
+    private static string GetDayLabel(byte day) => day switch
+    {
+        1 => "Thứ 2",
+        2 => "Thứ 3",
+        3 => "Thứ 4",
+        4 => "Thứ 5",
+        5 => "Thứ 6",
+        6 => "Thứ 7",
+        7 => "Chủ nhật",
+        _ => string.Empty
+    };
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/class-create.js" asp-append-version="true"></script>
+}

@@ -22,6 +22,7 @@ namespace EduBridge.Models.DTOs.TeacherLectures
     public class LectureHistoryDto
     {
         public int LessonId { get; set; }
+        public int ClassId { get; set; }
         public string DateString { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
         public string Topic { get; set; } = string.Empty;
@@ -41,5 +42,21 @@ namespace EduBridge.Models.DTOs.TeacherLectures
         
         [Required]
         public string Content { get; set; } = string.Empty;
+
+        [Required]
+        public string Status { get; set; } = "Scheduled";
+    }
+
+    public class EditLectureNoteRequest
+    {
+        [Required]
+        [StringLength(200)]
+        public string Topic { get; set; } = string.Empty;
+        
+        [Required]
+        public string Content { get; set; } = string.Empty;
+
+        [Required]
+        public string Status { get; set; } = "Scheduled";
     }
 }
