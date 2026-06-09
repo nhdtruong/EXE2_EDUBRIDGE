@@ -1,7 +1,9 @@
 using System.Data;
 using EduBridge.Contracts.Classes;
+using EduBridge.Contracts.Finance;
 using EduBridge.Data;
 using EduBridge.Models;
+using EduBridge.Services.Finance;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Services.Classes;
@@ -10,11 +12,13 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<ClassEnrollmentService> _logger;
+    private readonly IInvoiceService _invoiceService;
 
-    public ClassEnrollmentService(AppDbContext context, ILogger<ClassEnrollmentService> logger)
+    public ClassEnrollmentService(AppDbContext context, ILogger<ClassEnrollmentService> logger, IInvoiceService invoiceService)
     {
         _context = context;
         _logger = logger;
+        _invoiceService = invoiceService;
     }
 
     public async Task<ClassOperationResult<IReadOnlyList<EnrolledStudentResponse>>> GetEnrolledStudentsAsync(
@@ -129,6 +133,27 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
             }
 
             await _context.SaveChangesAsync(cancellationToken);
+
+            // AUTO-CREATE INVOICE
+            foreach (var enrollment in result)
+            {
+                var invoiceReq = new CreateInvoiceRequest(
+                    StudentId: enrollment.StudentId,
+                    ClassId: classId,
+                    Amount: null,
+                    DiscountAmount: null,
+                    DiscountNote: null,
+                    DueDate: null,
+                    Description: "Hóa đơn tự động khi đăng ký học"
+                );
+                
+                var invoiceResult = await _invoiceService.CreateInvoiceAsync(invoiceReq, cls.CenterId, ownerUserId, cancellationToken);
+                if (!invoiceResult.IsSuccess)
+                {
+                    return Failure<EnrollStudentsResponse>($"Lỗi khi tạo hóa đơn cho học sinh: {invoiceResult.Message}");
+                }
+            }
+
             await transaction.CommitAsync(cancellationToken);
 
             var response = result.Join(students, e => e.StudentId, s => s.StudentId,
@@ -164,8 +189,29 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
         enrollment.UpdatedByUserId = ownerUserId;
         enrollment.Note = NormalizeNote(note);
         AddHistory(enrollment, oldStatus, "Đã nghỉ", ownerUserId, now, note);
+
+        var invoice = await _context.Invoices.FirstOrDefaultAsync(i => i.ClassId == classId && i.StudentId == studentId, cancellationToken);
+        bool hasWarning = false;
+        if (invoice != null)
+        {
+            if (invoice.Status == "Unpaid")
+            {
+                invoice.Status = "Cancelled";
+                invoice.UpdatedAt = now;
+            }
+            else if (invoice.Status == "Partial" || invoice.Status == "Paid")
+            {
+                hasWarning = true;
+            }
+        }
+
         await _context.SaveChangesAsync(cancellationToken);
-        return ClassOperationResult<bool>.Success(true, "Đã gỡ học sinh khỏi lớp và giữ nguyên lịch sử.");
+        
+        string successMessage = hasWarning 
+            ? "Đã gỡ học sinh khỏi lớp. LƯU Ý: Học sinh này đã có thanh toán học phí, bạn cần kiểm tra và xử lý hoàn tiền thủ công nếu cần!"
+            : "Đã gỡ học sinh khỏi lớp và giữ nguyên lịch sử.";
+            
+        return ClassOperationResult<bool>.Success(true, successMessage);
     }
 
     private IQueryable<Class> ManagedClasses(int ownerUserId) =>

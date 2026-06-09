@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -21,6 +21,8 @@ public partial class Center
 
     public DateTime CreatedAt { get; set; }
 
+    public string? SettingsJson { get; set; }
+
     public virtual ICollection<CenterUser> CenterUsers { get; set; } = new List<CenterUser>();
 
     public virtual ICollection<ClassCodeCounter> ClassCodeCounters { get; set; } = new List<ClassCodeCounter>();
@@ -29,7 +31,15 @@ public partial class Center
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 
+    public virtual ICollection<InvoiceCodeCounter> InvoiceCodeCounters { get; set; } = new List<InvoiceCodeCounter>();
+
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
     public virtual User OwnerUser { get; set; } = null!;
+
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 

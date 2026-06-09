@@ -1,226 +1,202 @@
 @page
 @model EduBridge.Pages.AdminSettingsModel
 @{
-    ViewData["Title"] = "Cài đặt hệ thống";
+    ViewData["Title"] = "Cài đặt trung tâm";
     Layout = "_AdminLayout";
     ViewData["ActivePage"] = "AdminSettings";
 }
 
-<div class="space-y-6 pb-20">
-    <!-- Header -->
-    <div>
-        <h1 class="text-3xl font-bold text-gray-900">Cài đặt hệ thống</h1>
-        <p class="text-gray-500 mt-1">Cấu hình và tùy chỉnh hệ thống</p>
-    </div>
-
-    <!-- Settings Card -->
-    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden max-w-4xl">
-        <div class="p-6 border-b border-gray-100 bg-white">
-            <h3 class="text-base font-bold text-gray-900">Thông tin trung tâm</h3>
-            <p class="text-xs text-gray-500 mt-1">Cập nhật thông tin cơ bản của trung tâm</p>
-        </div>
-
-        <form id="settingsForm" onsubmit="saveSettings(event)" class="p-6 space-y-6">
-            <!-- Tên trung tâm -->
-            <div class="space-y-2">
-                <label for="centerName" class="block text-sm font-semibold text-gray-700">Tên trung tâm</label>
-                <input type="text" id="centerName" value="Trung tâm EduBridge" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập tên trung tâm...">
-            </div>
-
-            <!-- Địa chỉ -->
-            <div class="space-y-2">
-                <label for="centerAddress" class="block text-sm font-semibold text-gray-700">Địa chỉ</label>
-                <input type="text" id="centerAddress" value="123 Đường ABC, Quận 1, TP.HCM" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập địa chỉ trung tâm...">
-            </div>
-
-            <!-- Phone & Email -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label for="centerPhone" class="block text-sm font-semibold text-gray-700">Số điện thoại</label>
-                    <input type="tel" id="centerPhone" value="0901234567" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập số điện thoại...">
-                </div>
-                <div class="space-y-2">
-                    <label for="centerEmail" class="block text-sm font-semibold text-gray-700">Email</label>
-                    <input type="email" id="centerEmail" value="info@edubridge.com" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập địa chỉ email...">
-                </div>
-            </div>
-
-            <!-- Giới thiệu -->
-            <div class="space-y-2">
-                <label for="centerIntro" class="block text-sm font-semibold text-gray-700">Giới thiệu</label>
-                <textarea id="centerIntro" rows="4" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Giới thiệu về trung tâm...">EduBridge là trung tâm giáo dục chất lượng cao với đội ngũ giáo viên giàu kinh nghiệm.</textarea>
-            </div>
-
-            <!-- Save Button -->
-            <div class="pt-2">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl inline-flex items-center gap-2 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                    Lưu thay đổi
-                </button>
-            </div>
-        </form>
-    </div>
-
-    <!-- Automatic Notifications Card -->
-    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden max-w-4xl mt-6">
-        <div class="p-6 border-b border-gray-100 bg-white flex items-center gap-3">
-            <div class="bg-blue-50 p-2.5 rounded-xl text-blue-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-            </div>
-            <div>
-                <h3 class="text-base font-bold text-gray-900">Thông báo tự động</h3>
-                <p class="text-xs text-gray-500 mt-1">Cấu hình gửi thông báo tự động cho phụ huynh</p>
-            </div>
-        </div>
-
-        <div class="p-6 space-y-6 divide-y divide-gray-100">
-            <!-- Item 1 -->
-            <div class="flex items-center justify-between py-4 first:pt-0">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-900">Thông báo bài tập mới</h4>
-                    <p class="text-xs text-gray-500 mt-1">Gửi thông báo khi có bài tập mới được giao</p>
-                </div>
-                <!-- Toggle Switch -->
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                </label>
-            </div>
-
-            <!-- Item 2 -->
-            <div class="flex items-center justify-between py-4">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-900">Thông báo điểm số</h4>
-                    <p class="text-xs text-gray-500 mt-1">Gửi thông báo khi có điểm mới được cập nhật</p>
-                </div>
-                <!-- Toggle Switch -->
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                </label>
-            </div>
-
-            <!-- Item 3 -->
-            <div class="flex items-center justify-between py-4">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-900">Nhắc nhở học phí</h4>
-                    <p class="text-xs text-gray-500 mt-1">Nhắc nhở tự động trước 3 ngày đến hạn đóng</p>
-                </div>
-                <!-- Toggle Switch -->
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                </label>
-            </div>
-
-            <!-- Item 4 -->
-            <div class="flex items-center justify-between py-4">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-900">Thông báo điểm danh</h4>
-                    <p class="text-xs text-gray-500 mt-1">Gửi thông báo khi học sinh vắng mặt</p>
-                </div>
-                <!-- Toggle Switch -->
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                </label>
-            </div>
-
-            <!-- Select Dropdown -->
-            <div class="space-y-2 py-4 pb-0">
-                <label for="notificationTime" class="block text-sm font-semibold text-gray-900">Thời gian gửi thông báo</label>
-                <div class="relative max-w-full">
-                    <select id="notificationTime" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200 appearance-none">
-                        <option value="18:00">18:00</option>
-                        <option value="08:00">08:00</option>
-                        <option value="12:00">12:00</option>
-                        <option value="20:00">20:00</option>
-                    </select>
-                    <!-- Select Custom Arrow -->
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                    </div>
-                </div>
-            </div>
+<div class="container-fluid px-4 py-6">
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Cài đặt hệ thống</h1>
+            <p class="text-sm text-gray-500 mt-1">Cấu hình các quy tắc vận hành cho trung tâm của bạn</p>
         </div>
     </div>
 
-    <!-- Tuition Fee Management Card -->
-    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden max-w-4xl mt-6">
-        <div class="p-6 border-b border-gray-100 bg-white">
-            <h3 class="text-base font-bold text-gray-900">Quản lý học phí</h3>
-            <p class="text-xs text-gray-500 mt-1">Cấu hình các gói học phí và phương thức thanh toán</p>
-        </div>
-
-        <form id="tuitionSettingsForm" onsubmit="saveSettings(event)" class="p-6 space-y-6">
-            <!-- Học phí mặc định (VNĐ/tháng) -->
-            <div class="space-y-2">
-                <label for="defaultTuition" class="block text-sm font-semibold text-gray-700">Học phí mặc định (VNĐ/tháng)</label>
-                <input type="number" id="defaultTuition" value="1500000" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200" placeholder="Nhập học phí mặc định...">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="mb-4 rounded-lg bg-green-50 p-4 border border-green-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-800">@TempData["SuccessMessage"]</p>
+                </div>
             </div>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="mb-4 rounded-lg bg-red-50 p-4 border border-red-200">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-red-800">@TempData["ErrorMessage"]</p>
+                </div>
+            </div>
+        </div>
+    }
 
-            <!-- Ngày đóng học phí hàng tháng -->
-            <div class="space-y-2">
-                <label for="tuitionDueDay" class="block text-sm font-semibold text-gray-700">Ngày đóng học phí hàng tháng</label>
-                <div class="relative w-full">
-                    <select id="tuitionDueDay" class="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-900 focus:bg-white focus:ring-1 focus:ring-blue-500 focus:border-blue-500 focus:outline-none sm:text-sm transition-all duration-200 appearance-none">
-                        <option value="5">Ngày 5</option>
-                        <option value="10">Ngày 10</option>
-                        <option value="15">Ngày 15</option>
-                        <option value="20">Ngày 20</option>
-                        <option value="25">Ngày 25</option>
-                    </select>
-                    <!-- Custom Arrow -->
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
-                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+    <form method="post" id="settingsForm">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Sidebar -->
+            <div class="md:col-span-1">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-2 space-y-1">
+                        <button type="button" class="tab-btn w-full text-left px-4 py-2.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors" data-target="general-tab">
+                            <i class="fas fa-building w-5 text-center mr-2"></i> Cài đặt chung
+                        </button>
+                        @* <button type="button" class="tab-btn w-full text-left px-4 py-2.5 text-sm font-medium rounded-md text-gray-700 hover:bg-gray-50 transition-colors" data-target="finance-tab"> *@
+                        @*     <i class="fas fa-file-invoice-dollar w-5 text-center mr-2"></i> Tài chính & Hóa đơn *@
+                        @* </button> *@
                     </div>
                 </div>
             </div>
 
-            <!-- Cho phép đóng trễ (Toggle) -->
-            <div class="flex items-center justify-between py-2">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-900">Cho phép đóng trễ</h4>
-                    <p class="text-xs text-gray-500 mt-1">Cho phép đóng học phí muộn hơn hạn</p>
+            <!-- Content Area -->
+            <div class="md:col-span-3">
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    
+                    <!-- General Settings Tab -->
+                    <div id="general-tab" class="tab-content p-6 block">
+                        <h2 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Hồ sơ trung tâm</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Tên trung tâm <span class="text-red-500">*</span></label>
+                                <input asp-for="SettingsDto.General.CenterName" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" required>
+                                <span asp-validation-for="SettingsDto.General.CenterName" class="text-red-500 text-xs"></span>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Địa chỉ</label>
+                                <input asp-for="SettingsDto.General.Address" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                                    <input asp-for="SettingsDto.General.PhoneNumber" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Email liên hệ</label>
+                                    <input asp-for="SettingsDto.General.Email" type="email" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Múi giờ</label>
+                                    <select asp-for="SettingsDto.General.TimeZone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                        <option value="Asia/Ho_Chi_Minh">(GMT+07:00) Asia/Ho_Chi_Minh</option>
+                                    </select>
+                                </div>
+                                @* <div> *@
+                                @*     <label class="block text-sm font-medium text-gray-700">Ngày làm việc</label> *@
+                                @*     <input asp-for="SettingsDto.General.WorkingDays" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="VD: 2,3,4,5,6,7"> *@
+                                @*     <p class="mt-1 text-xs text-gray-500">Nhập số tương ứng với thứ trong tuần, cách nhau bởi dấu phẩy.</p> *@
+                                @* </div> *@
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Finance Settings Tab -->
+                    <div id="finance-tab" class="tab-content p-6 hidden">
+                        <h2 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Quy tắc Tài chính</h2>
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Số ngày đến hạn thanh toán</label>
+                                    <div class="mt-1 relative rounded-md shadow-sm">
+                                        <input asp-for="SettingsDto.Finance.DefaultInvoiceDueDays" type="number" min="0" max="365" class="block w-full rounded-md border-gray-300 pr-12 focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500 sm:text-sm">ngày</span>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="SettingsDto.Finance.DefaultInvoiceDueDays" class="text-red-500 text-xs"></span>
+                                    <p class="mt-1 text-xs text-gray-500">Mặc định dùng khi tạo hóa đơn mới.</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">Tiền tệ</label>
+                                    <select asp-for="SettingsDto.Finance.Currency" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                        <option value="VND">VNĐ (Việt Nam Đồng)</option>
+                                        <option value="USD">USD (Đô la Mỹ)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Phương thức thanh toán được hỗ trợ</label>
+                                <input asp-for="SettingsDto.Finance.PaymentMethods" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="VD: CASH,TRANSFER">
+                                <p class="mt-1 text-xs text-gray-500">Các phương thức cách nhau bởi dấu phẩy.</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Định dạng mã biên lai</label>
+                                <input asp-for="SettingsDto.Finance.ReceiptNumberingFormat" type="text" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <p class="mt-1 text-xs text-gray-500">Ví dụ: BL-{YYYYMMDD}-{ID}</p>
+                            </div>
+                            
+                            <div class="flex items-start mt-4">
+                                <div class="flex items-center h-5">
+                                    <input asp-for="SettingsDto.Finance.ShowTaxOnInvoice" type="checkbox" class="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                </div>
+                                <div class="ml-3 text-sm">
+                                    <label class="font-medium text-gray-700">Hiển thị Thuế/VAT trên hóa đơn</label>
+                                    <p class="text-gray-500">Bật nếu trung tâm của bạn có thu thuế và muốn in trên biên lai.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Action -->
+                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end rounded-b-lg">
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            <i class="fas fa-save mr-2 mt-0.5"></i> Lưu cấu hình
+                        </button>
+                    </div>
+
                 </div>
-                <!-- Toggle Switch -->
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked class="sr-only peer">
-                    <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                </label>
             </div>
-
-            <!-- Save Button -->
-            <div class="pt-2">
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl inline-flex items-center gap-2 transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-                    Lưu cài đặt
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Premium Toast Notification -->
-<div id="toast" class="fixed top-5 right-5 z-50 bg-green-600 text-white font-semibold px-5 py-3.5 rounded-xl shadow-xl transform translate-y-[-100px] opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-    <span>Đã lưu các thay đổi cấu hình hệ thống thành công!</span>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
-        function saveSettings(event) {
-            event.preventDefault();
-            
-            // Show toast message
-            const toast = document.getElementById('toast');
-            toast.classList.remove('translate-y-[-100px]', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const contents = document.querySelectorAll('.tab-content');
 
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-[-100px]', 'opacity-0');
-            }, 4000);
-        }
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Remove active from all tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('bg-blue-50', 'text-blue-700');
+                        t.classList.add('text-gray-700');
+                    });
+                    
+                    // Hide all contents
+                    contents.forEach(c => {
+                        c.classList.remove('block');
+                        c.classList.add('hidden');
+                    });
+
+                    // Set active to clicked tab
+                    tab.classList.remove('text-gray-700');
+                    tab.classList.add('bg-blue-50', 'text-blue-700');
+                    
+                    // Show target content
+                    const targetId = tab.getAttribute('data-target');
+                    document.getElementById(targetId).classList.remove('hidden');
+                    document.getElementById(targetId).classList.add('block');
+                });
+            });
+        });
     </script>
 }

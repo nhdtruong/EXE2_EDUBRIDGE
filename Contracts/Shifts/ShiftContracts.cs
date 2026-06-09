@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace EduBridge.Contracts.Shifts;
 
 public sealed record ShiftQuery(
@@ -31,14 +33,38 @@ public sealed record ShiftListItemDto(
     string StatusText
 );
 
-public sealed record SaveShiftRequest(
-    string ShiftCode,
-    string ShiftName,
-    TimeOnly StartTime,
-    TimeOnly EndTime,
-    string Status,
-    string? Note
-);
+public sealed class SaveShiftRequest
+{
+    [Required(ErrorMessage = "Vui lòng nhập mã ca.")]
+    [MaxLength(30, ErrorMessage = "Mã ca không được vượt quá 30 ký tự.")]
+    public string ShiftCode { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Vui lòng nhập tên ca.")]
+    [MaxLength(100, ErrorMessage = "Tên ca không được vượt quá 100 ký tự.")]
+    public string ShiftName { get; set; } = string.Empty;
+
+    public TimeOnly StartTime { get; set; }
+    
+    public TimeOnly EndTime { get; set; }
+
+    [Required(ErrorMessage = "Vui lòng chọn trạng thái ca.")]
+    public string Status { get; set; } = string.Empty;
+
+    [MaxLength(255, ErrorMessage = "Ghi chú không được vượt quá 255 ký tự.")]
+    public string? Note { get; set; }
+
+    public SaveShiftRequest() { }
+
+    public SaveShiftRequest(string shiftCode, string shiftName, TimeOnly startTime, TimeOnly endTime, string status, string? note)
+    {
+        ShiftCode = shiftCode;
+        ShiftName = shiftName;
+        StartTime = startTime;
+        EndTime = endTime;
+        Status = status;
+        Note = note;
+    }
+}
 
 public sealed record ShiftMutationResponse(
     int StudyShiftId,

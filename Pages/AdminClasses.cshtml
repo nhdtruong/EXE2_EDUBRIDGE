@@ -474,21 +474,35 @@
             }
             else
             {
-            <table class="min-w-[1560px] w-full text-left border-collapse">
+            <table class="w-full table-fixed text-left border-collapse text-[12px]">
+                <colgroup>
+                    <col class="w-[3.5%]" />
+                    <col class="w-[3%]" />
+                    <col class="w-[8%]" />
+                    <col class="w-[10.5%]" />
+                    <col class="w-[7.5%]" />
+                    <col class="w-[7.5%]" />
+                    <col class="w-[4%]" />
+                    <col class="w-[11%]" />
+                    <col class="w-[10%]" />
+                    <col class="w-[7.5%]" />
+                    <col class="w-[9%]" />
+                    <col class="w-[8.5%]" />
+                </colgroup>
                 <thead>
-                    <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
-                        <th class="py-3 px-3 text-center font-bold border-r border-slate-200">STT</th>
-                        <th class="py-3 px-3 text-center font-bold border-r border-slate-200">ID</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Mã lớp</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Tên lớp</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Môn học</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Giáo viên</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Sĩ số</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Lịch học</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Thời gian học</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Phòng</th>
-                        <th class="py-3 px-4 font-bold border-r border-slate-200">Trạng thái</th>
-                        <th class="py-3 px-4 font-bold text-right">Thao tác</th>
+                    <tr class="bg-slate-100 border-b border-slate-200 text-[12px] font-bold text-slate-800">
+                        <th class="py-3 px-2 text-center font-bold border-r border-slate-200">STT</th>
+                        <th class="py-3 px-2 text-center font-bold border-r border-slate-200">ID</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Mã lớp</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Tên lớp</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Môn học</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Giáo viên</th>
+                        <th class="py-3 px-2 text-center font-bold border-r border-slate-200">Sĩ số</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Lịch học</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Thời gian học</th>
+                        <th class="py-3 px-2 font-bold border-r border-slate-200">Phòng</th>
+                        <th class="py-3 px-2 text-center font-bold border-r border-slate-200">Trạng thái</th>
+                        <th class="py-3 px-2 font-bold text-center">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="text-xs divide-y divide-gray-100">
@@ -506,46 +520,46 @@
                         {
                             var cls = Model.Classes[index];
                             <tr class="group hover:bg-slate-100 transition-colors">
-                                <td class="py-4 px-3 text-center font-medium text-gray-700 border-r border-gray-200">@(Model.FirstClassItemNumber + index)</td>
-                                <td class="py-4 px-3 text-center font-medium text-gray-900 border-r border-gray-200">@cls.ClassId</td>
-                                <td class="py-4 px-4 font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@cls.ClassCode</td>
-                                <td class="py-4 px-4 font-semibold text-gray-900 border-r border-gray-200">@cls.ClassName</td>
-                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">@cls.CourseName</td>
-                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">@cls.TeacherName</td>
-                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">
-                                    <div class="flex items-center">
-                                        <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                <td class="py-3 px-2 text-center font-medium text-gray-700 border-r border-gray-200">@(Model.FirstClassItemNumber + index)</td>
+                                <td class="py-3 px-2 text-center font-medium text-gray-900 border-r border-gray-200">@cls.ClassId</td>
+                                <td class="py-3 px-2 break-words font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@cls.ClassCode</td>
+                                <td class="py-3 px-2 break-words font-semibold text-gray-900 border-r border-gray-200">@cls.ClassName</td>
+                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.CourseName</td>
+                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.TeacherName</td>
+                                <td class="py-3 px-2 text-gray-600 border-r border-gray-200">
+                                    <div class="flex items-center justify-center">
+                                        <svg class="w-3.5 h-3.5 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                         @cls.TotalStudents
                                     </div>
                                 </td>
-                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">
+                                <td class="py-3 px-2 text-gray-600 border-r border-gray-200">
                                     <div class="space-y-1">
                                         @foreach (var schedule in cls.ScheduleLines)
                                         {
-                                            <div class="whitespace-nowrap">@schedule</div>
+                                            <div class="break-words leading-snug">@schedule</div>
                                         }
                                     </div>
                                 </td>
-                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200 whitespace-nowrap">@cls.StudyPeriod</td>
-                                <td class="py-4 px-4 text-gray-600 border-r border-gray-200">@cls.DisplayRoom</td>
-                                <td class="py-4 px-4 border-r border-gray-200">
-                                    <span class="inline-flex min-w-28 justify-center rounded-full px-3 py-1 text-xs font-semibold @cls.StatusBadgeClass">
+                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.StudyPeriod</td>
+                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.DisplayRoom</td>
+                                <td class="py-3 px-2 text-center border-r border-gray-200">
+                                    <span class="inline-flex max-w-full justify-center rounded-full px-2 py-1 text-[11px] font-semibold leading-snug @cls.StatusBadgeClass">
                                         @cls.StatusText
                                     </span>
                                 </td>
-                                <td class="py-4 px-4 text-center">
-                                    <div class="flex items-center justify-center gap-3">
-                                        <a asp-page="/AdminClasses/Edit" asp-route-classId="@cls.ClassId" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                <td class="py-3 px-2 text-center">
+                                    <div class="flex flex-wrap items-center justify-center gap-1.5">
+                                        <a asp-page="/AdminClasses/Edit" asp-route-classId="@cls.ClassId" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
                                         </a>
                                         @if (cls.Status != "Closed")
                                         {
-                                            <button type="button" onclick="openCloseClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-amber-500 bg-amber-50 text-amber-600 transition-colors hover:bg-amber-100" title="Đóng lớp">
-                                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                            <button type="button" onclick="openCloseClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-500 bg-amber-50 text-amber-600 transition-colors hover:bg-amber-100" title="Đóng lớp">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                                             </button>
                                         }
-                                        <button type="button" onclick="openDeleteClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <button type="button" onclick="openDeleteClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </div>
                                 </td>
@@ -903,7 +917,7 @@
     <script>
         function openCreateRoomModal() {
             clearRoomValidation('createRoomForm');
-            document.getElementById('CreateRoomInput_RoomId').value = 0;
+            
             document.getElementById('CreateRoomInput_RoomCode').value = '';
             document.getElementById('CreateRoomInput_RoomName').value = '';
             document.getElementById('CreateRoomInput_Capacity').value = '';

@@ -12,13 +12,13 @@ public interface IRoomManagementService
 
     Task<ClassOperationResult<RoomMutationResponse>> CreateAsync(
         int ownerUserId,
-        SaveRoomRequest request,
+        CreateRoomRequest request,
         CancellationToken cancellationToken = default);
 
     Task<ClassOperationResult<RoomMutationResponse>> UpdateAsync(
         int ownerUserId,
         int roomId,
-        SaveRoomRequest request,
+        UpdateRoomRequest request,
         CancellationToken cancellationToken = default);
 
     Task<ClassOperationResult<RoomMutationResponse>> SetStatusAsync(

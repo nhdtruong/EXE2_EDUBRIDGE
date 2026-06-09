@@ -67,9 +67,10 @@ namespace EduBridge.Services.Notifications
 
             foreach (var parentId in parentUserIds)
             {
+                if (!parentId.HasValue) continue;
                 var notification = new Notification
                 {
-                    UserId = parentId,
+                    UserId = parentId.Value,
                     Title = request.Title.Trim(),
                     Content = request.Content.Trim(),
                     IsRead = false,

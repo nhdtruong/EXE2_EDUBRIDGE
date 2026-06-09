@@ -1,0 +1,19 @@
+USE EduBridgeDB;
+GO
+
+-- Kiểm tra và thêm cột SettingsJson nếu chưa tồn tại
+IF NOT EXISTS (
+    SELECT * FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'Centers' AND COLUMN_NAME = 'SettingsJson'
+)
+BEGIN
+    ALTER TABLE Centers
+    ADD SettingsJson NVARCHAR(MAX) NULL;
+    
+    PRINT 'Da them cot SettingsJson vao bang Centers.';
+END
+ELSE
+BEGIN
+    PRINT 'Cot SettingsJson da ton tai trong bang Centers.';
+END
+GO

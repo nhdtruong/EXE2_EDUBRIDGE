@@ -150,11 +150,13 @@ DELETE /api/v1/shifts/{id}
 ```
 
 ## Validation Rules
-- `shiftCode`: Required, max 50 chars, must be unique within center.
+- `shiftCode`: Required, max 30 chars, must be unique among non-deleted shifts within the center.
 - `shiftName`: Required, max 100 chars.
 - `startTime`: Required, must be before `endTime`.
 - `endTime`: Required, must be after `startTime`.
-- `status`: Must be "Active" or "Inactive".
+- `status`: Required; must be `Active` or `Inactive`.
+- `note`: Optional, max 255 chars.
+- Input text is trimmed before validation and persistence.
 
 ## Error Cases
 - Shift code already exists.

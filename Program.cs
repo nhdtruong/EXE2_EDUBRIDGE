@@ -9,14 +9,17 @@ using EduBridge.Services.Auth;
 using EduBridge.Services.Classes;
 using EduBridge.Services.Courses;
 using EduBridge.Services.Dashboard;
+using EduBridge.Services.Finance;
 using EduBridge.Services.Parents;
 using EduBridge.Services.Rooms;
 using EduBridge.Services.Shifts;
 using EduBridge.Services.Students;
 using EduBridge.Services.Teachers;
+using EduBridge.Services.Settings;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.OpenApi.Models;
 
 namespace EduBridge
 {
@@ -51,6 +54,11 @@ namespace EduBridge
             builder.Services.AddScoped<EduBridge.Services.Attendance.IAttendanceService, EduBridge.Services.Attendance.AttendanceService>();
             builder.Services.AddScoped<EduBridge.Services.Chat.IChatService, EduBridge.Services.Chat.ChatService>();
             builder.Services.AddScoped<EduBridge.Services.Notifications.INotificationService, EduBridge.Services.Notifications.NotificationService>();
+            builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+            builder.Services.AddScoped<IPaymentService, PaymentService>();
+            builder.Services.AddScoped<IReceiptService, ReceiptService>();
+            builder.Services.AddScoped<IFinanceSummaryService, FinanceSummaryService>();
+            builder.Services.AddScoped<ICenterSettingsService, CenterSettingsService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)
@@ -83,6 +91,42 @@ namespace EduBridge
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+            });
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "EduBridge API",
+                    Version = "v1",
+                    Description = "API phục vụ EduBridge Web, Mobile App và các tích hợp bên ngoài."
+                });
+
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Nhập JWT access token."
+                });
+
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
             });
 
             builder.Services.AddRazorPages(options =>
@@ -138,6 +182,16 @@ namespace EduBridge
             {
                 app.UseExceptionHandler("/Error");
                 app.UseHsts();
+            }
+            else
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(options =>
+                {
+                    options.SwaggerEndpoint("/swagger/v1/swagger.json", "EduBridge API v1");
+                    options.RoutePrefix = "swagger";
+                    options.DocumentTitle = "EduBridge API Documentation";
+                });
             }
 
             app.Use(async (context, next) =>
