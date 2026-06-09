@@ -91,9 +91,16 @@ public class RoomManagementService : IRoomManagementService
 
     public async Task<ClassOperationResult<RoomMutationResponse>> CreateAsync(
         int ownerUserId,
-        SaveRoomRequest request,
+        CreateRoomRequest request,
         CancellationToken cancellationToken = default)
     {
+        var normalizedRequest = NormalizeCreateRequest(request);
+        var validationErrors = ValidateCreateRequest(normalizedRequest);
+        if (validationErrors.Count > 0)
+        {
+            return ClassOperationResult<RoomMutationResponse>.Failure("Dữ liệu phòng học không hợp lệ.", validationErrors);
+        }
+
         var centerId = await GetActiveCenterIdAsync(ownerUserId, cancellationToken);
         if (centerId == null)
             return ClassOperationResult<RoomMutationResponse>.Failure("Không tìm thấy trung tâm.", new Dictionary<string, string[]>());
@@ -102,22 +109,24 @@ public class RoomManagementService : IRoomManagementService
             .AnyAsync(r =>
                 r.CenterId == centerId.Value &&
                 !r.IsDeleted &&
-                r.RoomCode == request.RoomCode,
+                r.RoomCode == normalizedRequest.RoomCode,
                 cancellationToken);
 
         if (existingRoom)
         {
-            return ClassOperationResult<RoomMutationResponse>.Failure("Mã phòng học đã tồn tại.", new Dictionary<string, string[]>());
+            return ClassOperationResult<RoomMutationResponse>.Failure(
+                "Mã phòng học đã tồn tại.", 
+                new Dictionary<string, string[]> { { "RoomCode", new[] { "Mã phòng học đã tồn tại." } } });
         }
 
         var room = new Room
         {
             CenterId = centerId.Value,
-            RoomCode = request.RoomCode,
-            RoomName = request.RoomName,
-            Capacity = request.Capacity,
-            Location = request.Location,
-            Status = request.Status,
+            RoomCode = normalizedRequest.RoomCode,
+            RoomName = normalizedRequest.RoomName,
+            Capacity = normalizedRequest.Capacity,
+            Location = normalizedRequest.Location,
+            Status = normalizedRequest.Status,
             IsDeleted = false
         };
 
@@ -132,9 +141,16 @@ public class RoomManagementService : IRoomManagementService
     public async Task<ClassOperationResult<RoomMutationResponse>> UpdateAsync(
         int ownerUserId,
         int roomId,
-        SaveRoomRequest request,
+        UpdateRoomRequest request,
         CancellationToken cancellationToken = default)
     {
+        var normalizedRequest = NormalizeUpdateRequest(request);
+        var validationErrors = ValidateUpdateRequest(normalizedRequest);
+        if (validationErrors.Count > 0)
+        {
+            return ClassOperationResult<RoomMutationResponse>.Failure("Dữ liệu phòng học không hợp lệ.", validationErrors);
+        }
+
         var centerId = await GetActiveCenterIdAsync(ownerUserId, cancellationToken);
         if (centerId == null)
             return ClassOperationResult<RoomMutationResponse>.Failure("Không tìm thấy trung tâm.", new Dictionary<string, string[]>());
@@ -145,26 +161,28 @@ public class RoomManagementService : IRoomManagementService
         if (room == null)
             return ClassOperationResult<RoomMutationResponse>.Failure("Không tìm thấy phòng học.", new Dictionary<string, string[]>());
 
-        if (room.RoomCode != request.RoomCode)
+        if (room.RoomCode != normalizedRequest.RoomCode)
         {
             var existingRoom = await _context.Rooms
                 .AnyAsync(r =>
                     r.CenterId == centerId.Value &&
                     !r.IsDeleted &&
-                    r.RoomCode == request.RoomCode,
+                    r.RoomCode == normalizedRequest.RoomCode,
                     cancellationToken);
 
             if (existingRoom)
             {
-                return ClassOperationResult<RoomMutationResponse>.Failure("Mã phòng học đã tồn tại.", new Dictionary<string, string[]>());
+                return ClassOperationResult<RoomMutationResponse>.Failure(
+                    "Mã phòng học đã tồn tại.", 
+                    new Dictionary<string, string[]> { { "RoomCode", new[] { "Mã phòng học đã tồn tại." } } });
             }
         }
 
-        room.RoomCode = request.RoomCode;
-        room.RoomName = request.RoomName;
-        room.Capacity = request.Capacity;
-        room.Location = request.Location;
-        room.Status = request.Status;
+        room.RoomCode = normalizedRequest.RoomCode;
+        room.RoomName = normalizedRequest.RoomName;
+        room.Capacity = normalizedRequest.Capacity;
+        room.Location = normalizedRequest.Location;
+        room.Status = normalizedRequest.Status;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -189,7 +207,13 @@ public class RoomManagementService : IRoomManagementService
         if (room == null)
             return ClassOperationResult<RoomMutationResponse>.Failure("Không tìm thấy phòng học.", new Dictionary<string, string[]>());
 
-        if (status == "Inactive" || status == "Maintenance")
+        var normalizedStatus = NormalizeStatus(status);
+        if (normalizedStatus == null)
+        {
+            return ClassOperationResult<RoomMutationResponse>.Failure("Trạng thái phòng học không hợp lệ.", new Dictionary<string, string[]>());
+        }
+
+        if (normalizedStatus == "Inactive" || normalizedStatus == "Maintenance")
         {
             var hasActiveClasses = await _context.Classes
                 .AnyAsync(c =>
@@ -203,7 +227,7 @@ public class RoomManagementService : IRoomManagementService
             }
         }
 
-        room.Status = status;
+        room.Status = normalizedStatus;
         await _context.SaveChangesAsync(cancellationToken);
 
         return ClassOperationResult<RoomMutationResponse>.Success(
@@ -266,4 +290,119 @@ public class RoomManagementService : IRoomManagementService
         "MAINTENANCE" => "bg-orange-100 text-orange-700",
         _ => "bg-red-100 text-red-700"
     };
+
+    private static CreateRoomRequest NormalizeCreateRequest(CreateRoomRequest request)
+    {
+        return new CreateRoomRequest
+        {
+            RoomCode = request.RoomCode?.Trim() ?? string.Empty,
+            RoomName = request.RoomName?.Trim() ?? string.Empty,
+            Capacity = request.Capacity,
+            Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim(),
+            Status = NormalizeStatus(request.Status) ?? string.Empty
+        };
+    }
+
+    private static Dictionary<string, string[]> ValidateCreateRequest(CreateRoomRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.RoomCode))
+        {
+            errors["RoomCode"] = new[] { "Vui lòng nhập mã phòng." };
+        }
+        else if (request.RoomCode.Length > 30)
+        {
+            errors["RoomCode"] = new[] { "Mã phòng không được vượt quá 30 ký tự." };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.RoomName))
+        {
+            errors["RoomName"] = new[] { "Vui lòng nhập tên phòng." };
+        }
+        else if (request.RoomName.Length > 100)
+        {
+            errors["RoomName"] = new[] { "Tên phòng không được vượt quá 100 ký tự." };
+        }
+
+        if (request.Capacity is <= 0 or > 10000)
+        {
+            errors["Capacity"] = new[] { "Sức chứa phải từ 1 đến 10000." };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Location) && request.Location.Length > 150)
+        {
+            errors["Location"] = new[] { "Tầng không được vượt quá 150 ký tự." };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Status))
+        {
+            errors["Status"] = new[] { "Trạng thái phòng học không hợp lệ." };
+        }
+
+        return errors;
+    }
+
+    private static UpdateRoomRequest NormalizeUpdateRequest(UpdateRoomRequest request)
+    {
+        return new UpdateRoomRequest
+        {
+            RoomCode = request.RoomCode?.Trim() ?? string.Empty,
+            RoomName = request.RoomName?.Trim() ?? string.Empty,
+            Capacity = request.Capacity,
+            Location = string.IsNullOrWhiteSpace(request.Location) ? null : request.Location.Trim(),
+            Status = NormalizeStatus(request.Status) ?? string.Empty
+        };
+    }
+
+    private static Dictionary<string, string[]> ValidateUpdateRequest(UpdateRoomRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.RoomCode))
+        {
+            errors["RoomCode"] = new[] { "Vui lòng nhập mã phòng." };
+        }
+        else if (request.RoomCode.Length > 30)
+        {
+            errors["RoomCode"] = new[] { "Mã phòng không được vượt quá 30 ký tự." };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.RoomName))
+        {
+            errors["RoomName"] = new[] { "Vui lòng nhập tên phòng." };
+        }
+        else if (request.RoomName.Length > 100)
+        {
+            errors["RoomName"] = new[] { "Tên phòng không được vượt quá 100 ký tự." };
+        }
+
+        if (request.Capacity is <= 0 or > 10000)
+        {
+            errors["Capacity"] = new[] { "Sức chứa phải từ 1 đến 10000." };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Location) && request.Location.Length > 150)
+        {
+            errors["Location"] = new[] { "Tầng không được vượt quá 150 ký tự." };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Status))
+        {
+            errors["Status"] = new[] { "Trạng thái phòng học không hợp lệ." };
+        }
+
+        return errors;
+    }
+
+    private static string? NormalizeStatus(string? status)
+    {
+        return status?.Trim().ToUpperInvariant() switch
+        {
+            "ACTIVE" => "Active",
+            "INACTIVE" => "Inactive",
+            "MAINTENANCE" => "Maintenance",
+            _ => null
+        };
+    }
 }

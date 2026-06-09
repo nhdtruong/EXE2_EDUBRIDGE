@@ -1,3 +1,6 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace EduBridge.Models;
 
 public partial class EnrollmentHistory

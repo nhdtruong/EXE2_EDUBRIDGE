@@ -124,6 +124,23 @@ public sealed class EditModel : PageModel
         var ownerUserId = GetCurrentUserId();
         if (ownerUserId == null) return Unauthorized();
         var result = await _classEnrollmentService.RemoveStudentAsync(ownerUserId.Value, classId, studentId, cancellationToken: cancellationToken);
+        
+        if (result.IsSuccess)
+        {
+            if (result.Message.Contains("LƯU Ý"))
+            {
+                TempData["ToastTitle"] = "Cần lưu ý";
+                TempData["ToastMessage"] = result.Message;
+                TempData["ToastType"] = "warning";
+            }
+            else
+            {
+                TempData["ToastTitle"] = "Thành công";
+                TempData["ToastMessage"] = result.Message;
+                TempData["ToastType"] = "success";
+            }
+        }
+        
         return new JsonResult(new ApiResponse<bool>(result.IsSuccess, result.Message, result.Value, result.Errors))
         {
             StatusCode = result.IsSuccess ? StatusCodes.Status200OK : StatusCodes.Status400BadRequest

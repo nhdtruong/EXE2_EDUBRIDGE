@@ -25,12 +25,12 @@ public sealed class RoomsController : ControllerBase
 
     [HttpPost]
     public async Task<ActionResult<ApiResponse<RoomMutationResponse>>> Create(
-        [FromBody] SaveRoomRequest request, CancellationToken cancellationToken) =>
+        [FromBody] CreateRoomRequest request, CancellationToken cancellationToken) =>
         ToActionResult(await _service.CreateAsync(GetUserId(), request, cancellationToken));
 
     [HttpPut("{id:int}")]
     public async Task<ActionResult<ApiResponse<RoomMutationResponse>>> Update(
-        int id, [FromBody] SaveRoomRequest request, CancellationToken cancellationToken) =>
+        int id, [FromBody] UpdateRoomRequest request, CancellationToken cancellationToken) =>
         ToActionResult(await _service.UpdateAsync(GetUserId(), id, request, cancellationToken));
 
     [HttpPatch("{id:int}/status")]

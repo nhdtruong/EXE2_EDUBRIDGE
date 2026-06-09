@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -17,7 +17,7 @@ public partial class Homework
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual Lesson Lesson { get; set; } = null!;
-
     public virtual ICollection<HomeworkSubmission> HomeworkSubmissions { get; set; } = new List<HomeworkSubmission>();
+
+    public virtual Lesson Lesson { get; set; } = null!;
 }

@@ -75,11 +75,19 @@ public partial class User
 
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
     public virtual ICollection<Message> MessageReceiverUsers { get; set; } = new List<Message>();
 
     public virtual ICollection<Message> MessageSenderUsers { get; set; } = new List<Message>();
 
     public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public virtual ICollection<Receipt> ReceiptIssuedByUsers { get; set; } = new List<Receipt>();
+
+    public virtual ICollection<Receipt> ReceiptVoidedByUsers { get; set; } = new List<Receipt>();
 
     public virtual Role Role { get; set; } = null!;
 

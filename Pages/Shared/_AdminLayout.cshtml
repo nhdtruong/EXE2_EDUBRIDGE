@@ -128,72 +128,147 @@
         .admin-main .border-t.bg-white.px-6.py-4 {
             padding: 0.75rem 1rem !important;
         }
+
+        #admin-sidebar {
+            transition: width 0.2s ease;
+        }
+
+        .admin-sidebar-label,
+        .admin-sidebar-brand-text,
+        .admin-sidebar-user-info,
+        .admin-sidebar-logout-label {
+            transition: opacity 0.15s ease, visibility 0.15s ease;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar {
+            width: 5rem !important;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-brand-text,
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-label,
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-user-info,
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logout-label {
+            width: 0;
+            opacity: 0;
+            visibility: hidden;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo-row {
+            justify-content: center;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo {
+            margin-right: 0;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-nav {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link {
+            justify-content: center;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link svg {
+            margin-right: 0;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar form button svg {
+            margin-right: 0;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-footer {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-profile {
+            justify-content: center;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-avatar {
+            margin-right: 0;
+        }
     </style>
 </head>
 <body class="text-gray-800 flex h-screen overflow-hidden">
     <div id="layout-toast-container" class="fixed right-6 top-6 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col gap-3"></div>
 
     <!-- Sidebar -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
+    <aside id="admin-sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
         <div>
             <!-- Logo -->
-            <div class="h-20 flex items-center px-6 border-b border-gray-50">
-                <div class="text-blue-600 mr-3">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+            <div class="admin-sidebar-logo-row h-20 flex items-center justify-between px-6 border-b border-gray-50">
+                <div class="flex min-w-0 items-center">
+                    <div class="admin-sidebar-logo text-blue-600 mr-3 flex-shrink-0">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                    </div>
+                    <div class="admin-sidebar-brand-text min-w-0">
+                        <div class="font-bold text-xl text-gray-900 leading-tight">EduBridge</div>
+                        <div class="text-xs text-gray-500 font-medium">Chủ trung tâm</div>
+                    </div>
+                </div>
+                <button id="admin-sidebar-toggle" type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path>
                     </svg>
-                </div>
-                <div>
-                    <div class="font-bold text-xl text-gray-900 leading-tight">EduBridge</div>
-                    <div class="text-xs text-gray-500 font-medium">Chủ trung tâm</div>
-                </div>
+                </button>
             </div>
 
             <!-- Navigation -->
-            <nav class="p-4 space-y-1.5 mt-2">
-                <a href="/AdminDashboard" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminDashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+            <nav class="admin-sidebar-nav p-4 space-y-1.5 mt-2">
+                <a href="/AdminDashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminDashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    Dashboard
+                    <span class="admin-sidebar-label">Dashboard</span>
                 </a>
-                <a href="/AdminClasses" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminClasses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminClasses" title="Lớp học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminClasses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    Lớp học
+                    <span class="admin-sidebar-label">Lớp học</span>
                 </a>
-                <a href="/AdminCourses" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminCourses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminCourses" title="Môn học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminCourses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path><path d="M8 6h8"></path><path d="M8 10h6"></path></svg>
-                    Môn học
+                    <span class="admin-sidebar-label">Môn học</span>
                 </a>
-                <a href="/AdminStudents" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminStudents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminStudents" title="Học sinh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminStudents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    Học sinh
+                    <span class="admin-sidebar-label">Học sinh</span>
                 </a>
-                <a href="/AdminParents" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminParents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminParents" title="Phụ huynh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminParents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"></circle><path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path><path d="M19 8.5a3 3 0 0 1 0 5"></path><path d="M21.5 21a5 5 0 0 0-3.5-4.77"></path></svg>
-                    Phụ huynh
+                    <span class="admin-sidebar-label">Phụ huynh</span>
                 </a>
-                <a href="/AdminTeachers" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminTeachers" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminTeachers" title="Giáo viên" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminTeachers" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                    Giáo viên
+                    <span class="admin-sidebar-label">Giáo viên</span>
                 </a>
-                <a href="/AdminFinance" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminFinance" title="Tài chính" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    Tài chính
+                    <span class="admin-sidebar-label">Tài chính</span>
                 </a>
-                <a href="/AdminSettings" class="flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                <a href="/AdminSettings" title="Cài đặt" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    Cài đặt
+                    <span class="admin-sidebar-label">Cài đặt</span>
                 </a>
             </nav>
         </div>
 
         <!-- User Profile & Logout -->
-        <div class="p-5 border-t border-gray-100">
-            <div class="flex items-center mb-5">
-                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3">
+        <div class="admin-sidebar-footer p-5 border-t border-gray-100">
+            <div class="admin-sidebar-profile flex items-center mb-5">
+                <div class="admin-sidebar-avatar w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
                     @initials
                 </div>
-                <div>
+                <div class="admin-sidebar-user-info min-w-0">
                     <div class="font-bold text-sm text-gray-900">@fullName</div>
                     <div class="text-xs text-gray-500">@email</div>
                 </div>
@@ -201,7 +276,7 @@
             <form method="post" asp-page="/Logout" class="w-full">
                 <button type="submit" class="flex items-center justify-center w-full py-2.5 px-4 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors bg-white">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    Đăng xuất
+                    <span class="admin-sidebar-logout-label">Đăng xuất</span>
                 </button>
             </form>
         </div>
@@ -215,6 +290,20 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
+        const adminSidebarStorageKey = 'edubridge.admin.sidebar.collapsed';
+        const adminSidebarToggle = document.getElementById('admin-sidebar-toggle');
+
+        function setAdminSidebarCollapsed(isCollapsed) {
+            document.body.classList.toggle('admin-sidebar-collapsed', isCollapsed);
+            adminSidebarToggle?.setAttribute('aria-expanded', (!isCollapsed).toString());
+            localStorage.setItem(adminSidebarStorageKey, isCollapsed ? 'true' : 'false');
+        }
+
+        setAdminSidebarCollapsed(localStorage.getItem(adminSidebarStorageKey) === 'true');
+        adminSidebarToggle?.addEventListener('click', () => {
+            setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
+        });
+
         const layoutToastStorageKey = 'edubridge.admin.toasts';
 
         function getStoredLayoutToasts() {

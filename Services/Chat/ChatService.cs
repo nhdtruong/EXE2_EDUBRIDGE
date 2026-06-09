@@ -90,7 +90,7 @@ namespace EduBridge.Services.Chat
             .ThenBy(c => c.ParentName)
             .Select(c => new ConversationDto
             {
-                ParentUserId = c.ParentUserId,
+                ParentUserId = c.ParentUserId ?? 0,
                 ParentName = c.ParentName,
                 StudentNames = c.StudentNames,
                 LastMessage = c.LastMessage,

@@ -23,7 +23,27 @@ public partial class Invoice
 
     public DateTime CreatedAt { get; set; }
 
+    public int CenterId { get; set; }
+
+    public string InvoiceCode { get; set; } = null!;
+
+    public int? EnrollmentId { get; set; }
+
+    public string? Description { get; set; }
+
+    public string? DiscountNote { get; set; }
+
+    public int CreatedByUserId { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    public virtual Center Center { get; set; } = null!;
+
     public virtual Class Class { get; set; } = null!;
+
+    public virtual User CreatedByUser { get; set; } = null!;
+
+    public virtual Enrollment? Enrollment { get; set; }
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 

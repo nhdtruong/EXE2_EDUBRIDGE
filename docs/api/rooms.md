@@ -147,11 +147,15 @@ DELETE /api/v1/rooms/{id}
 ```
 
 ## Validation Rules
-- `roomCode`: Required, max 50 chars, must be unique within center.
+- `roomCode`: Required, max 30 chars, must be unique among non-deleted rooms within the center.
 - `roomName`: Required, max 100 chars.
-- `status`: Must be "Active" or "Inactive".
+- `capacity`: Optional; when supplied, must be from 1 to 10000.
+- `location`: Optional, max 150 chars.
+- `status`: Required; must be `Active`, `Inactive`, or `Maintenance`.
+- Input text is trimmed before validation and persistence.
 
 ## Error Cases
 - Room code already exists.
-- Cannot pause/delete room if there are classes currently or scheduled to use it.
+- Cannot change a room to `Inactive` or `Maintenance` while an active class uses it.
+- Cannot delete a room while an active class uses it.
 - Room not found or unauthorized.

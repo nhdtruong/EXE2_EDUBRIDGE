@@ -27,6 +27,8 @@ public partial class Enrollment
 
     public virtual ICollection<EnrollmentHistory> EnrollmentHistories { get; set; } = new List<EnrollmentHistory>();
 
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
     public virtual Student Student { get; set; } = null!;
 
     public virtual User? UpdatedByUser { get; set; }

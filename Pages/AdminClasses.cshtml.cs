@@ -97,7 +97,7 @@ namespace EduBridge.Pages
         public int ShiftPageSize { get; set; } = 20;
 
         [BindProperty]
-        public SaveRoomRequest CreateRoomInput { get; set; } = new("", "", null, null, "Active");
+        public CreateRoomRequest CreateRoomInput { get; set; } = new();
 
         [BindProperty]
         public RoomEditInput EditRoomInput { get; set; } = new();
@@ -199,8 +199,8 @@ namespace EduBridge.Pages
 
         public async Task<IActionResult> OnPostCreateRoomAsync(CancellationToken cancellationToken)
         {
-            RemoveModelStatePrefix("Input");
-            RemoveModelStatePrefix(nameof(EditRoomInput));
+            ModelState.Clear();
+            TryValidateModel(CreateRoomInput, nameof(CreateRoomInput));
             Tab = "rooms";
             NormalizeTabsAndSearch();
 
@@ -209,6 +209,8 @@ namespace EduBridge.Pages
 
             if (!ModelState.IsValid)
             {
+                // Removed debug message as it's no longer needed
+
                 OpenCreateRoomModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -219,6 +221,16 @@ namespace EduBridge.Pages
             if (!result.IsSuccess)
             {
                 ModelState.AddModelError(string.Empty, result.Message);
+                if (result.Errors != null)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        foreach (var message in error.Value)
+                        {
+                            ModelState.AddModelError($"CreateRoomInput.{error.Key}", message);
+                        }
+                    }
+                }
                 OpenCreateRoomModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -230,8 +242,8 @@ namespace EduBridge.Pages
 
         public async Task<IActionResult> OnPostUpdateRoomAsync(CancellationToken cancellationToken)
         {
-            RemoveModelStatePrefix("Input");
-            RemoveModelStatePrefix(nameof(CreateRoomInput));
+            ModelState.Clear();
+            TryValidateModel(EditRoomInput, nameof(EditRoomInput));
             Tab = "rooms";
             NormalizeTabsAndSearch();
 
@@ -240,12 +252,14 @@ namespace EduBridge.Pages
 
             if (!ModelState.IsValid)
             {
+                // Removed debug message as it's no longer needed
+
                 OpenEditRoomModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
             }
 
-            var request = new SaveRoomRequest(
+            var request = new UpdateRoomRequest(
                 EditRoomInput.RoomCode,
                 EditRoomInput.RoomName,
                 EditRoomInput.Capacity,
@@ -257,6 +271,16 @@ namespace EduBridge.Pages
             if (!result.IsSuccess)
             {
                 ModelState.AddModelError(string.Empty, result.Message);
+                if (result.Errors != null)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        foreach (var message in error.Value)
+                        {
+                            ModelState.AddModelError($"EditRoomInput.{error.Key}", message);
+                        }
+                    }
+                }
                 OpenEditRoomModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -288,10 +312,8 @@ namespace EduBridge.Pages
 
         public async Task<IActionResult> OnPostCreateShiftAsync(CancellationToken cancellationToken)
         {
-            RemoveModelStatePrefix("Input");
-            RemoveModelStatePrefix(nameof(CreateRoomInput));
-            RemoveModelStatePrefix(nameof(EditRoomInput));
-            RemoveModelStatePrefix(nameof(EditShiftInput));
+            ModelState.Clear();
+            TryValidateModel(CreateShiftInput, nameof(CreateShiftInput));
             Tab = "shifts";
             NormalizeTabsAndSearch();
 
@@ -300,6 +322,8 @@ namespace EduBridge.Pages
 
             if (!ModelState.IsValid)
             {
+                // Removed debug message as it's no longer needed
+
                 OpenCreateShiftModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -310,6 +334,16 @@ namespace EduBridge.Pages
             if (!result.IsSuccess)
             {
                 ModelState.AddModelError(string.Empty, result.Message);
+                if (result.Errors != null)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        foreach (var message in error.Value)
+                        {
+                            ModelState.AddModelError($"CreateShiftInput.{error.Key}", message);
+                        }
+                    }
+                }
                 OpenCreateShiftModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -321,10 +355,8 @@ namespace EduBridge.Pages
 
         public async Task<IActionResult> OnPostUpdateShiftAsync(CancellationToken cancellationToken)
         {
-            RemoveModelStatePrefix("Input");
-            RemoveModelStatePrefix(nameof(CreateRoomInput));
-            RemoveModelStatePrefix(nameof(EditRoomInput));
-            RemoveModelStatePrefix(nameof(CreateShiftInput));
+            ModelState.Clear();
+            TryValidateModel(EditShiftInput, nameof(EditShiftInput));
             Tab = "shifts";
             NormalizeTabsAndSearch();
 
@@ -333,6 +365,8 @@ namespace EduBridge.Pages
 
             if (!ModelState.IsValid)
             {
+                // Removed debug message as it's no longer needed
+
                 OpenEditShiftModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -351,6 +385,16 @@ namespace EduBridge.Pages
             if (!result.IsSuccess)
             {
                 ModelState.AddModelError(string.Empty, result.Message);
+                if (result.Errors != null)
+                {
+                    foreach (var error in result.Errors)
+                    {
+                        foreach (var message in error.Value)
+                        {
+                            ModelState.AddModelError($"EditShiftInput.{error.Key}", message);
+                        }
+                    }
+                }
                 OpenEditShiftModal = true;
                 await LoadPageDataAsync(ownerUserId.Value, cancellationToken);
                 return Page();
@@ -479,14 +523,6 @@ namespace EduBridge.Pages
             ShiftStatusFilter = string.IsNullOrWhiteSpace(ShiftStatusFilter) ? string.Empty : ShiftStatusFilter.Trim();
         }
 
-        private void RemoveModelStatePrefix(string prefix)
-        {
-            var keys = ModelState.Keys.Where(k => k.StartsWith(prefix + ".") || k == prefix).ToList();
-            foreach (var key in keys)
-            {
-                ModelState.Remove(key);
-            }
-        }
 
         public class RoomEditInput
         {

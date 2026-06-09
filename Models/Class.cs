@@ -47,6 +47,8 @@ public partial class Class
 
     public byte[] RowVersion { get; set; } = null!;
 
+    public decimal? TuitionFee { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<ClassSchedule> ClassSchedules { get; set; } = new List<ClassSchedule>();

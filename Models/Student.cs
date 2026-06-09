@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -7,7 +7,7 @@ public partial class Student
 {
     public int StudentId { get; set; }
 
-    public int ParentUserId { get; set; }
+    public int? ParentUserId { get; set; }
 
     public int CenterId { get; set; }
 
@@ -63,9 +63,9 @@ public partial class Student
 
     public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
 
+    public virtual ICollection<HomeworkSubmission> HomeworkSubmissions { get; set; } = new List<HomeworkSubmission>();
+
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
-    public virtual User ParentUser { get; set; } = null!;
-
-    public virtual ICollection<HomeworkSubmission> HomeworkSubmissions { get; set; } = new List<HomeworkSubmission>();
+    public virtual User? ParentUser { get; set; }
 }

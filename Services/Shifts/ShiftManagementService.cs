@@ -94,36 +94,47 @@ public class ShiftManagementService : IShiftManagementService
         SaveShiftRequest request,
         CancellationToken cancellationToken = default)
     {
+        var normalizedRequest = NormalizeRequest(request);
+        var validationErrors = ValidateRequest(normalizedRequest);
+        if (validationErrors.Count > 0)
+        {
+            return ClassOperationResult<ShiftMutationResponse>.Failure("Dữ liệu ca học không hợp lệ.", validationErrors);
+        }
+
         var centerId = await GetActiveCenterIdAsync(ownerUserId, cancellationToken);
         if (centerId == null)
             return ClassOperationResult<ShiftMutationResponse>.Failure("Không tìm thấy trung tâm.", new Dictionary<string, string[]>());
 
-        if (request.StartTime >= request.EndTime)
+        if (normalizedRequest.StartTime >= normalizedRequest.EndTime)
         {
-            return ClassOperationResult<ShiftMutationResponse>.Failure("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.", new Dictionary<string, string[]>());
+            return ClassOperationResult<ShiftMutationResponse>.Failure(
+                "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.",
+                new Dictionary<string, string[]> { { "EndTime", new[] { "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." } } });
         }
 
         var existingShift = await _context.StudyShifts
             .AnyAsync(s =>
                 s.CenterId == centerId.Value &&
                 !s.IsDeleted &&
-                s.ShiftCode == request.ShiftCode,
+                s.ShiftCode == normalizedRequest.ShiftCode,
                 cancellationToken);
 
         if (existingShift)
         {
-            return ClassOperationResult<ShiftMutationResponse>.Failure("Mã ca học đã tồn tại.", new Dictionary<string, string[]>());
+            return ClassOperationResult<ShiftMutationResponse>.Failure(
+                "Mã ca học đã tồn tại.",
+                new Dictionary<string, string[]> { { "ShiftCode", new[] { "Mã ca học đã tồn tại." } } });
         }
 
         var shift = new StudyShift
         {
             CenterId = centerId.Value,
-            ShiftCode = request.ShiftCode,
-            ShiftName = request.ShiftName,
-            StartTime = request.StartTime,
-            EndTime = request.EndTime,
-            Status = request.Status,
-            Note = request.Note,
+            ShiftCode = normalizedRequest.ShiftCode,
+            ShiftName = normalizedRequest.ShiftName,
+            StartTime = normalizedRequest.StartTime,
+            EndTime = normalizedRequest.EndTime,
+            Status = normalizedRequest.Status,
+            Note = normalizedRequest.Note,
             IsDeleted = false
         };
 
@@ -141,13 +152,22 @@ public class ShiftManagementService : IShiftManagementService
         SaveShiftRequest request,
         CancellationToken cancellationToken = default)
     {
+        var normalizedRequest = NormalizeRequest(request);
+        var validationErrors = ValidateRequest(normalizedRequest);
+        if (validationErrors.Count > 0)
+        {
+            return ClassOperationResult<ShiftMutationResponse>.Failure("Dữ liệu ca học không hợp lệ.", validationErrors);
+        }
+
         var centerId = await GetActiveCenterIdAsync(ownerUserId, cancellationToken);
         if (centerId == null)
             return ClassOperationResult<ShiftMutationResponse>.Failure("Không tìm thấy trung tâm.", new Dictionary<string, string[]>());
 
-        if (request.StartTime >= request.EndTime)
+        if (normalizedRequest.StartTime >= normalizedRequest.EndTime)
         {
-            return ClassOperationResult<ShiftMutationResponse>.Failure("Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.", new Dictionary<string, string[]>());
+            return ClassOperationResult<ShiftMutationResponse>.Failure(
+                "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc.",
+                new Dictionary<string, string[]> { { "EndTime", new[] { "Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc." } } });
         }
 
         var shift = await _context.StudyShifts
@@ -156,27 +176,29 @@ public class ShiftManagementService : IShiftManagementService
         if (shift == null)
             return ClassOperationResult<ShiftMutationResponse>.Failure("Không tìm thấy ca học.", new Dictionary<string, string[]>());
 
-        if (shift.ShiftCode != request.ShiftCode)
+        if (shift.ShiftCode != normalizedRequest.ShiftCode)
         {
             var existingShift = await _context.StudyShifts
                 .AnyAsync(s =>
                     s.CenterId == centerId.Value &&
                     !s.IsDeleted &&
-                    s.ShiftCode == request.ShiftCode,
+                    s.ShiftCode == normalizedRequest.ShiftCode,
                     cancellationToken);
 
             if (existingShift)
             {
-                return ClassOperationResult<ShiftMutationResponse>.Failure("Mã ca học đã tồn tại.", new Dictionary<string, string[]>());
+                return ClassOperationResult<ShiftMutationResponse>.Failure(
+                    "Mã ca học đã tồn tại.",
+                    new Dictionary<string, string[]> { { "ShiftCode", new[] { "Mã ca học đã tồn tại." } } });
             }
         }
 
-        shift.ShiftCode = request.ShiftCode;
-        shift.ShiftName = request.ShiftName;
-        shift.StartTime = request.StartTime;
-        shift.EndTime = request.EndTime;
-        shift.Status = request.Status;
-        shift.Note = request.Note;
+        shift.ShiftCode = normalizedRequest.ShiftCode;
+        shift.ShiftName = normalizedRequest.ShiftName;
+        shift.StartTime = normalizedRequest.StartTime;
+        shift.EndTime = normalizedRequest.EndTime;
+        shift.Status = normalizedRequest.Status;
+        shift.Note = normalizedRequest.Note;
 
         await _context.SaveChangesAsync(cancellationToken);
 
@@ -201,7 +223,13 @@ public class ShiftManagementService : IShiftManagementService
         if (shift == null)
             return ClassOperationResult<ShiftMutationResponse>.Failure("Không tìm thấy ca học.", new Dictionary<string, string[]>());
 
-        if (status == "Inactive")
+        var normalizedStatus = NormalizeStatus(status);
+        if (normalizedStatus == null)
+        {
+            return ClassOperationResult<ShiftMutationResponse>.Failure("Trạng thái ca học không hợp lệ.", new Dictionary<string, string[]>());
+        }
+
+        if (normalizedStatus == "Inactive")
         {
             var hasActiveClasses = await _context.Classes
                 .AnyAsync(c =>
@@ -217,7 +245,7 @@ public class ShiftManagementService : IShiftManagementService
             }
         }
 
-        shift.Status = status;
+        shift.Status = normalizedStatus;
         await _context.SaveChangesAsync(cancellationToken);
 
         return ClassOperationResult<ShiftMutationResponse>.Success(
@@ -273,4 +301,76 @@ public class ShiftManagementService : IShiftManagementService
         "INACTIVE" => "Tạm dừng",
         _ => "Không xác định"
     };
+
+    private static SaveShiftRequest NormalizeRequest(SaveShiftRequest request)
+    {
+        return new SaveShiftRequest
+        {
+            ShiftCode = request.ShiftCode?.Trim() ?? string.Empty,
+            ShiftName = request.ShiftName?.Trim() ?? string.Empty,
+            StartTime = request.StartTime,
+            EndTime = request.EndTime,
+            Status = NormalizeStatus(request.Status) ?? string.Empty,
+            Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim()
+        };
+    }
+
+    private static Dictionary<string, string[]> ValidateRequest(SaveShiftRequest request)
+    {
+        var errors = new Dictionary<string, string[]>();
+
+        if (string.IsNullOrWhiteSpace(request.ShiftCode))
+        {
+            errors["ShiftCode"] = new[] { "Vui lòng nhập mã ca." };
+        }
+        else if (request.ShiftCode.Length > 30)
+        {
+            errors["ShiftCode"] = new[] { "Mã ca không được vượt quá 30 ký tự." };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.ShiftName))
+        {
+            errors["ShiftName"] = new[] { "Vui lòng nhập tên ca." };
+        }
+        else if (request.ShiftName.Length > 100)
+        {
+            errors["ShiftName"] = new[] { "Tên ca không được vượt quá 100 ký tự." };
+        }
+
+        if (request.StartTime == default)
+        {
+            errors["StartTime"] = new[] { "Vui lòng chọn giờ bắt đầu." };
+        }
+
+        if (request.EndTime == default)
+        {
+            errors["EndTime"] = new[] { "Vui lòng chọn giờ kết thúc." };
+        }
+        else if (request.StartTime != default && request.EndTime <= request.StartTime)
+        {
+            errors["EndTime"] = new[] { "Giờ kết thúc phải sau giờ bắt đầu." };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Status))
+        {
+            errors["Status"] = new[] { "Trạng thái ca học không hợp lệ." };
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Note) && request.Note.Length > 255)
+        {
+            errors["Note"] = new[] { "Ghi chú không được vượt quá 255 ký tự." };
+        }
+
+        return errors;
+    }
+
+    private static string? NormalizeStatus(string? status)
+    {
+        return status?.Trim().ToUpperInvariant() switch
+        {
+            "ACTIVE" => "Active",
+            "INACTIVE" => "Inactive",
+            _ => null
+        };
+    }
 }

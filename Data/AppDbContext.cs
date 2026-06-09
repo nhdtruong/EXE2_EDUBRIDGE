@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
@@ -42,6 +42,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
+    public virtual DbSet<InvoiceCodeCounter> InvoiceCodeCounters { get; set; }
+
     public virtual DbSet<Lesson> Lessons { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
@@ -49,6 +51,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<Payment> Payments { get; set; }
+
+    public virtual DbSet<Receipt> Receipts { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -75,7 +79,6 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<VwStudentOverview> VwStudentOverviews { get; set; }
 
     public virtual DbSet<VwStudyShiftOverview> VwStudyShiftOverviews { get; set; }
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -194,6 +197,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");
+            entity.Property(e => e.TuitionFee).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.UpdatedAt).HasPrecision(0);
 
             entity.HasOne(d => d.Center).WithMany(p => p.Classes)
@@ -334,10 +338,7 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<EnrollmentHistory>(entity =>
         {
-            entity.HasKey(e => e.EnrollmentHistoryId).HasName("PK_EnrollmentHistories");
-
-            entity.HasIndex(e => new { e.EnrollmentId, e.ChangedAt }, "IX_EnrollmentHistories_EnrollmentId_ChangedAt")
-                .IsDescending(false, true);
+            entity.HasIndex(e => new { e.EnrollmentId, e.ChangedAt }, "IX_EnrollmentHistories_EnrollmentId_ChangedAt").IsDescending(false, true);
 
             entity.Property(e => e.ChangedAt)
                 .HasPrecision(0)
@@ -393,22 +394,23 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<HomeworkSubmission>(entity =>
         {
-            entity.HasKey(e => e.SubmissionId).HasName("PK_HomeworkSubmissions");
-
-            entity.ToTable("HomeworkSubmissions");
+            entity.HasKey(e => e.SubmissionId).HasName("PK__Homework__449EE1252C96FA8F");
 
             entity.HasIndex(e => e.HomeworkId, "IX_HomeworkSubmissions_HomeworkId");
+
             entity.HasIndex(e => e.StudentId, "IX_HomeworkSubmissions_StudentId");
+
             entity.HasIndex(e => new { e.HomeworkId, e.StudentId }, "UQ_HomeworkSubmissions").IsUnique();
 
-            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(sysdatetime())");
-            entity.Property(e => e.Score).HasColumnType("decimal(5, 2)");
             entity.Property(e => e.Feedback).HasMaxLength(500);
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Submitted");
+            entity.Property(e => e.Score).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Submitted");
+            entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(sysdatetime())");
 
             entity.HasOne(d => d.Homework).WithMany(p => p.HomeworkSubmissions)
                 .HasForeignKey(d => d.HomeworkId)
-                .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_HomeworkSubmissions_Homework");
 
             entity.HasOne(d => d.Student).WithMany(p => p.HomeworkSubmissions)
@@ -421,31 +423,68 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.InvoiceId).HasName("PK__Invoices__D796AAB514CC5E3C");
 
+            entity.HasIndex(e => new { e.CenterId, e.Status }, "IX_Invoices_CenterId_Status");
+
             entity.HasIndex(e => e.ClassId, "IX_Invoices_ClassId");
 
             entity.HasIndex(e => e.Status, "IX_Invoices_Status");
 
             entity.HasIndex(e => e.StudentId, "IX_Invoices_StudentId");
 
+            entity.HasIndex(e => new { e.CenterId, e.InvoiceCode }, "UX_Invoices_CenterId_InvoiceCode").IsUnique();
+
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.DiscountNote).HasMaxLength(500);
             entity.Property(e => e.FinalAmount)
                 .HasComputedColumnSql("([Amount]-[DiscountAmount])", true)
                 .HasColumnType("decimal(19, 2)");
+            entity.Property(e => e.InvoiceCode).HasMaxLength(30);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Unpaid");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Center).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Centers");
 
             entity.HasOne(d => d.Class).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.ClassId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Invoices_Classes");
 
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Users");
+
+            entity.HasOne(d => d.Enrollment).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.EnrollmentId)
+                .HasConstraintName("FK_Invoices_Enrollments");
+
             entity.HasOne(d => d.Student).WithMany(p => p.Invoices)
                 .HasForeignKey(d => d.StudentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Invoices_Students");
+        });
+
+        modelBuilder.Entity<InvoiceCodeCounter>(entity =>
+        {
+            entity.HasKey(e => new { e.CenterId, e.YearMonth }).HasName("PK__InvoiceC__E1FAC998524F52AC");
+
+            entity.Property(e => e.YearMonth)
+                .HasMaxLength(6)
+                .IsUnicode(false)
+                .IsFixedLength();
+
+            entity.HasOne(d => d.Center).WithMany(p => p.InvoiceCodeCounters)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InvoiceCodeCounters_Centers");
         });
 
         modelBuilder.Entity<Lesson>(entity =>
@@ -520,19 +559,79 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A3855CF874E");
 
+            entity.HasIndex(e => new { e.CenterId, e.Status }, "IX_Payments_CenterId_Status");
+
             entity.HasIndex(e => e.InvoiceId, "IX_Payments_InvoiceId");
 
             entity.HasIndex(e => e.PaidAt, "IX_Payments_PaidAt");
 
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Note).HasMaxLength(255);
             entity.Property(e => e.PaidAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.PaymentMethod).HasMaxLength(30);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Confirmed");
+            entity.Property(e => e.TransactionReference).HasMaxLength(100);
+
+            entity.HasOne(d => d.Center).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Payments_Centers");
 
             entity.HasOne(d => d.Invoice).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.InvoiceId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Payments_Invoices");
+
+            entity.HasOne(d => d.ReceivedByUser).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.ReceivedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Payments_Users");
+        });
+
+        modelBuilder.Entity<Receipt>(entity =>
+        {
+            entity.HasKey(e => e.ReceiptId).HasName("PK__Receipts__CC08C420369ED396");
+
+            entity.HasIndex(e => new { e.CenterId, e.ReceiptNumber }, "UX_Receipts_CenterId_ReceiptNumber").IsUnique();
+
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ClassName).HasMaxLength(150);
+            entity.Property(e => e.CourseName).HasMaxLength(150);
+            entity.Property(e => e.IssuedAt)
+                .HasDefaultValueSql("(sysdatetime())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.PaymentMethod).HasMaxLength(30);
+            entity.Property(e => e.ReceiptNumber).HasMaxLength(30);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Active");
+            entity.Property(e => e.StudentName).HasMaxLength(100);
+            entity.Property(e => e.VoidReason).HasMaxLength(500);
+            entity.Property(e => e.VoidedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Center).WithMany(p => p.Receipts)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Receipts_Centers");
+
+            entity.HasOne(d => d.IssuedByUser).WithMany(p => p.ReceiptIssuedByUsers)
+                .HasForeignKey(d => d.IssuedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Receipts_IssuedByUser");
+
+            entity.HasOne(d => d.Payment).WithMany(p => p.Receipts)
+                .HasForeignKey(d => d.PaymentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Receipts_Payments");
+
+            entity.HasOne(d => d.VoidedByUser).WithMany(p => p.ReceiptVoidedByUsers)
+                .HasForeignKey(d => d.VoidedByUserId)
+                .HasConstraintName("FK_Receipts_VoidedByUser");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -635,7 +734,6 @@ public partial class AppDbContext : DbContext
 
             entity.HasOne(d => d.ParentUser).WithMany(p => p.Students)
                 .HasForeignKey(d => d.ParentUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Students_Users");
         });
 

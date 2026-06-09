@@ -75,7 +75,7 @@ public class StudentManagementService : IStudentManagementService
 
         var dbQuery = _context.Students
             .AsNoTracking()
-            .Where(s => s.CenterId == centerId.Value && !s.IsDeleted && !s.ParentUser.IsDeleted);
+            .Where(s => s.CenterId == centerId.Value && !s.IsDeleted && s.ParentUser != null && !s.ParentUser.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(query.Keyword))
         {
@@ -84,7 +84,7 @@ public class StudentManagementService : IStudentManagementService
 
         if (!string.IsNullOrWhiteSpace(query.ParentKeyword))
         {
-            dbQuery = dbQuery.Where(s => s.ParentUser.FullName.Contains(query.ParentKeyword));
+            dbQuery = dbQuery.Where(s => s.ParentUser != null && s.ParentUser.FullName.Contains(query.ParentKeyword));
         }
 
         if (!string.IsNullOrWhiteSpace(query.ContactKeyword))
@@ -95,9 +95,9 @@ public class StudentManagementService : IStudentManagementService
                 (s.PhoneNumber != null && s.PhoneNumber.Contains(query.ContactKeyword)) ||
                 (s.Email != null && s.Email.Contains(query.ContactKeyword)) ||
                 (hasPhoneKeyword && s.NormalizedPhoneNumber != null && s.NormalizedPhoneNumber.Contains(normalizedKeyword)) ||
-                (s.ParentUser.PhoneNumber != null && s.ParentUser.PhoneNumber.Contains(query.ContactKeyword)) ||
-                (hasPhoneKeyword && s.ParentUser.NormalizedPhoneNumber != null && s.ParentUser.NormalizedPhoneNumber.Contains(normalizedKeyword)) ||
-                (s.ParentUser.Email != null && s.ParentUser.Email.Contains(query.ContactKeyword)));
+                (s.ParentUser != null && s.ParentUser.PhoneNumber != null && s.ParentUser.PhoneNumber.Contains(query.ContactKeyword)) ||
+                (hasPhoneKeyword && s.ParentUser != null && s.ParentUser.NormalizedPhoneNumber != null && s.ParentUser.NormalizedPhoneNumber.Contains(normalizedKeyword)) ||
+                (s.ParentUser != null && s.ParentUser.Email != null && s.ParentUser.Email.Contains(query.ContactKeyword)));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Gender))
@@ -139,10 +139,10 @@ public class StudentManagementService : IStudentManagementService
                 PermanentAddress = s.PermanentAddress,
                 Hometown = s.Hometown,
                 PlaceOfBirth = s.PlaceOfBirth,
-                ParentUserId = s.ParentUserId,
-                ParentName = s.ParentUser.FullName,
-                ParentPhone = s.ParentUser.PhoneNumber,
-                ParentEmail = s.ParentUser.Email,
+                ParentUserId = s.ParentUserId ?? 0,
+                ParentName = s.ParentUser != null ? s.ParentUser.FullName : string.Empty,
+                ParentPhone = s.ParentUser != null ? s.ParentUser.PhoneNumber : string.Empty,
+                ParentEmail = s.ParentUser != null ? s.ParentUser.Email : string.Empty,
                 CurrentClasses = s.Enrollments
                     .Where(e => e.Status == "Đang học")
                     .OrderByDescending(e => e.EnrollmentId)
@@ -196,10 +196,10 @@ public class StudentManagementService : IStudentManagementService
                 PermanentAddress = s.PermanentAddress,
                 Hometown = s.Hometown,
                 PlaceOfBirth = s.PlaceOfBirth,
-                ParentUserId = s.ParentUserId,
-                ParentName = s.ParentUser.FullName,
-                ParentPhone = s.ParentUser.PhoneNumber,
-                ParentEmail = s.ParentUser.Email,
+                ParentUserId = s.ParentUserId ?? 0,
+                ParentName = s.ParentUser != null ? s.ParentUser.FullName : string.Empty,
+                ParentPhone = s.ParentUser != null ? s.ParentUser.PhoneNumber : string.Empty,
+                ParentEmail = s.ParentUser != null ? s.ParentUser.Email : string.Empty,
                 CurrentClasses = s.Enrollments
                     .Where(e => e.Status == "Đang học")
                     .OrderByDescending(e => e.EnrollmentId)
