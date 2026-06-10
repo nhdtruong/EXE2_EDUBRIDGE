@@ -275,7 +275,7 @@ public sealed class ParentManagementService : IParentManagementService
         var query = _context.Students.AsNoTracking().Where(s => s.CenterId == centerId && !s.IsDeleted && s.ParentUserId != parentUserId);
         if (keyword != null) query = query.Where(s => s.StudentCode.Contains(keyword) || s.FullName.Contains(keyword));
         var students = await query.OrderBy(s => s.FullName).Take(50)
-            .Select(s => new LinkableStudentResponse(s.StudentId, s.StudentCode, s.FullName, s.ParentUser.FullName))
+            .Select(s => new LinkableStudentResponse(s.StudentId, s.StudentCode, s.FullName, s.ParentUser != null ? s.ParentUser.FullName : string.Empty))
             .ToListAsync(cancellationToken);
         return ClassOperationResult<IReadOnlyList<LinkableStudentResponse>>.Success(students, "Tải danh sách học sinh thành công.");
     }

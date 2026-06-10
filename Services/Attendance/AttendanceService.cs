@@ -19,6 +19,22 @@ namespace EduBridge.Services.Attendance
             _context = context;
         }
 
+        public async Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return new List<TeacherClassDto>();
+
+            var classes = await _context.Classes
+                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            return classes.Select(c => new TeacherClassDto
+            {
+                ClassId = c.ClassId,
+                ClassName = c.ClassName
+            }).ToList();
+        }
+
         public async Task<List<LessonDropdownDto>> GetLessonsByClassAsync(int teacherUserId, int classId, CancellationToken cancellationToken = default)
         {
             var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
@@ -143,7 +159,7 @@ namespace EduBridge.Services.Attendance
                         StudentId = input.StudentId,
                         Status = dbStatus,
                         Note = input.Note?.Trim(),
-                        RecordedAt = DateTime.Now
+                        RecordedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow()
                     };
                     _context.Attendances.Add(att);
                 }
@@ -151,7 +167,7 @@ namespace EduBridge.Services.Attendance
                 {
                     att.Status = dbStatus;
                     att.Note = input.Note?.Trim();
-                    att.RecordedAt = DateTime.Now;
+                    att.RecordedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow();
                     _context.Attendances.Update(att);
                 }
             }

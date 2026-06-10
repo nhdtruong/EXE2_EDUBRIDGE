@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Models.DTOs.TeacherChat;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Services.Chat
 {
@@ -62,7 +62,7 @@ namespace EduBridge.Services.Chat
             var conversations = groupedByParent.Select(group =>
             {
                 var parentId = group.Key;
-                
+
                 // Lấy các tin nhắn giữa giáo viên và phụ huynh này
                 var parentMessages = allMessages
                     .Where(m => (m.SenderUserId == teacherUserId && m.ReceiverUserId == parentId) ||
@@ -70,7 +70,7 @@ namespace EduBridge.Services.Chat
                     .ToList();
 
                 var lastMsg = parentMessages.FirstOrDefault();
-                
+
                 // Đếm tin nhắn chưa đọc mà phụ huynh gửi cho giáo viên
                 var unreadCount = parentMessages
                     .Count(m => m.SenderUserId == parentId && m.ReceiverUserId == teacherUserId && !m.IsRead);
@@ -124,18 +124,10 @@ namespace EduBridge.Services.Chat
 
         public async Task<bool> MarkAsReadAsync(int currentUserId, int senderUserId, CancellationToken cancellationToken = default)
         {
-            var unreadMessages = await _context.Messages
+            await _context.Messages
                 .Where(m => m.SenderUserId == senderUserId && m.ReceiverUserId == currentUserId && !m.IsRead)
-                .ToListAsync(cancellationToken);
+                .ExecuteUpdateAsync(s => s.SetProperty(m => m.IsRead, true), cancellationToken);
 
-            if (unreadMessages.Any())
-            {
-                foreach (var msg in unreadMessages)
-                {
-                    msg.IsRead = true;
-                }
-                await _context.SaveChangesAsync(cancellationToken);
-            }
             return true;
         }
     }

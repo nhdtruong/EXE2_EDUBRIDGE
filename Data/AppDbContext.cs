@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using EduBridge.Models;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Data;
 
-public partial class AppDbContext : DbContext
+public partial class AppDbContext : DbContext, IDataProtectionKeyContext
 {
     public AppDbContext()
     {
@@ -23,6 +24,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<CenterUser> CenterUsers { get; set; }
 
     public virtual DbSet<Class> Classes { get; set; }
+
+    public virtual DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
     public virtual DbSet<ClassCodeCounter> ClassCodeCounters { get; set; }
 

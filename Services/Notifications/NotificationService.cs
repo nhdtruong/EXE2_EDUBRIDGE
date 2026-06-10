@@ -63,7 +63,7 @@ namespace EduBridge.Services.Notifications
             if (!parentUserIds.Any()) return true; // Lớp không có học sinh/phụ huynh nào thì vẫn xem như gửi xong
 
             var notifications = new List<Notification>();
-            var now = DateTime.Now;
+            var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
 
             foreach (var parentId in parentUserIds)
             {

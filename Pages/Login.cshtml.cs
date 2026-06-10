@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EduBridge.Pages
 {
@@ -30,6 +31,7 @@ namespace EduBridge.Pages
             }
         }
 
+        [EnableRateLimiting("LoginRateLimit")]
         public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
         {
             if (User.Identity?.IsAuthenticated == true)

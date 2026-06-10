@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace EduBridge.Controllers.Api;
 
@@ -29,6 +30,7 @@ public sealed class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting("LoginRateLimit")]
     public async Task<ActionResult<ApiLoginResponse>> LoginAsync(
         ApiLoginRequest request,
         CancellationToken cancellationToken)

@@ -117,7 +117,7 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
                 "Mật khẩu trong hệ thống chưa được cấu hình đúng. Vui lòng liên hệ quản trị viên.");
         }
 
-        user.LastLoginAt = DateTime.Now;
+        user.LastLoginAt = EduBridge.Helpers.TimeHelper.GetVietnamNow();
         await _context.SaveChangesAsync(cancellationToken);
 
         return AccountAuthenticationResult.Success(user);

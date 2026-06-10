@@ -91,7 +91,12 @@
     });
 
     courseSelect?.addEventListener('change', () => {
-        const sessions = courseSelect.selectedOptions[0]?.dataset.totalSessions;
+        let sessions = null;
+        if (courseSelect.tagName === 'SELECT') {
+            sessions = courseSelect.selectedOptions[0]?.dataset.totalSessions;
+        } else {
+            sessions = courseSelect.dataset.totalSessions;
+        }
 
         if (sessions) {
             totalSessionsInput.value = sessions;

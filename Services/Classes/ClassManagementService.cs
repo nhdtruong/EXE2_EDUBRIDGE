@@ -359,6 +359,7 @@ public sealed class ClassManagementService : IClassManagementService
                 .ThenInclude(t => t.User)
             .Include(c => c.Enrollments)
                 .ThenInclude(e => e.Student)
+            .Include(c => c.RoomNavigation)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query.Keyword))
@@ -406,11 +407,11 @@ public sealed class ClassManagementService : IClassManagementService
             c.Enrollments.Count(e => e.Status == "Đang học" && !e.Student.IsDeleted),
             c.ScheduleText ?? string.Empty,
             string.IsNullOrWhiteSpace(c.ScheduleText) ? new[] { "-" } : c.ScheduleText.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
-            c.Room ?? string.Empty,
-            string.IsNullOrWhiteSpace(c.Room) ? "-" : c.Room,
+            c.RoomNavigation != null ? c.RoomNavigation.RoomName : string.Empty,
+            c.RoomNavigation != null ? c.RoomNavigation.RoomName : "-",
             $"{c.StartDate:dd/MM/yyyy} - {c.EndDate:dd/MM/yyyy}",
             c.Status,
-            GetDisplaySchedule(c.Room, c.ScheduleText),
+            GetDisplaySchedule(c.RoomNavigation != null ? c.RoomNavigation.RoomName : c.Room, c.ScheduleText),
             GetStatusText(c.Status),
             GetStatusBadgeClass(c.Status)
         )).ToList();
@@ -455,7 +456,7 @@ public sealed class ClassManagementService : IClassManagementService
         var rooms = await _context.Rooms
             .Where(r => r.CenterId == centerId && r.Status == "Active" && !r.IsDeleted)
             .OrderBy(r => r.RoomName)
-            .Select(r => new RoomOptionDto(r.RoomId, r.RoomName, r.RoomCode, $"{r.RoomName} ({r.RoomCode})"))
+            .Select(r => new RoomOptionDto(r.RoomId, r.RoomName, r.RoomCode, r.RoomName))
             .ToListAsync(cancellationToken);
 
         return ClassOperationResult<ClassDropdownOptionsResponse>.Success(

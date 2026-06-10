@@ -93,8 +93,8 @@ namespace EduBridge.Services.Lectures
                 ClassId = request.ClassId,
                 LessonTitle = request.Topic.Trim(),
                 LessonContent = request.Content?.Trim(),
-                LessonDate = DateOnly.FromDateTime(DateTime.Now),
-                CreatedAt = DateTime.Now,
+                LessonDate = DateOnly.FromDateTime(EduBridge.Helpers.TimeHelper.GetVietnamNow()),
+                CreatedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow(),
                 SessionNumber = existingSessionsCount + 1,
                 Status = string.IsNullOrWhiteSpace(request.Status) ? "Scheduled" : request.Status
             };

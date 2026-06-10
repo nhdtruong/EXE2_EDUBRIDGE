@@ -57,7 +57,7 @@ namespace EduBridge.Controllers.Api
                 .CountAsync();
 
             // Lịch dạy hôm nay theo buổi học (Lesson) thực tế trong ngày hôm nay
-            var todayDate = DateOnly.FromDateTime(DateTime.Now);
+            var todayDate = DateOnly.FromDateTime(EduBridge.Helpers.TimeHelper.GetVietnamNow());
             var todayLessons = await _context.Lessons
                 .Include(l => l.Class)
                 .Where(l => classIds.Contains(l.ClassId) && l.LessonDate == todayDate)

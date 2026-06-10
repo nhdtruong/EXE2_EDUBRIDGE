@@ -1,28 +1,31 @@
 using System.Security.Claims;
 using System.Text.RegularExpressions;
-using EduBridge.Data;
 using EduBridge.Models;
+using EduBridge.Services.Classes;
+using EduBridge.Services.Settings;
 using EduBridge.Services.Students;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Pages
 {
     [Authorize(Policy = "AdminOnly")]
     public class AdminStudentsModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly ICenterSettingsService _centerSettingsService;
+        private readonly IClassManagementService _classManagementService;
         private readonly IStudentManagementService _studentService;
         private readonly ILogger<AdminStudentsModel> _logger;
 
         public AdminStudentsModel(
-            AppDbContext context,
+            ICenterSettingsService centerSettingsService,
+            IClassManagementService classManagementService,
             IStudentManagementService studentService,
             ILogger<AdminStudentsModel> logger)
         {
-            _context = context;
+            _centerSettingsService = centerSettingsService;
+            _classManagementService = classManagementService;
             _studentService = studentService;
             _logger = logger;
         }
@@ -216,17 +219,31 @@ namespace EduBridge.Pages
             int centerId,
             CancellationToken cancellationToken)
         {
-            ClassFilterOptions = await _context.Classes
-                .AsNoTracking()
-                .Where(c => c.CenterId == centerId && c.Status == "Active")
-                .OrderBy(c => c.ClassName)
-                .Select(c => new StudentClassFilterItem
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return;
+
+            var classOptions = await _classManagementService.GetClassOptionsAsync(ownerUserId.Value, cancellationToken);
+            if (classOptions.IsSuccess && classOptions.Value != null)
+            {
+                // ClassOptionDto in GetClassOptionsAsync might not be Class but we can use GetClassesAsync or just filter if needed. Wait, does ClassDropdownOptionsResponse have what we need?
+                // Let's check ClassDropdownOptionsResponse. Wait, GetClassOptionsAsync doesn't return classes, it returns Courses, Teachers, Rooms!
+                // Ah, GetClassOptionsAsync returns Dropdown options for *creating* a class. It doesn't return the list of Active Classes.
+                // We should use GetClassesAsync from IClassManagementService or add a specific method.
+                // Let's use GetClassesAsync.
+                var query = new EduBridge.Contracts.Classes.ClassQuery(null, "Active", null, null, 1, 1000);
+                var result = await _classManagementService.GetClassesAsync(ownerUserId.Value, query, cancellationToken);
+                if (result.IsSuccess && result.Value != null)
                 {
-                    ClassId = c.ClassId,
-                    ClassName = c.ClassName,
-                    ClassCode = c.ClassCode
-                })
-                .ToListAsync(cancellationToken);
+                    ClassFilterOptions = result.Value.Items
+                        .OrderBy(c => c.ClassName)
+                        .Select(c => new StudentClassFilterItem
+                        {
+                            ClassId = c.ClassId,
+                            ClassName = c.ClassName,
+                            ClassCode = c.ClassCode
+                        }).ToList();
+                }
+            }
         }
 
         private int? GetCurrentUserId()
@@ -242,11 +259,7 @@ namespace EduBridge.Pages
             int ownerUserId,
             CancellationToken cancellationToken)
         {
-            return await _context.Centers
-                .AsNoTracking()
-                .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-                .Select(c => (int?)c.CenterId)
-                .FirstOrDefaultAsync(cancellationToken);
+            return await _centerSettingsService.GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
         }
 
         private void NormalizeFilters()
