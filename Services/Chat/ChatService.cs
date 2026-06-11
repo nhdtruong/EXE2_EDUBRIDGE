@@ -32,14 +32,14 @@ namespace EduBridge.Services.Chat
 
             if (!classIds.Any()) return new List<ConversationDto>();
 
-            // Lấy danh sách học sinh đang học trong các lớp đó và thông tin Phụ huynh
+            // Lấy danh sách học sinh đang học trong các lớp đó và thông tin Phụ huynh (chỉ lấy học sinh đã được gán tài khoản phụ huynh)
             var studentsData = await _context.Enrollments
                 .Include(e => e.Student)
                 .ThenInclude(s => s.ParentUser)
-                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted)
+                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != null)
                 .Select(e => new
                 {
-                    ParentUserId = e.Student.ParentUserId,
+                    ParentUserId = e.Student.ParentUserId!.Value,
                     ParentName = e.Student.ParentUser != null ? e.Student.ParentUser.FullName : string.Empty,
                     StudentName = e.Student.FullName
                 })
@@ -90,7 +90,7 @@ namespace EduBridge.Services.Chat
             .ThenBy(c => c.ParentName)
             .Select(c => new ConversationDto
             {
-                ParentUserId = c.ParentUserId ?? 0,
+                ParentUserId = c.ParentUserId,
                 ParentName = c.ParentName,
                 StudentNames = c.StudentNames,
                 LastMessage = c.LastMessage,

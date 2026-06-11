@@ -35,6 +35,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Exported Design System Stylesheets -->
+    <link rel="stylesheet" href="~/css/design-system/design-system.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/buttons.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/forms.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/filters.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/tables.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/pagination.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/toggle.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/toast.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/datepicker.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/icons.css" asp-append-version="true" />
+    
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/teacher.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/teacher-premium.css" asp-append-version="true" />
@@ -59,7 +71,7 @@
 
         .teacher-sidebar-toggle:hover {
             background: #f1f5f9;
-            color: #059669;
+            color: #2563eb;
         }
 
         .brand-text,
@@ -125,10 +137,8 @@
     </style>
 </head>
 <body class="bg-gray">
-    <div id="layout-toast" style="position: fixed; right: 24px; top: 24px; z-index: 9999; display: none; width: 360px; border-radius: 12px; background: #16a34a; padding: 16px 20px; color: #fff; box-shadow: 0 20px 35px rgba(15, 23, 42, 0.22);">
-        <div id="layout-toast-title" style="font-size: 18px; line-height: 24px; font-weight: 800;">Thành công</div>
-        <div id="layout-toast-message" style="margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 600; color: rgba(255,255,255,0.95);"></div>
-    </div>
+    <!-- Stacked Toast Container from Design System -->
+    <div id="layout-toast-container" class="ds-toast-container"></div>
 
     <div class="app-container">
         <!-- Sidebar -->
@@ -136,9 +146,8 @@
             <div class="sidebar-brand">
                 <div class="logo-box">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-                        <polyline points="2 17 12 22 22 17"></polyline>
-                        <polyline points="2 12 12 17 22 12"></polyline>
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
                     </svg>
                 </div>
                 <div class="brand-text">
@@ -220,18 +229,94 @@
             setTeacherSidebarCollapsed(!document.body.classList.contains('teacher-sidebar-collapsed'));
         });
 
-        const layoutToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
+        // Dynamic stacked toast logic
+        const layoutToastStorageKey = 'edubridge.teacher.toasts';
 
-        if (layoutToastMessage) {
-            const toast = document.getElementById('layout-toast');
-            document.getElementById('layout-toast-title').textContent = 'Thành công';
-            document.getElementById('layout-toast-message').textContent = layoutToastMessage;
-            toast.style.display = 'block';
-
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 3000);
+        function getStoredLayoutToasts() {
+            try {
+                const value = localStorage.getItem(layoutToastStorageKey);
+                const toasts = value ? JSON.parse(value) : [];
+                const now = Date.now();
+                return Array.isArray(toasts) ? toasts.filter(toast => toast && toast.expiresAt > now) : [];
+            } catch {
+                return [];
+            }
         }
+
+        function saveStoredLayoutToasts(toasts) {
+            localStorage.setItem(layoutToastStorageKey, JSON.stringify(toasts));
+        }
+
+        function removeStoredLayoutToast(id) {
+            saveStoredLayoutToasts(getStoredLayoutToasts().filter(toast => toast.id !== id));
+        }
+
+        function pushStoredLayoutToast(title, message, type) {
+            if (!message) return;
+            const toasts = getStoredLayoutToasts();
+            toasts.push({
+                id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                title,
+                message,
+                type,
+                expiresAt: Date.now() + 4500
+            });
+            saveStoredLayoutToasts(toasts);
+        }
+
+        function showLayoutToast(title, message, type, id, remainingMs) {
+            if (!message) return;
+            const container = document.getElementById('layout-toast-container');
+            if (!container) return;
+
+            const isError = type === 'error' || type === 'danger' || type === 'failed' || type === false;
+            const toast = document.createElement('div');
+            
+            toast.className = `ds-toast ${isError ? 'ds-toast-error' : 'ds-toast-success'}`;
+            toast.innerHTML = `
+                <div class="min-w-0 flex-1">
+                    <div class="ds-toast-title">${title || (isError ? 'Thất bại' : 'Thành công')}</div>
+                    <div class="ds-toast-message">${message}</div>
+                </div>
+                <button type="button" class="ds-toast-close" aria-label="Đóng thông báo">&times;</button>
+            `;
+
+            const closeToast = () => {
+                if (id) {
+                    removeStoredLayoutToast(id);
+                }
+                toast.remove();
+            };
+
+            toast.querySelector('.ds-toast-close')?.addEventListener('click', closeToast);
+            container.appendChild(toast);
+
+            setTimeout(closeToast, Math.max(1200, remainingMs ?? 4500));
+        }
+
+        // Global showToast helper
+        window.showToast = function(message, isSuccess = true) {
+            showLayoutToast(isSuccess ? 'Thành công' : 'Lỗi', message, isSuccess ? 'success' : 'error');
+        };
+
+        // Push layout toasts from TempData
+        const tempToastTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastTitle"] as string));
+        const tempToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
+        const tempToastType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastType"] as string));
+
+        if (tempToastMessage) {
+            pushStoredLayoutToast(tempToastTitle, tempToastMessage, tempToastType);
+        }
+
+        getStoredLayoutToasts().forEach(toast => {
+            showLayoutToast(
+                toast.title,
+                toast.message,
+                toast.type,
+                toast.id,
+                toast.expiresAt - Date.now()
+            );
+        });
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

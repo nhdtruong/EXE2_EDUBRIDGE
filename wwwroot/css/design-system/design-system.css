@@ -1,0 +1,89 @@
+/* EduBridge exported design tokens.
+   Sources: wwwroot/css/site.css, wwwroot/css/theme.css, wwwroot/css/teacher.css,
+   Pages/Shared/_AdminLayout.cshtml, admin Razor pages using Tailwind utility classes. */
+
+:root {
+    --ds-primary: #2563eb;
+    --ds-primary-hover: #1d4ed8;
+    --ds-primary-soft: #eff6ff;
+    --ds-success: #22c55e;
+    --ds-success-soft: #dcfce7;
+    --ds-danger: #ef4444;
+    --ds-danger-hover: #dc2626;
+    --ds-danger-soft: #fef2f2;
+    --ds-warning: #f97316;
+    --ds-bg: #f8fafc;
+    --ds-surface: #ffffff;
+    --ds-surface-muted: #f8fafc;
+    --ds-table-head: #f1f5f9;
+    --ds-text: #111827;
+    --ds-text-muted: #6b7280;
+    --ds-text-subtle: #9ca3af;
+    --ds-border: #e5e7eb;
+    --ds-border-strong: #d1d5db;
+    --ds-radius-sm: 0.25rem;
+    --ds-radius-md: 0.5rem;
+    --ds-radius-lg: 0.75rem;
+    --ds-radius-xl: 1rem;
+    --ds-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+    --ds-shadow-md: 0 10px 15px -3px rgba(15, 23, 42, 0.12);
+    --ds-shadow-lg: 0 20px 35px rgba(15, 23, 42, 0.22);
+    --ds-font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--ds-bg);
+    color: var(--ds-text);
+    font-family: var(--ds-font-family);
+    font-size: 14px;
+}
+
+.ds-page {
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.ds-page-title {
+    margin: 0;
+    color: var(--ds-text);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.ds-page-subtitle {
+    margin: 4px 0 0;
+    color: var(--ds-text-muted);
+    font-size: 14px;
+}
+
+.ds-card {
+    overflow: hidden;
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-lg);
+    background: var(--ds-surface);
+    box-shadow: var(--ds-shadow-sm);
+}
+
+.ds-card-header {
+    border-bottom: 1px solid #dbeafe;
+    background: #eff6ff99;
+    padding: 20px;
+}
+
+.ds-card-title {
+    margin: 0;
+    color: var(--ds-text);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.ds-muted {
+    color: var(--ds-text-muted);
+}
+

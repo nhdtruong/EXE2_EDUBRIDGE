@@ -1,19 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using EduBridge.Data;
-using EduBridge.Models;
+using EduBridge.Services.Dashboard;
 
 namespace EduBridge.Pages.Teacher
 {
     public class DashboardModel : PageModel
     {
-        private readonly AppDbContext _context;
+        private readonly IDashboardService _dashboardService;
 
-        public DashboardModel(AppDbContext context)
+        public DashboardModel(IDashboardService dashboardService)
         {
-            _context = context;
+            _dashboardService = dashboardService;
         }
 
         public DateTime CurrentDate { get; set; }
@@ -35,101 +33,46 @@ namespace EduBridge.Pages.Teacher
             if (!int.TryParse(userIdStr, out int userId))
                 return RedirectToPage("/Login");
 
-            var teacher = await _context.Teachers
-                .Include(t => t.User)
-                .FirstOrDefaultAsync(t => t.UserId == userId);
-
-            if (teacher == null)
+            var result = await _dashboardService.GetTeacherDashboardDataAsync(userId);
+            if (!result.IsSuccess)
+            {
                 return RedirectToPage("/Login");
+            }
 
-            TeacherName = teacher.User.FullName;
+            var data = result.Value!;
 
-            var teacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active")
-                .ToListAsync();
+            TeacherName = data.TeacherName;
+            TotalClasses = data.TotalClasses;
+            TotalStudents = data.TotalStudents;
+            UngradedAssignments = data.UngradedAssignmentsCount;
+            UnreadMessages = data.UnreadMessagesCount;
 
-            TotalClasses = teacherClasses.Count;
-            var classIds = teacherClasses.Select(c => c.ClassId).ToList();
-
-            TotalStudents = await _context.Enrollments
-                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học")
-                .Select(e => e.StudentId)
-                .Distinct()
-                .CountAsync();
-
-            // IsRead là bool không nullable - không cần ?? false
-            UnreadMessages = await _context.Messages
-                .CountAsync(m => m.ReceiverUserId == userId && !m.IsRead);
-
-            // Lịch dạy hôm nay theo buổi học (Lesson) thực tế trong ngày hôm nay
-            var todayDate = DateOnly.FromDateTime(DateTime.Now);
-            var todayLessons = await _context.Lessons
-                .Include(l => l.Class)
-                .Where(l => classIds.Contains(l.ClassId) && l.LessonDate == todayDate)
-                .OrderBy(l => l.StartTime)
-                .Take(5)
-                .ToListAsync();
-
-            TodaySchedules = todayLessons.Select(l => new DashboardScheduleDto
+            TodaySchedules = data.TodaySchedules.Select(s => new DashboardScheduleDto
             {
-                ClassName = l.Class.ClassName,
-                Topic = l.LessonTitle,
-                TimeRange = (l.StartTime.HasValue && l.EndTime.HasValue)
-                    ? $"{l.StartTime.Value.ToString("HH:mm")} - {l.EndTime.Value.ToString("HH:mm")}"
-                    : "Chưa cấu hình giờ học",
-                Room = l.Class.Room ?? "Không có phòng"
+                ClassName = s.ClassName,
+                Topic = s.Topic,
+                TimeRange = s.TimeRange,
+                Room = s.Room
             }).ToList();
 
-            // Lấy lessonIds để tìm homework
-            var lessonIds = await _context.Lessons
-                .Where(l => classIds.Contains(l.ClassId))
-                .Select(l => l.LessonId)
-                .ToListAsync();
-
-            // Bài tập gần đây - lấy dữ liệu về trước rồi mới xử lý in-memory
-            var recentHomeworks = await _context.Homeworks
-                .Include(h => h.Lesson)
-                .ThenInclude(l => l.Class)
-                .Where(h => lessonIds.Contains(h.LessonId))
-                .OrderByDescending(h => h.CreatedAt)
-                .Take(5)
-                .ToListAsync();
-
-            // Tính số học sinh enrolled cho từng lớp sau khi đã lấy về
-            var enrollmentCounts = await _context.Enrollments
-                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học")
-                .GroupBy(e => e.ClassId)
-                .Select(g => new { ClassId = g.Key, Count = g.Count() })
-                .ToListAsync();
-            var enrollmentDict = enrollmentCounts.ToDictionary(x => x.ClassId, x => x.Count);
-
-            RecentAssignments = recentHomeworks.Select(h => new DashboardAssignmentDto
+            RecentAssignments = data.RecentAssignments.Select(a => new DashboardAssignmentDto
             {
-                Title = h.Title,
-                ClassName = h.Lesson.Class.ClassName,
-                CreatedAt = h.CreatedAt,
-                Submitted = 0, // Chưa có bảng Submission trong DB
-                Total = enrollmentDict.GetValueOrDefault(h.Lesson.ClassId, 0)
+                Title = a.Title,
+                ClassName = a.ClassName,
+                CreatedAt = a.CreatedAt ?? DateTime.Now,
+                Submitted = a.SubmittedCount,
+                Total = a.TotalStudents
             }).ToList();
 
-            // Tin nhắn gần đây - lấy về in-memory rồi mới format
-            var rawMessages = await _context.Messages
-                .Include(m => m.SenderUser)
-                .ThenInclude(u => u.Role)
-                .Where(m => m.ReceiverUserId == userId)
-                .OrderByDescending(m => m.SentAt)
-                .Take(5)
-                .ToListAsync();
-
-            RecentMessages = rawMessages.Select(m => new DashboardMessageDto
+            RecentMessages = data.RecentMessages.Select(m => new DashboardMessageDto
             {
-                SenderName = m.SenderUser.FullName,
-                ParentInfo = m.SenderUser.Role?.RoleName == "PARENT" ? "Phụ huynh" : (m.SenderUser.Role?.RoleName ?? ""),
-                Content = m.Content,
-                TimeAgo = CalculateTimeAgo(m.SentAt),  // SentAt là DateTime không nullable
-                Avatar = string.IsNullOrWhiteSpace(m.SenderUser.FullName)
+                SenderName = m.SenderName,
+                ParentInfo = m.SenderRole == "PARENT" ? "Phụ huynh" : m.SenderRole,
+                Content = m.ShortContent,
+                TimeAgo = CalculateTimeAgo(m.SentAt ?? DateTime.Now),
+                Avatar = string.IsNullOrWhiteSpace(m.SenderName)
                     ? "U"
-                    : m.SenderUser.FullName.Substring(0, 1).ToUpper()
+                    : m.SenderName.Substring(0, 1).ToUpper()
             }).ToList();
 
             return Page();

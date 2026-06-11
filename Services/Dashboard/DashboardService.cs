@@ -2,6 +2,7 @@ using EduBridge.Contracts.Dashboard;
 using EduBridge.Data;
 using EduBridge.Services.Classes;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Models.DTOs.TeacherDashboard;
 
 namespace EduBridge.Services.Dashboard;
 
@@ -187,6 +188,137 @@ public class DashboardService : IDashboardService
         );
 
         return ClassOperationResult<DashboardSummaryResponse>.Success(result, "Lấy thông tin tổng quan thành công.");
+    }
+
+    public async Task<ClassOperationResult<DashboardResponseDto>> GetTeacherDashboardDataAsync(
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        var teacher = await _context.Teachers
+            .Include(t => t.User)
+            .FirstOrDefaultAsync(t => t.UserId == userId, cancellationToken);
+
+        if (teacher == null)
+        {
+            _logger.LogWarning("Không tìm thấy hồ sơ giáo viên tương ứng với userId {UserId}.", userId);
+            return ClassOperationResult<DashboardResponseDto>.Failure("Không tìm thấy hồ sơ giáo viên tương ứng với tài khoản.");
+        }
+
+        // Lấy danh sách lớp do giáo viên này phụ trách
+        var teacherClasses = await _context.Classes
+            .AsNoTracking()
+            .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active")
+            .ToListAsync(cancellationToken);
+
+        var classIds = teacherClasses.Select(c => c.ClassId).ToList();
+
+        // Tổng số học sinh duy nhất trong các lớp của giáo viên
+        var totalStudents = await _context.Enrollments
+            .AsNoTracking()
+            .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học")
+            .Select(e => e.StudentId)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        // Đếm số tin nhắn chưa đọc
+        var unreadMessagesCount = await _context.Messages
+            .AsNoTracking()
+            .CountAsync(m => m.ReceiverUserId == userId && !m.IsRead, cancellationToken);
+
+        // Lịch dạy hôm nay theo buổi học (Lesson) thực tế trong ngày hôm nay
+        var todayDate = DateOnly.FromDateTime(DateTime.Now);
+        var todayLessons = await _context.Lessons
+            .Include(l => l.Class)
+            .AsNoTracking()
+            .Where(l => classIds.Contains(l.ClassId) && l.LessonDate == todayDate)
+            .OrderBy(l => l.StartTime)
+            .Take(5)
+            .ToListAsync(cancellationToken);
+
+        var todaySchedulesDto = todayLessons.Select(l => new ScheduleDto
+        {
+            ClassId = l.ClassId,
+            ClassName = l.Class.ClassName,
+            Topic = l.LessonTitle,
+            TimeRange = (l.StartTime.HasValue && l.EndTime.HasValue)
+                ? $"{l.StartTime.Value.ToString("HH:mm")} - {l.EndTime.Value.ToString("HH:mm")}"
+                : "Chưa cấu hình giờ học",
+            Room = l.Class.Room ?? string.Empty
+        }).ToList();
+
+        // Lấy danh sách lessonIds của giáo viên
+        var lessonIds = await _context.Lessons
+            .AsNoTracking()
+            .Where(l => classIds.Contains(l.ClassId))
+            .Select(l => l.LessonId)
+            .ToListAsync(cancellationToken);
+
+        // Bài tập gần đây (Homeworks thuộc các Lesson của các Lớp này)
+        var recentHomeworks = await _context.Homeworks
+            .Include(h => h.Lesson)
+            .ThenInclude(l => l.Class)
+            .Include(h => h.HomeworkSubmissions)
+            .AsNoTracking()
+            .Where(h => lessonIds.Contains(h.LessonId))
+            .OrderByDescending(h => h.CreatedAt)
+            .Take(5)
+            .ToListAsync(cancellationToken);
+
+        var enrollmentCounts = await _context.Enrollments
+            .AsNoTracking()
+            .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học")
+            .GroupBy(e => e.ClassId)
+            .Select(g => new { ClassId = g.Key, Count = g.Count() })
+            .ToListAsync(cancellationToken);
+        var enrollmentDict = enrollmentCounts.ToDictionary(x => x.ClassId, x => x.Count);
+
+        var assignmentsDto = recentHomeworks.Select(h => new AssignmentDto
+        {
+            HomeworkId = h.HomeworkId,
+            Title = h.Title,
+            ClassName = h.Lesson.Class.ClassName,
+            CreatedAt = h.CreatedAt,
+            SubmittedCount = h.HomeworkSubmissions.Count,
+            TotalStudents = enrollmentDict.GetValueOrDefault(h.Lesson.ClassId, 0)
+        }).ToList();
+
+        // Tính số bài tập nộp chưa được chấm điểm
+        var ungradedAssignmentsCount = await _context.HomeworkSubmissions
+            .AsNoTracking()
+            .CountAsync(s => lessonIds.Contains(s.Homework.LessonId) && s.Status == "Submitted", cancellationToken);
+
+        // 5 tin nhắn gần nhất
+        var rawMessages = await _context.Messages
+            .Include(m => m.SenderUser)
+            .ThenInclude(u => u.Role)
+            .AsNoTracking()
+            .Where(m => m.ReceiverUserId == userId)
+            .OrderByDescending(m => m.SentAt)
+            .Take(5)
+            .ToListAsync(cancellationToken);
+
+        var recentMessages = rawMessages.Select(m => new MessageDto
+        {
+            MessageId = m.MessageId,
+            SenderName = m.SenderUser.FullName,
+            SenderRole = m.SenderUser.Role?.RoleName ?? string.Empty,
+            ShortContent = m.Content.Length > 50 ? m.Content.Substring(0, 50) + "..." : m.Content,
+            SentAt = m.SentAt
+        }).ToList();
+
+        var response = new DashboardResponseDto
+        {
+            TeacherName = teacher.User.FullName,
+            TotalClasses = teacherClasses.Count,
+            TotalStudents = totalStudents,
+            UngradedAssignmentsCount = ungradedAssignmentsCount,
+            UnreadMessagesCount = unreadMessagesCount,
+            TodaySchedules = todaySchedulesDto,
+            RecentAssignments = assignmentsDto,
+            RecentMessages = recentMessages
+        };
+
+        return ClassOperationResult<DashboardResponseDto>.Success(response, "Lấy thông tin tổng quan giáo viên thành công.");
     }
 
     private async Task<ChartDataDto> LoadRevenueChartAsync(
