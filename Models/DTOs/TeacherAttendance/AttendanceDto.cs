@@ -4,6 +4,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EduBridge.Models.DTOs.TeacherAttendance
 {
+    public class TeacherClassDto
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+    }
+
     public class LessonDropdownDto
     {
         public int LessonId { get; set; }

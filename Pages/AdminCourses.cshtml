@@ -132,12 +132,12 @@
                                     </form>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="flex items-center justify-center gap-3">
-                                        <a asp-page="/AdminCourses" asp-page-handler="Edit" asp-route-courseId="@course.CourseId" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                    <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
+                                        <a asp-page="/AdminCourses" asp-page-handler="Edit" asp-route-courseId="@course.CourseId" asp-route-search="@Model.Search" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
                                         </a>
-                                        <button type="button" onclick='openDeleteCourseModal(@course.CourseId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(course.CourseName)))' class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
-                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        <button type="button" onclick='openDeleteCourseModal(@course.CourseId, @Html.Raw(System.Text.Json.JsonSerializer.Serialize(course.CourseName)))' class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     </div>
                                 </td>

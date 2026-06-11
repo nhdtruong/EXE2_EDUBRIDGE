@@ -7,6 +7,7 @@ namespace EduBridge.Services.Homeworks
 {
     public interface IHomeworkService
     {
+        Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default);
         Task<List<HomeworkListItemDto>> GetHomeworkListAsync(int teacherUserId, CancellationToken cancellationToken = default);
         
         Task<bool> CreateHomeworkAsync(int teacherUserId, CreateHomeworkRequest request, CancellationToken cancellationToken = default);

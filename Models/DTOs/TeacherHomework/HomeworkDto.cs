@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EduBridge.Models.DTOs.TeacherHomework
 {
+    public class TeacherClassDto
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+    }
+
     public class HomeworkListItemDto
     {
         public int HomeworkId { get; set; }

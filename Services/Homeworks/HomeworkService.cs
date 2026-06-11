@@ -19,6 +19,22 @@ namespace EduBridge.Services.Homeworks
             _context = context;
         }
 
+        public async Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return new List<TeacherClassDto>();
+
+            var classes = await _context.Classes
+                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            return classes.Select(c => new TeacherClassDto
+            {
+                ClassId = c.ClassId,
+                ClassName = c.ClassName
+            }).ToList();
+        }
+
         public async Task<List<HomeworkListItemDto>> GetHomeworkListAsync(int teacherUserId, CancellationToken cancellationToken = default)
         {
             var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
@@ -90,7 +106,7 @@ namespace EduBridge.Services.Homeworks
                 Title = request.Title.Trim(),
                 Description = request.Description?.Trim(),
                 DueDate = request.DueDate,
-                CreatedAt = DateTime.Now
+                CreatedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow()
             };
 
             _context.Homeworks.Add(homework);
@@ -194,7 +210,7 @@ namespace EduBridge.Services.Homeworks
                     HomeworkId = homeworkId,
                     StudentId = studentId,
                     SubmissionContent = "Giáo viên chủ động chấm điểm trực tiếp (không thông qua bài nộp hệ thống).",
-                    SubmittedAt = DateTime.Now,
+                    SubmittedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow(),
                     Score = request.Score,
                     Feedback = request.Feedback?.Trim(),
                     Status = "Graded"

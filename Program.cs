@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using EduBridge.Services.Auth;
 using EduBridge.Services.Classes;
 using EduBridge.Services.Courses;
@@ -16,10 +17,12 @@ using EduBridge.Services.Shifts;
 using EduBridge.Services.Students;
 using EduBridge.Services.Teachers;
 using EduBridge.Services.Settings;
+using EduBridge.Services.Storage;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 namespace EduBridge
 {
@@ -54,11 +57,14 @@ namespace EduBridge
             builder.Services.AddScoped<EduBridge.Services.Attendance.IAttendanceService, EduBridge.Services.Attendance.AttendanceService>();
             builder.Services.AddScoped<EduBridge.Services.Chat.IChatService, EduBridge.Services.Chat.ChatService>();
             builder.Services.AddScoped<EduBridge.Services.Notifications.INotificationService, EduBridge.Services.Notifications.NotificationService>();
+            builder.Services.AddScoped<IDashboardService, DashboardService>();
+            builder.Services.AddScoped<ITeacherDashboardService, TeacherDashboardService>();
             builder.Services.AddScoped<IInvoiceService, InvoiceService>();
             builder.Services.AddScoped<IPaymentService, PaymentService>();
             builder.Services.AddScoped<IReceiptService, ReceiptService>();
             builder.Services.AddScoped<IFinanceSummaryService, FinanceSummaryService>();
             builder.Services.AddScoped<ICenterSettingsService, CenterSettingsService>();
+            builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)
@@ -78,15 +84,9 @@ namespace EduBridge
                 options.MultipartBodyLengthLimit = 5 * 1024 * 1024;
             });
 
-            var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
-
-            if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
-            {
-                builder.Services
-                    .AddDataProtection()
-                    .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
-                    .SetApplicationName("EduBridge");
-            }
+            builder.Services.AddDataProtection()
+                .PersistKeysToDbContext<AppDbContext>()
+                .SetApplicationName("EduBridge");
 
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
@@ -134,6 +134,7 @@ namespace EduBridge
                 options.Conventions.AuthorizeFolder("/");
                 options.Conventions.AllowAnonymousToPage("/Login");
                 options.Conventions.AllowAnonymousToPage("/AccessDenied");
+                options.Conventions.AllowAnonymousToPage("/NotFound");
                 options.Conventions.AuthorizePage("/AdminDashboard", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminClasses", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminStudents", "AdminOnly");
@@ -158,6 +159,20 @@ namespace EduBridge
                     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
                         ? CookieSecurePolicy.SameAsRequest
                         : CookieSecurePolicy.Always;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "EduBridge",
+                        ValidAudience = builder.Configuration["Jwt:Audience"] ?? "EduBridgeUsers",
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "EduBridge-Development-Only-Replace-On-Server-2026"))
+                    };
                 });
 
             builder.Services.AddAuthorization(options =>
@@ -172,11 +187,33 @@ namespace EduBridge
                     policy.RequireRole("PARENT"));
             });
 
-            builder.Services.AddSignalR();
+            var signalRBuilder = builder.Services.AddSignalR();
+            var redisConnection = builder.Configuration.GetConnectionString("RedisConnection");
+            if (!string.IsNullOrWhiteSpace(redisConnection))
+            {
+                signalRBuilder.AddStackExchangeRedis(redisConnection, options =>
+                {
+                    options.Configuration.ChannelPrefix = "EduBridge_Chat";
+                });
+            }
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.AddFixedWindowLimiter("LoginRateLimit", opt =>
+                {
+                    opt.PermitLimit = 5;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            });
 
             var app = builder.Build();
 
             app.UseForwardedHeaders();
+
+            app.UseStatusCodePagesWithReExecute("/NotFound");
 
             if (!app.Environment.IsDevelopment())
             {
@@ -206,6 +243,8 @@ namespace EduBridge
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseRateLimiter();
 
             app.UseAuthentication();
             app.UseAuthorization();

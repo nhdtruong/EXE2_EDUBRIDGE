@@ -1,12 +1,12 @@
 using System.Security.Claims;
 using EduBridge.Contracts.Finance;
 using EduBridge.Services.Finance;
+using EduBridge.Services.Settings;
+using EduBridge.Services.Classes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-using EduBridge.Data;
 
 namespace EduBridge.Pages;
 
@@ -15,13 +15,19 @@ public class AdminFinanceModel : PageModel
 {
     private readonly IFinanceSummaryService _summaryService;
     private readonly IInvoiceService _invoiceService;
-    private readonly AppDbContext _context;
+    private readonly ICenterSettingsService _centerSettingsService;
+    private readonly IClassManagementService _classManagementService;
 
-    public AdminFinanceModel(IFinanceSummaryService summaryService, IInvoiceService invoiceService, AppDbContext context)
+    public AdminFinanceModel(
+        IFinanceSummaryService summaryService, 
+        IInvoiceService invoiceService, 
+        ICenterSettingsService centerSettingsService,
+        IClassManagementService classManagementService)
     {
         _summaryService = summaryService;
         _invoiceService = invoiceService;
-        _context = context;
+        _centerSettingsService = centerSettingsService;
+        _classManagementService = classManagementService;
     }
 
     public int CenterId { get; set; }
@@ -63,14 +69,12 @@ public class AdminFinanceModel : PageModel
         if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var ownerUserId))
             return RedirectToPage("/Login");
 
-        var center = await _context.Centers.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.OwnerUserId == ownerUserId && c.Status == "Active", cancellationToken);
+        var centerId = await _centerSettingsService.GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
+        if (centerId == null) return RedirectToPage("/Login");
 
-        if (center == null) return RedirectToPage("/Login");
+        CenterId = centerId.Value;
 
-        CenterId = center.CenterId;
-
-        var now = DateTime.Now;
+        var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
         var summaryResult = await _summaryService.GetDashboardSummaryAsync(CenterId, now.Month, now.Year, cancellationToken);
         if (summaryResult.IsSuccess && summaryResult.Value != null)
         {
@@ -83,11 +87,20 @@ public class AdminFinanceModel : PageModel
             ClassDebts = classDebtsResult.Value;
         }
 
-        var classes = await _context.Classes
-            .Where(c => c.CenterId == CenterId && c.Status != "DELETED")
-            .Select(c => new { c.ClassId, c.ClassName })
-            .ToListAsync(cancellationToken);
-        Classes = new SelectList(classes, "ClassId", "ClassName");
+        var query = new EduBridge.Contracts.Classes.ClassQuery(null, null, null, null, 1, 1000);
+        var classesResult = await _classManagementService.GetClassesAsync(ownerUserId, query, cancellationToken);
+        if (classesResult.IsSuccess && classesResult.Value != null)
+        {
+            var classList = classesResult.Value.Items
+                .OrderBy(c => c.ClassName)
+                .Select(c => new { c.ClassId, c.ClassName })
+                .ToList();
+            Classes = new SelectList(classList, "ClassId", "ClassName");
+        }
+        else
+        {
+            Classes = new SelectList(new List<object>(), "ClassId", "ClassName");
+        }
 
         var filter = new InvoiceFilterRequest(
             InvoiceCode: InvoiceCode,

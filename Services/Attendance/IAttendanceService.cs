@@ -7,6 +7,8 @@ namespace EduBridge.Services.Attendance
 {
     public interface IAttendanceService
     {
+        Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default);
+        
         Task<List<LessonDropdownDto>> GetLessonsByClassAsync(int teacherUserId, int classId, CancellationToken cancellationToken = default);
         
         Task<List<StudentAttendanceDto>> GetAttendanceByLessonAsync(int teacherUserId, int lessonId, CancellationToken cancellationToken = default);

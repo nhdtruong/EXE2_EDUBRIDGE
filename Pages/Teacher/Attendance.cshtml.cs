@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using EduBridge.Data;
-using EduBridge.Models;
+
 using EduBridge.Services.Attendance;
 using EduBridge.Models.DTOs.TeacherAttendance;
 
@@ -15,16 +14,14 @@ namespace EduBridge.Pages.Teacher
 {
     public class AttendanceModel : PageModel
     {
-        private readonly AppDbContext _context;
         private readonly IAttendanceService _attendanceService;
 
-        public AttendanceModel(AppDbContext context, IAttendanceService attendanceService)
+        public AttendanceModel(IAttendanceService attendanceService)
         {
-            _context = context;
             _attendanceService = attendanceService;
         }
 
-        public List<Class> TeacherClasses { get; set; } = new();
+        public List<TeacherClassDto> TeacherClasses { get; set; } = new();
         public List<LessonDropdownDto> ClassLessons { get; set; } = new();
         public List<StudentAttendanceDto> StudentAttendances { get; set; } = new();
         public List<AttendanceHistoryDto> AttendanceHistory { get; set; } = new();
@@ -37,12 +34,7 @@ namespace EduBridge.Pages.Teacher
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
 
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null) return RedirectToPage("/Login");
-
-            TeacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
-                .ToListAsync();
+            TeacherClasses = await _attendanceService.GetTeacherClassesAsync(userId);
 
             if (!TeacherClasses.Any())
             {

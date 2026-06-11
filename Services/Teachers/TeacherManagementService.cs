@@ -5,6 +5,7 @@ using EduBridge.Contracts.Teachers;
 using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Services.Classes;
+using EduBridge.Services.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Services.Teachers;
@@ -14,11 +15,13 @@ public sealed class TeacherManagementService : ITeacherManagementService
     private static readonly int[] AllowedPageSizes = [10, 20, 50, 100, 200, 500];
     private readonly AppDbContext _context;
     private readonly ILogger<TeacherManagementService> _logger;
+    private readonly IFileStorageService _storageService;
 
-    public TeacherManagementService(AppDbContext context, ILogger<TeacherManagementService> logger)
+    public TeacherManagementService(AppDbContext context, ILogger<TeacherManagementService> logger, IFileStorageService storageService)
     {
         _context = context;
         _logger = logger;
+        _storageService = storageService;
     }
 
     public async Task<ClassOperationResult<TeacherPagedResponse>> GetTeachersAsync(
@@ -81,7 +84,7 @@ public sealed class TeacherManagementService : ITeacherManagementService
             .Where(t => t.CenterId == centerId && t.UserId == teacherUserId && !t.IsDeleted)
             .Select(t => new TeacherDetailResponse(
                 t.UserId, t.TeacherCode, t.User.FullName, t.User.PhoneNumber, t.User.Email, t.User.AvatarUrl,
-                t.User.DateOfBirth, t.User.Gender, t.User.Ethnicity, t.User.Religion, t.User.IdentityNumber!,
+                t.User.DateOfBirth, t.User.Gender ?? string.Empty, t.User.Ethnicity, t.User.Religion, t.User.IdentityNumber ?? string.Empty,
                 t.User.IdentityIssuedDate, t.User.IdentityIssuedPlace, t.User.CurrentAddress, t.User.PermanentAddress,
                 t.User.Hometown, t.User.PlaceOfBirth, t.Status, t.User.CreatedAt))
             .FirstOrDefaultAsync(cancellationToken);
@@ -314,9 +317,7 @@ public sealed class TeacherManagementService : ITeacherManagementService
 
         if (!string.IsNullOrWhiteSpace(teacher.User.AvatarUrl))
         {
-            var relativePath = teacher.User.AvatarUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-            var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", relativePath);
-            if (System.IO.File.Exists(fullPath)) System.IO.File.Delete(fullPath);
+            await _storageService.DeleteFileAsync(teacher.User.AvatarUrl, cancellationToken);
             teacher.User.AvatarUrl = null;
         }
 
@@ -333,24 +334,16 @@ public sealed class TeacherManagementService : ITeacherManagementService
         var teacher = await _context.Teachers.Include(t => t.User).FirstOrDefaultAsync(t => t.CenterId == centerId && t.UserId == teacherUserId && !t.IsDeleted, cancellationToken);
         if (teacher == null) return Fail<string?>("Không tìm thấy hồ sơ giáo viên.");
 
-        var uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "teachers");
-        Directory.CreateDirectory(uploadDirectory);
-
-        var extension = Path.GetExtension(fileName).ToLowerInvariant();
-        var safeFileName = $"{teacher.TeacherCode.ToLowerInvariant()}-{Guid.NewGuid():N}{extension}";
-        var fullPath = Path.Combine(uploadDirectory, safeFileName);
-
-        await using var writeStream = System.IO.File.Create(fullPath);
-        await fileStream.CopyToAsync(writeStream, cancellationToken);
-
         var oldAvatar = teacher.User.AvatarUrl;
-        teacher.User.AvatarUrl = $"/uploads/teachers/{safeFileName}";
+        
+        var safeFileName = $"{teacher.TeacherCode.ToLowerInvariant()}-{Guid.NewGuid():N}{Path.GetExtension(fileName)}";
+        teacher.User.AvatarUrl = await _storageService.SaveFileAsync(fileStream, safeFileName, "teachers", cancellationToken);
+        
         await _context.SaveChangesAsync(cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(oldAvatar))
         {
-            var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", oldAvatar.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-            if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+            await _storageService.DeleteFileAsync(oldAvatar, cancellationToken);
         }
 
         return ClassOperationResult<string?>.Success(teacher.User.AvatarUrl, "Cập nhật ảnh đại diện thành công.");
@@ -367,8 +360,7 @@ public sealed class TeacherManagementService : ITeacherManagementService
 
         if (!string.IsNullOrWhiteSpace(teacher.User.AvatarUrl))
         {
-            var oldPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", teacher.User.AvatarUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-            if (System.IO.File.Exists(oldPath)) System.IO.File.Delete(oldPath);
+            await _storageService.DeleteFileAsync(teacher.User.AvatarUrl, cancellationToken);
             teacher.User.AvatarUrl = null;
             await _context.SaveChangesAsync(cancellationToken);
         }

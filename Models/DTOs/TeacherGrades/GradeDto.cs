@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace EduBridge.Models.DTOs.TeacherGrades
 {
+    public class TeacherClassDto
+    {
+        public int ClassId { get; set; }
+        public string ClassName { get; set; } = string.Empty;
+    }
+
     public class StudentGradesDto
     {
         public int StudentId { get; set; }

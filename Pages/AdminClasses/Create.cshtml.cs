@@ -1,25 +1,24 @@
 using System.Security.Claims;
 using EduBridge.Contracts.Classes;
-using EduBridge.Data;
 using EduBridge.Services.Classes;
+using EduBridge.Services.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Pages.AdminClasses;
 
 [Authorize(Policy = "AdminOnly")]
 public sealed class CreateModel : PageModel
 {
-    private readonly AppDbContext _context;
+    private readonly ICenterSettingsService _centerSettingsService;
     private readonly IClassCreationService _classCreationService;
 
     public CreateModel(
-        AppDbContext context,
+        ICenterSettingsService centerSettingsService,
         IClassCreationService classCreationService)
     {
-        _context = context;
+        _centerSettingsService = centerSettingsService;
         _classCreationService = classCreationService;
     }
 
@@ -111,19 +110,7 @@ public sealed class CreateModel : PageModel
             return null;
         }
 
-        var centerId = await _context.Centers
-            .AsNoTracking()
-            .Where(center =>
-                center.Status == "Active" &&
-                (center.OwnerUserId == ownerUserId ||
-                 _context.CenterUsers.Any(centerUser =>
-                     centerUser.CenterId == center.CenterId &&
-                     centerUser.UserId == ownerUserId &&
-                     centerUser.UserType == "OWNER" &&
-                     centerUser.Status == "Active")))
-            .OrderBy(center => center.CenterId)
-            .Select(center => (int?)center.CenterId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var centerId = await _centerSettingsService.GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
 
         return centerId.HasValue
             ? new OwnerContext(ownerUserId, centerId.Value)

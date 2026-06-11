@@ -16,7 +16,7 @@ namespace EduBridge.Services.Settings
             _context = context;
         }
 
-        public async Task<CenterSettingsDto> GetSettingsAsync(int ownerId)
+        public async Task<CenterSettingsDto?> GetSettingsAsync(int ownerId)
         {
             var center = await _context.Centers
                 .FirstOrDefaultAsync(c => c.OwnerUserId == ownerId && c.Status == "Active");
@@ -87,6 +87,22 @@ namespace EduBridge.Services.Settings
             var result = await _context.SaveChangesAsync();
 
             return result > 0;
+        }
+
+        public async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Centers
+                .AsNoTracking()
+                .Where(center =>
+                    center.Status == "Active" &&
+                    (center.OwnerUserId == ownerUserId ||
+                     _context.CenterUsers.Any(centerUser =>
+                         centerUser.CenterId == center.CenterId &&
+                         centerUser.UserId == ownerUserId &&
+                         centerUser.UserType == "OWNER" &&
+                         centerUser.Status == "Active")))
+                .Select(c => (int?)c.CenterId)
+                .FirstOrDefaultAsync(cancellationToken);
         }
     }
 }
