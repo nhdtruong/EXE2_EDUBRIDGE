@@ -1,0 +1,23 @@
+WMI: All checks passed.
+Started WMI.
+WMI: Process 163348 (SafeExamBrowser.Service.exe): Inject result = 1FEA0000
+WMI: Process 163348 (SafeExamBrowser.Service.exe): Inject result = 1FEA0000
+WMI: Process 163348 (SafeExamBrowser.Service.exe): Inject result = 1FEA0000
+WMI: Process 162160 (SafeExamBrowser.exe): Inject result = 1FEA0000
+WMI: Process 162160 (SafeExamBrowser.exe): Exception during injection: System.IO.IOException: The process cannot access the file 'C:\Users\ASUS\Downloads\Release\Release\text.txt' because it is being used by another process.
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.File.OpenHandle(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.WriteToFile(String path, FileMode mode, String contents, Encoding encoding)
+   at seb_window.Utils.Logging.WriteLog(String text) in D:\Programming\Projects\C#\seb-breakage\src\seb-window\Utils\Logging.cs:line 25
+   at seb_window.Program.<>c__DisplayClass20_0.<StartCheckInject>b__1() in D:\Programming\Projects\C#\seb-breakage\src\seb-window\Program.cs:line 345
+WMI: Process 162160 (SafeExamBrowser.exe): Exception during injection: System.IO.IOException: The process cannot access the file 'C:\Users\ASUS\Downloads\Release\Release\text.txt' because it is being used by another process.
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.CreateFile(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options)
+   at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+   at System.IO.File.OpenHandle(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize)
+   at System.IO.File.WriteToFile(String path, FileMode mode, String contents, Encoding encoding)
+   at seb_window.Utils.Logging.WriteLog(String text) in D:\Programming\Projects\C#\seb-breakage\src\seb-window\Utils\Logging.cs:line 25
+   at seb_window.Program.<>c__DisplayClass20_0.<StartCheckInject>b__1() in D:\Programming\Projects\C#\seb-breakage\src\seb-window\Program.cs:line 345
+WMI: Process 165360 (SafeExamBrowser.Client.exe): Inject result = 1FEA0000
+WMI: Process 165360 (SafeExamBrowser.Client.exe): Inject result = 1FEA0000
+WMI: Process 165360 (SafeExamBrowser.Client.exe): Inject result = 1FEA0000

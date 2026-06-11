@@ -342,7 +342,7 @@
                                     const feedback = feedbackInput.value;
 
                                     if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
-                                        alert("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.");
+                                        window.showToast("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.", false);
                                         return;
                                     }
 
