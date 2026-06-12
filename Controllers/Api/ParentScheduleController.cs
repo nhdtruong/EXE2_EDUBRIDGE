@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using EduBridge.Services.Classes;
 using EduBridge.Contracts.Classes;
 using EduBridge.Models.DTOs.ParentApp;
 using EduBridge.Services.ParentApp;

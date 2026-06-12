@@ -1,25 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
-<<<<<<< HEAD
+
 using EduBridge.Contracts.Dashboard;
-=======
->>>>>>> origin/main
 using EduBridge.Services.Dashboard;
 
 namespace EduBridge.Pages.Teacher
 {
     public class DashboardModel : PageModel
     {
-<<<<<<< HEAD
-        private readonly ITeacherDashboardService _dashboardService;
-
-        public DashboardModel(ITeacherDashboardService dashboardService)
-=======
         private readonly IDashboardService _dashboardService;
 
         public DashboardModel(IDashboardService dashboardService)
->>>>>>> origin/main
         {
             _dashboardService = dashboardService;
         }
@@ -57,35 +49,40 @@ namespace EduBridge.Pages.Teacher
             UngradedAssignments = data.UngradedAssignmentsCount;
             UnreadMessages = data.UnreadMessagesCount;
 
-            TodaySchedules = data.TodaySchedules.Select(s => new DashboardScheduleDto
-            {
-                ClassName = s.ClassName,
-                Topic = s.Topic,
-                TimeRange = s.TimeRange,
-                Room = s.Room
-            }).ToList();
+            TodaySchedules = data.TodaySchedules.Select(s => new TeacherDashboardScheduleDto(
+                s.ClassName,
+                s.Topic,
+                s.TimeRange,
+                s.Room
+            )).ToList();
 
-            RecentAssignments = data.RecentAssignments.Select(a => new DashboardAssignmentDto
-            {
-                Title = a.Title,
-                ClassName = a.ClassName,
-                CreatedAt = a.CreatedAt ?? DateTime.Now,
-                Submitted = a.SubmittedCount,
-                Total = a.TotalStudents
-            }).ToList();
+            RecentAssignments = data.RecentAssignments.Select(a => new TeacherDashboardAssignmentDto(
+                a.Title,
+                a.ClassName,
+                a.CreatedAt ?? DateTime.Now,
+                a.SubmittedCount,
+                a.TotalStudents,
+                a.TotalStudents > 0 ? (int)((double)a.SubmittedCount / a.TotalStudents * 100) : 0
+            )).ToList();
 
-            RecentMessages = data.RecentMessages.Select(m => new DashboardMessageDto
-            {
-                SenderName = m.SenderName,
-                ParentInfo = m.SenderRole == "PARENT" ? "Phụ huynh" : m.SenderRole,
-                Content = m.ShortContent,
-                TimeAgo = CalculateTimeAgo(m.SentAt ?? DateTime.Now),
-                Avatar = string.IsNullOrWhiteSpace(m.SenderName)
-                    ? "U"
-                    : m.SenderName.Substring(0, 1).ToUpper()
-            }).ToList();
+            RecentMessages = data.RecentMessages.Select(m => new TeacherDashboardMessageDto(
+                m.SenderName,
+                m.SenderRole == "PARENT" ? "Phụ huynh" : m.SenderRole,
+                m.ShortContent,
+                CalculateTimeAgo(m.SentAt ?? DateTime.Now),
+                string.IsNullOrWhiteSpace(m.SenderName) ? "U" : m.SenderName.Substring(0, 1).ToUpper()
+            )).ToList();
 
             return Page();
+        }
+
+        private string CalculateTimeAgo(DateTime pastTime)
+        {
+            var span = EduBridge.Helpers.TimeHelper.GetVietnamNow() - pastTime;
+            if (span.TotalDays > 1) return $"{(int)span.TotalDays} ngày trước";
+            if (span.TotalHours > 1) return $"{(int)span.TotalHours} giờ trước";
+            if (span.TotalMinutes > 1) return $"{(int)span.TotalMinutes} phút trước";
+            return "Vừa xong";
         }
     }
 }

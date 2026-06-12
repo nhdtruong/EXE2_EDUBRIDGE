@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EduBridge.Contracts.Classes;
+using EduBridge.Services.Classes;
 using EduBridge.Data;
 using EduBridge.Models.DTOs.ParentApp;
 using Microsoft.EntityFrameworkCore;
@@ -163,7 +163,7 @@ public class ParentAppService : IParentAppService
                 CourseName = e.Class.Course?.CourseName ?? "",
                 TeacherName = e.Class.Teacher?.User?.FullName ?? "",
                 Status = e.Status,
-                EnrolledAt = e.EnrolledAt
+                EnrolledAt = e.EnrollDate.ToDateTime(TimeOnly.MinValue)
             }).OrderByDescending(c => c.EnrolledAt).ToList()
         };
 
@@ -269,9 +269,9 @@ public class ParentAppService : IParentAppService
             {
                 GradeId = g.GradeId,
                 ClassName = g.Class.ClassName,
-                ExamName = g.ExamName,
+                ExamName = g.GradeName,
                 Score = g.Score,
-                Comments = g.Comments,
+                Comments = g.Comment,
                 CreatedAt = g.CreatedAt
             })
             .ToListAsync(cancellationToken);
@@ -308,10 +308,10 @@ public class ParentAppService : IParentAppService
                 HomeworkId = hw.HomeworkId,
                 ClassName = hw.Lesson.Class.ClassName,
                 Title = hw.Title,
-                DueDate = hw.DueDate,
+                DueDate = hw.DueDate ?? DateTime.MinValue,
                 SubmissionStatus = sub == null ? "NotSubmitted" : (sub.Score.HasValue ? "Graded" : "Submitted"),
                 Score = sub?.Score,
-                TeacherFeedback = sub?.TeacherFeedback
+                TeacherFeedback = sub?.Feedback
             });
         }
 
@@ -333,10 +333,10 @@ public class ParentAppService : IParentAppService
             {
                 InvoiceId = i.InvoiceId,
                 InvoiceCode = i.InvoiceCode,
-                Title = i.Title,
+                Title = i.Description ?? $"Hóa đơn {i.InvoiceCode}",
                 Amount = i.Amount,
-                AmountPaid = i.AmountPaid,
-                DueDate = i.DueDate,
+                AmountPaid = i.Payments.Sum(p => p.Amount),
+                DueDate = i.DueDate ?? DateOnly.MinValue,
                 Status = i.Status
             })
             .ToListAsync(cancellationToken);
@@ -355,7 +355,7 @@ public class ParentAppService : IParentAppService
                 NotificationId = n.NotificationId,
                 Title = n.Title,
                 Content = n.Content,
-                Type = n.Type,
+                Type = "SYSTEM",
                 IsRead = n.IsRead,
                 CreatedAt = n.CreatedAt
             })

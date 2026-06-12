@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using EduBridge.Contracts.Classes;
+using EduBridge.Services.Classes;
 using EduBridge.Models.DTOs.ParentApp;
 
 namespace EduBridge.Services.ParentApp;
