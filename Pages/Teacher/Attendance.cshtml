@@ -89,9 +89,9 @@
                 }
             </select>
 
-            <div style="position: relative; width: 200px;">
-                <svg style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #9ca3af;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="studentSearchInput" class="attendance-select" style="width: 100%; padding-left: 2rem;" placeholder="Tìm học sinh...">
+            <div class="search-wrapper" style="width: 200px;">
+                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="studentSearchInput" class="search-input-field" placeholder="Tìm học sinh...">
             </div>
         </div>
     </div>
@@ -136,7 +136,7 @@
                                     }
                                 </span>
                             </td>
-                            <td><input type="text" class="notes-input" id="note-@std.StudentId" value="@std.Note" placeholder="Nhập ghi chú..." style="border-radius: 12px; padding: 0.6rem 1rem; border-color: #cbd5e1;" /></td>
+                            <td><input type="text" class="notes-input" id="note-@std.StudentId" value="@std.Note" placeholder="Nhập ghi chú..." /></td>
                             <td>
                                 <div class="action-buttons justify-content-end">
                                     <button class="btn-status btn-present-select @(std.Status == "Present" ? "btn-status-active" : "")" data-id="@std.StudentId">Có mặt</button>
@@ -493,7 +493,7 @@
                             ${getBadgeText(std.Status)}
                         </span>
                     </td>
-                    <td><input type="text" class="notes-input" id="note-${std.StudentId}" value="${std.Note || ''}" placeholder="Nhập ghi chú..." style="border-radius: 12px; padding: 0.6rem 1rem; border-color: #cbd5e1;" /></td>
+                    <td><input type="text" class="notes-input" id="note-${std.StudentId}" value="${std.Note || ''}" placeholder="Nhập ghi chú..." /></td>
                     <td>
                         <div class="action-buttons justify-content-end">
                             <button class="btn-status btn-present-select ${std.Status === 'Present' ? 'btn-status-active' : ''}" data-id="${std.StudentId}">Có mặt</button>
@@ -700,27 +700,6 @@
                 return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>Vắng`;
             }
             return "Chưa điểm danh";
-        }
-
-        // Hàm hiển thị Toast
-        function showToast(message, isSuccess = true) {
-            const toast = document.getElementById('layout-toast');
-            const title = document.getElementById('layout-toast-title');
-            const msg = document.getElementById('layout-toast-message');
-            
-            if (isSuccess) {
-                toast.style.background = '#16a34a';
-                title.textContent = 'Thành công';
-            } else {
-                toast.style.background = '#dc2626';
-                title.textContent = 'Lỗi';
-            }
-            msg.textContent = message;
-            toast.style.display = 'block';
-            
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 3000);
         }
     </script>
 }

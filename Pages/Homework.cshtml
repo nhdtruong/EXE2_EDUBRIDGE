@@ -342,18 +342,8 @@
                                     const feedback = feedbackInput.value;
 
                                     if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
-                                        let errorSpan = scoreInput.parentElement.querySelector('.text-danger');
-                                        if (!errorSpan) {
-                                            errorSpan = document.createElement('div');
-                                            errorSpan.className = 'text-danger mt-1';
-                                            errorSpan.style.fontSize = '0.75rem';
-                                            scoreInput.parentElement.appendChild(errorSpan);
-                                        }
-                                        errorSpan.innerText = "Điểm 0-10";
+                                        window.showToast("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.", false);
                                         return;
-                                    } else {
-                                        const errorSpan = scoreInput.parentElement.querySelector('.text-danger');
-                                        if (errorSpan) errorSpan.remove();
                                     }
 
                                     // Điền dữ liệu vào form ẩn và Submit

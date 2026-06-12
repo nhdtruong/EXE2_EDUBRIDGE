@@ -1,0 +1,76 @@
+/* Source: Pages/Admin*.cshtml Tailwind button utilities - primary action button */
+.ds-btn {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: 1px solid transparent;
+    border-radius: var(--ds-radius-sm);
+    padding: 0 16px;
+    font-family: var(--ds-font-family);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+/* Source: Pages/AdminTeachers.cshtml - bg-blue-600 hover:bg-blue-700 */
+.ds-btn-primary {
+    background: var(--ds-primary);
+    color: #ffffff;
+}
+
+.ds-btn-primary:hover {
+    background: var(--ds-primary-hover);
+}
+
+/* Source: Pages/AdminTeachers.cshtml - bg-slate-600 hover:bg-slate-700 */
+.ds-btn-secondary {
+    background: #475569;
+    color: #ffffff;
+}
+
+.ds-btn-secondary:hover {
+    background: #334155;
+}
+
+/* Source: Pages/AdminCourses.cshtml delete modal - bg-red-600 hover:bg-red-700 */
+.ds-btn-danger {
+    background: var(--ds-danger);
+    color: #ffffff;
+}
+
+.ds-btn-danger:hover {
+    background: var(--ds-danger-hover);
+}
+
+/* Source: Pages/AdminCourses.cshtml modal cancel button */
+.ds-btn-outline {
+    border-color: var(--ds-border-strong);
+    background: #ffffff;
+    color: #374151;
+}
+
+.ds-btn-outline:hover {
+    background: #f9fafb;
+}
+
+/* Source: wwwroot/css/teacher.css - .btn-primary-green, .btn-save */
+.ds-btn-success {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.ds-btn-success:hover {
+    background: #15803d;
+}
+
+.ds-btn:disabled,
+.ds-btn.ds-disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+

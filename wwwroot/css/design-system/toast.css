@@ -1,0 +1,57 @@
+/* Source: Pages/Shared/_AdminLayout.cshtml - stacked admin toast container */
+.ds-toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 50;
+    display: flex;
+    width: 380px;
+    max-width: calc(100vw - 32px);
+    flex-direction: column;
+    gap: 12px;
+}
+
+.ds-toast {
+    display: flex;
+    gap: 12px;
+    border-left: 4px solid;
+    border-radius: var(--ds-radius-md);
+    background: #ffffff;
+    padding: 16px;
+    box-shadow: var(--ds-shadow-lg);
+}
+
+.ds-toast-success {
+    border-left-color: #22c55e;
+    background: #dcfce7;
+    color: #166534;
+}
+
+.ds-toast-error {
+    border-left-color: #ef4444;
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.ds-toast-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.ds-toast-message {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.ds-toast-close {
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: currentColor;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+}
+
