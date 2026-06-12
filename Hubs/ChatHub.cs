@@ -2,10 +2,12 @@ using EduBridge.Data;
 using EduBridge.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
 namespace EduBridge.Hubs
 {
+    [Authorize]
     public class ChatHub : Hub
     {
         private readonly AppDbContext _context;
@@ -56,7 +58,7 @@ namespace EduBridge.Hubs
                 SenderUserId = senderUserId.Value,
                 ReceiverUserId = receiverUserId,
                 Content = content.Trim(),
-                SentAt = DateTime.Now,
+                SentAt = EduBridge.Helpers.TimeHelper.GetVietnamNow(),
                 IsRead = false
             };
 

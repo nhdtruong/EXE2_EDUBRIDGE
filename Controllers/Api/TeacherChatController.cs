@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using EduBridge.Contracts.Classes; // Contains ApiResponse wrapper
 using EduBridge.Models.DTOs.TeacherChat;
 using EduBridge.Services.Chat;
+using EduBridge.Services.Storage;
 
 namespace EduBridge.Controllers.Api
 {
@@ -19,12 +20,12 @@ namespace EduBridge.Controllers.Api
     public class TeacherChatController : ControllerBase
     {
         private readonly IChatService _chatService;
-        private readonly IWebHostEnvironment _env;
+        private readonly IFileStorageService _storageService;
 
-        public TeacherChatController(IChatService chatService, IWebHostEnvironment env)
+        public TeacherChatController(IChatService chatService, IFileStorageService storageService)
         {
             _chatService = chatService;
-            _env = env;
+            _storageService = storageService;
         }
 
         [HttpGet("conversations")]
@@ -41,9 +42,9 @@ namespace EduBridge.Controllers.Api
                 var conversations = await _chatService.GetTeacherConversationsAsync(userId);
                 return Ok(new ApiResponse<List<ConversationDto>>(true, "Success", conversations));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new ApiResponse<List<ConversationDto>>(false, $"Lỗi máy chủ: {ex.Message}", null));
+                return StatusCode(500, new ApiResponse<List<ConversationDto>>(false, "Đã xảy ra lỗi hệ thống trong quá trình xử lý.", null));
             }
         }
 
@@ -61,9 +62,9 @@ namespace EduBridge.Controllers.Api
                 var history = await _chatService.GetChatHistoryAsync(userId, contactUserId);
                 return Ok(new ApiResponse<List<ChatMessageDto>>(true, "Success", history));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new ApiResponse<List<ChatMessageDto>>(false, $"Lỗi máy chủ: {ex.Message}", null));
+                return StatusCode(500, new ApiResponse<List<ChatMessageDto>>(false, "Đã xảy ra lỗi hệ thống trong quá trình xử lý.", null));
             }
         }
 
@@ -81,9 +82,9 @@ namespace EduBridge.Controllers.Api
                 var result = await _chatService.MarkAsReadAsync(userId, contactUserId);
                 return Ok(new ApiResponse<bool>(true, "Đã đánh dấu đã đọc", result));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new ApiResponse<bool>(false, $"Lỗi máy chủ: {ex.Message}", false));
+                return StatusCode(500, new ApiResponse<bool>(false, "Đã xảy ra lỗi hệ thống trong quá trình xử lý.", false));
             }
         }
 
@@ -110,30 +111,17 @@ namespace EduBridge.Controllers.Api
 
             try
             {
-                var uploadsDir = Path.Combine(_env.WebRootPath, "uploads", "chat");
-                if (!Directory.Exists(uploadsDir))
-                {
-                    Directory.CreateDirectory(uploadsDir);
-                }
+                var fileUrl = await _storageService.SaveFileAsync(file, "chat");
 
-                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-                var filePath = Path.Combine(uploadsDir, uniqueFileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-
-                var fileUrl = $"/uploads/chat/{uniqueFileName}";
                 return Ok(new ApiResponse<object>(true, "Tải lên file thành công", new
                 {
                     fileUrl,
                     fileName = file.FileName
                 }));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new ApiResponse<object>(false, $"Lỗi tải lên file: {ex.Message}", null));
+                return StatusCode(500, new ApiResponse<object>(false, "Lỗi tải lên file.", null));
             }
         }
     }

@@ -35,9 +35,9 @@ namespace EduBridge.Controllers.Api
                 var classes = await _notificationService.GetTeacherClassesAsync(userId);
                 return Ok(new ApiResponse<List<TeacherClassDto>>(true, "Success", classes));
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                return StatusCode(500, new ApiResponse<List<TeacherClassDto>>(false, $"Lỗi hệ thống: {ex.Message}", null));
+                return StatusCode(500, new ApiResponse<List<TeacherClassDto>>(false, "Đã xảy ra lỗi hệ thống trong quá trình xử lý.", null));
             }
         }
 
@@ -65,9 +65,9 @@ namespace EduBridge.Controllers.Api
 
                 return Ok(new ApiResponse<bool>(true, "Gửi thông báo chung thành công", true));
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
-                return StatusCode(500, new ApiResponse<bool>(false, $"Lỗi hệ thống: {ex.Message}", false));
+                return StatusCode(500, new ApiResponse<bool>(false, "Đã xảy ra lỗi hệ thống trong quá trình xử lý.", false));
             }
         }
     }

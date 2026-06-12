@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Services.Lectures;
 using EduBridge.Models.DTOs.TeacherLectures;
@@ -15,18 +14,15 @@ namespace EduBridge.Pages.Teacher
 {
     public class LecturesModel : PageModel
     {
-        private readonly AppDbContext _context;
         private readonly ILectureService _lectureService;
 
-        public LecturesModel(AppDbContext context, ILectureService lectureService)
+        public LecturesModel(ILectureService lectureService)
         {
-            _context = context;
             _lectureService = lectureService;
         }
 
         public List<ClassProgressViewModel> ClassesProgress { get; set; } = new();
         public List<LectureHistoryViewModel> LectureHistories { get; set; } = new();
-        public List<Class> TeacherClasses { get; set; } = new();
 
         [BindProperty]
         public AddNoteInputModel Input { get; set; } = new();
@@ -35,13 +31,6 @@ namespace EduBridge.Pages.Teacher
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
-
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null) return RedirectToPage("/Login");
-
-            TeacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
-                .ToListAsync();
 
             var serviceData = await _lectureService.GetLecturesDataAsync(userId);
 

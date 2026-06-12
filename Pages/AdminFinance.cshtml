@@ -5,8 +5,23 @@
     Layout = "_AdminLayout";
     ViewData["ActivePage"] = "AdminFinance";
     var centerId = Model.CenterId;
+    
+    var selectedClassText = "Lớp học";
+    if (Model.ClassId.HasValue && Model.Classes != null)
+    {
+        var classItem = Model.Classes.FirstOrDefault(x => x.Value == Model.ClassId.Value.ToString());
+        if (classItem != null) selectedClassText = classItem.Text;
+    }
+    
+    var selectedStatusText = Model.Status switch
+    {
+        "Unpaid" => "Chưa thanh toán",
+        "Partial" => "Thanh toán 1 phần",
+        "Paid" => "Đã thanh toán đủ",
+        "Cancelled" => "Đã hủy",
+        _ => "Trạng thái"
+    };
 }
-
 <div class="space-y-6 pb-20">
     <!-- Header -->
     <div class="flex justify-between items-start">
@@ -80,41 +95,68 @@
                 <input type="hidden" name="PageNumber" value="1" />
                 <input type="hidden" name="PageSize" value="@Model.PageSize" />
                 <div class="grid gap-4 lg:grid-cols-4">
-                    <input type="text" name="InvoiceCode" value="@Model.InvoiceCode" maxlength="50" class="block h-10 w-full rounded-xl border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Mã hóa đơn">
-                    <input type="text" name="StudentName" value="@Model.StudentName" maxlength="150" class="block h-10 w-full rounded-xl border-gray-200 bg-gray-50 px-4 text-sm text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tên/mã học sinh">
-                    <select name="ClassId" asp-items="Model.Classes" class="block h-10 w-full rounded-xl border-gray-200 bg-gray-50 px-4 text-sm text-gray-600 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="">Lớp học</option>
-                    </select>
-                    <select name="Status" class="block h-10 w-full rounded-xl border-gray-200 bg-gray-50 px-4 text-sm text-gray-600 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="">Trạng thái</option>
-                        <option value="Unpaid" selected="@(Model.Status == "Unpaid")">Chưa thanh toán</option>
-                        <option value="Partial" selected="@(Model.Status == "Partial")">Thanh toán 1 phần</option>
-                        <option value="Paid" selected="@(Model.Status == "Paid")">Đã thanh toán đủ</option>
-                        <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Đã hủy</option>
-                    </select>
+                    <input type="text" name="InvoiceCode" value="@Model.InvoiceCode" maxlength="50" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Mã hóa đơn">
+                    <input type="text" name="StudentName" value="@Model.StudentName" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tên/mã học sinh">
+                    <div class="relative w-full" data-search-dropdown>
+                        <input type="hidden" name="ClassId" value="@Model.ClassId" data-filter-value="finance-class" />
+                        <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <span data-dropdown-label>@selectedClassText</span>
+                            <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                            <div class="relative p-2 sticky top-0 bg-white z-10 border-b border-gray-100">
+                                <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <button type="button" data-dropdown-option data-value="" data-label="Lớp học" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả lớp học</button>
+                            @if (Model.Classes != null)
+                            {
+                                foreach (var cls in Model.Classes)
+                                {
+                                    <button type="button" data-dropdown-option data-value="@cls.Value" data-label="@cls.Text" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">@cls.Text</button>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="relative w-full" data-search-dropdown>
+                        <input type="hidden" name="Status" value="@Model.Status" data-filter-value="finance-status" />
+                        <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <span data-dropdown-label>@selectedStatusText</span>
+                            <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                            <div class="relative p-2 sticky top-0 bg-white z-10 border-b border-gray-100">
+                                <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả trạng thái</button>
+                            <button type="button" data-dropdown-option data-value="Unpaid" data-label="Chưa thanh toán" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Chưa thanh toán</button>
+                            <button type="button" data-dropdown-option data-value="Partial" data-label="Thanh toán 1 phần" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Thanh toán 1 phần</button>
+                            <button type="button" data-dropdown-option data-value="Paid" data-label="Đã thanh toán đủ" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đã thanh toán đủ</button>
+                            <button type="button" data-dropdown-option data-value="Cancelled" data-label="Đã hủy" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đã hủy</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="grid gap-4 lg:grid-cols-4">
-                    <div class="relative">
+                    <div class="relative min-w-0">
                         <input asp-for="DateFrom" type="hidden" data-date-hidden="finance-date-from">
-                        <input type="text" data-date-display="finance-date-from" value="@Model.DateFrom?.ToString("dd/MM/yyyy")" autocomplete="off" class="block h-10 w-full rounded-xl border-gray-200 bg-gray-50 px-4 pr-12 text-sm text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Từ ngày">
-                        <button type="button" data-date-toggle="finance-date-from" class="absolute right-0 top-0 flex h-10 w-12 items-center justify-center rounded-r-xl bg-sky-600 text-white hover:bg-sky-700 transition-colors">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+                        <input type="text" data-date-display="finance-date-from" value="@Model.DateFrom?.ToString("dd/MM/yyyy")" autocomplete="off" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Từ ngày">
+                        <button type="button" data-date-toggle="finance-date-from" class="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-r bg-sky-600 text-white hover:bg-sky-700 transition-colors">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
                         </button>
                     </div>
-                    <div class="relative">
+                    <div class="relative min-w-0">
                         <input asp-for="DateTo" type="hidden" data-date-hidden="finance-date-to">
-                        <input type="text" data-date-display="finance-date-to" value="@Model.DateTo?.ToString("dd/MM/yyyy")" autocomplete="off" class="block h-10 w-full rounded-xl border-gray-200 bg-gray-50 px-4 pr-12 text-sm text-gray-900 placeholder-gray-500 focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Đến ngày">
-                        <button type="button" data-date-toggle="finance-date-to" class="absolute right-0 top-0 flex h-10 w-12 items-center justify-center rounded-r-xl bg-sky-600 text-white hover:bg-sky-700 transition-colors">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+                        <input type="text" data-date-display="finance-date-to" value="@Model.DateTo?.ToString("dd/MM/yyyy")" autocomplete="off" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Đến ngày">
+                        <button type="button" data-date-toggle="finance-date-to" class="absolute right-0 top-0 flex h-12 w-12 items-center justify-center rounded-r bg-sky-600 text-white hover:bg-sky-700 transition-colors">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg>
                         </button>
                     </div>
                     <div class="hidden lg:block"></div>
                     <div class="flex flex-wrap justify-end gap-3">
-                        <a asp-page="/AdminFinance" class="inline-flex h-10 items-center rounded-xl bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
-                            Làm mới bộ lọc
-                        </a>
-                        <button type="submit" class="inline-flex h-10 items-center rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                        <a asp-page="/AdminFinance" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">Làm mới bộ lọc</a>
+                        <button type="submit" class="inline-flex h-12 min-w-32 items-center justify-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
                             <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             Tìm kiếm
                         </button>
@@ -420,6 +462,68 @@
             }
         }
 
+        document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+            const container = dropdown.parentElement;
+            const hiddenInput = container.querySelector('[data-filter-value]') || dropdown.querySelector('[data-filter-value]');
+            const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+            const panel = dropdown.querySelector('[data-dropdown-panel]');
+            const label = dropdown.querySelector('[data-dropdown-label]');
+            const searchInput = dropdown.querySelector('[data-dropdown-search]');
+            const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+            function close() {
+                panel.classList.add('hidden');
+            }
+
+            function open() {
+                document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                panel.classList.remove('hidden');
+                searchInput.value = '';
+                filterOptions('');
+                searchInput.focus();
+            }
+
+            function filterOptions(keyword) {
+                const normalizedKeyword = keyword.trim().toLowerCase();
+
+                options.forEach(option => {
+                    const text = option.textContent.trim().toLowerCase();
+                    const labelText = (option.dataset.label || '').toLowerCase();
+                    const visible = !normalizedKeyword ||
+                        text.includes(normalizedKeyword) ||
+                        labelText.includes(normalizedKeyword);
+
+                    option.classList.toggle('hidden', !visible);
+                });
+            }
+
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+
+                if (panel.classList.contains('hidden')) {
+                    open();
+                } else {
+                    close();
+                }
+            });
+
+            searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+            searchInput.addEventListener('click', event => event.stopPropagation());
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hiddenInput.value = option.dataset.value || '';
+                    label.textContent = option.dataset.label || option.textContent.trim();
+                    close();
+                });
+            });
+
+            document.addEventListener('click', event => {
+                if (!dropdown.contains(event.target)) {
+                    close();
+                }
+            });
+        });
 
     </script>
 }

@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using EduBridge.Data;
-using EduBridge.Models;
+
 using EduBridge.Services.Grades;
 using EduBridge.Models.DTOs.TeacherGrades;
 
@@ -15,16 +14,14 @@ namespace EduBridge.Pages
 {
     public class GradesModel : PageModel
     {
-        private readonly AppDbContext _context;
         private readonly IGradeService _gradeService;
 
-        public GradesModel(AppDbContext context, IGradeService gradeService)
+        public GradesModel(IGradeService gradeService)
         {
-            _context = context;
             _gradeService = gradeService;
         }
 
-        public List<Class> TeacherClasses { get; set; } = new();
+        public List<TeacherClassDto> TeacherClasses { get; set; } = new();
         public List<StudentGradesDto> StudentsGrades { get; set; } = new();
         public int SelectedClassId { get; set; }
 
@@ -33,12 +30,7 @@ namespace EduBridge.Pages
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
 
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null) return RedirectToPage("/Login");
-
-            TeacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
-                .ToListAsync();
+            TeacherClasses = await _gradeService.GetTeacherClassesAsync(userId);
 
             if (!TeacherClasses.Any())
             {

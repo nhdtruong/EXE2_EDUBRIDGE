@@ -40,7 +40,7 @@
             }
 
             const picker = document.createElement('div');
-            picker.className = 'absolute left-0 top-[calc(100%+2px)] z-[90] hidden w-[380px] max-w-[calc(100vw-2rem)] border border-gray-200 bg-white text-sm text-gray-600 shadow-xl';
+            picker.className = 'absolute left-0 top-[calc(100%+2px)] z-[90] hidden w-[380px] max-w-[90vw] border border-gray-200 bg-white text-sm text-gray-600 shadow-xl';
             picker.dataset.ebDatePanel = 'true';
             display.parentElement.appendChild(picker);
 
@@ -65,10 +65,17 @@
             });
             display.addEventListener('blur', () => syncTypedDate(display, hidden, state));
             display.addEventListener('change', () => syncTypedDate(display, hidden, state));
-            display.addEventListener('click', openPicker);
-            toggle.addEventListener('click', event => {
+            display.addEventListener('click', event => {
                 event.stopPropagation();
                 openPicker();
+            });
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                if (picker.classList.contains('hidden')) {
+                    openPicker();
+                } else {
+                    picker.classList.add('hidden');
+                }
             });
 
             picker.addEventListener('mousedown', event => {
@@ -109,7 +116,7 @@
             };
 
             const panel = document.createElement('div');
-            panel.className = 'absolute left-0 top-[calc(100%+4px)] z-[90] hidden w-[440px] max-w-[calc(100vw-2rem)] rounded border border-gray-200 bg-white text-sm text-gray-600 shadow-xl';
+            panel.className = 'absolute left-0 top-[calc(100%+4px)] z-[90] hidden w-[440px] max-w-[90vw] rounded border border-gray-200 bg-white text-sm text-gray-600 shadow-xl';
             panel.dataset.ebRangePanel = 'true';
             range.appendChild(panel);
 

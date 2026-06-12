@@ -27,7 +27,7 @@ public sealed class FinanceSummaryService : IFinanceSummaryService
             .SumAsync(p => p.Amount, cancellationToken);
 
         var activeInvoices = await _context.Invoices
-            .Where(i => i.CenterId == centerId && (i.Status == "Unpaid" || i.Status == "Partial" || i.DueDate < DateOnly.FromDateTime(DateTime.Now)))
+            .Where(i => i.CenterId == centerId && (i.Status == "Unpaid" || i.Status == "Partial" || i.DueDate < DateOnly.FromDateTime(EduBridge.Helpers.TimeHelper.GetVietnamNow())))
             .Select(i => new {
                 FinalAmount = i.FinalAmount ?? 0,
                 PaidAmount = i.Payments.Where(p => p.Status == "Confirmed").Sum(p => p.Amount)

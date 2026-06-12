@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
+
+using EduBridge.Contracts.Dashboard;
 using EduBridge.Services.Dashboard;
 
 namespace EduBridge.Pages.Teacher
@@ -21,20 +23,20 @@ namespace EduBridge.Pages.Teacher
         public int UngradedAssignments { get; set; }
         public int UnreadMessages { get; set; }
 
-        public List<DashboardScheduleDto> TodaySchedules { get; set; } = new();
-        public List<DashboardAssignmentDto> RecentAssignments { get; set; } = new();
-        public List<DashboardMessageDto> RecentMessages { get; set; } = new();
+        public IReadOnlyList<TeacherDashboardScheduleDto> TodaySchedules { get; set; } = new List<TeacherDashboardScheduleDto>();
+        public IReadOnlyList<TeacherDashboardAssignmentDto> RecentAssignments { get; set; } = new List<TeacherDashboardAssignmentDto>();
+        public IReadOnlyList<TeacherDashboardMessageDto> RecentMessages { get; set; } = new List<TeacherDashboardMessageDto>();
 
-        public async Task<IActionResult> OnGetAsync()
+        public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
         {
-            CurrentDate = DateTime.Now;
+            CurrentDate = EduBridge.Helpers.TimeHelper.GetVietnamNow();
 
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId))
                 return RedirectToPage("/Login");
 
             var result = await _dashboardService.GetTeacherDashboardDataAsync(userId);
-            if (!result.IsSuccess)
+            if (!result.IsSuccess || result.Value == null)
             {
                 return RedirectToPage("/Login");
             }
@@ -47,71 +49,40 @@ namespace EduBridge.Pages.Teacher
             UngradedAssignments = data.UngradedAssignmentsCount;
             UnreadMessages = data.UnreadMessagesCount;
 
-            TodaySchedules = data.TodaySchedules.Select(s => new DashboardScheduleDto
-            {
-                ClassName = s.ClassName,
-                Topic = s.Topic,
-                TimeRange = s.TimeRange,
-                Room = s.Room
-            }).ToList();
+            TodaySchedules = data.TodaySchedules.Select(s => new TeacherDashboardScheduleDto(
+                s.ClassName,
+                s.Topic,
+                s.TimeRange,
+                s.Room
+            )).ToList();
 
-            RecentAssignments = data.RecentAssignments.Select(a => new DashboardAssignmentDto
-            {
-                Title = a.Title,
-                ClassName = a.ClassName,
-                CreatedAt = a.CreatedAt ?? DateTime.Now,
-                Submitted = a.SubmittedCount,
-                Total = a.TotalStudents
-            }).ToList();
+            RecentAssignments = data.RecentAssignments.Select(a => new TeacherDashboardAssignmentDto(
+                a.Title,
+                a.ClassName,
+                a.CreatedAt ?? DateTime.Now,
+                a.SubmittedCount,
+                a.TotalStudents,
+                a.TotalStudents > 0 ? (int)((double)a.SubmittedCount / a.TotalStudents * 100) : 0
+            )).ToList();
 
-            RecentMessages = data.RecentMessages.Select(m => new DashboardMessageDto
-            {
-                SenderName = m.SenderName,
-                ParentInfo = m.SenderRole == "PARENT" ? "Phụ huynh" : m.SenderRole,
-                Content = m.ShortContent,
-                TimeAgo = CalculateTimeAgo(m.SentAt ?? DateTime.Now),
-                Avatar = string.IsNullOrWhiteSpace(m.SenderName)
-                    ? "U"
-                    : m.SenderName.Substring(0, 1).ToUpper()
-            }).ToList();
+            RecentMessages = data.RecentMessages.Select(m => new TeacherDashboardMessageDto(
+                m.SenderName,
+                m.SenderRole == "PARENT" ? "Phụ huynh" : m.SenderRole,
+                m.ShortContent,
+                CalculateTimeAgo(m.SentAt ?? DateTime.Now),
+                string.IsNullOrWhiteSpace(m.SenderName) ? "U" : m.SenderName.Substring(0, 1).ToUpper()
+            )).ToList();
 
             return Page();
         }
 
-        private static string CalculateTimeAgo(DateTime pastTime)
+        private string CalculateTimeAgo(DateTime pastTime)
         {
-            var span = DateTime.Now - pastTime;
-            if (span.TotalDays >= 1) return $"{(int)span.TotalDays} ngày trước";
-            if (span.TotalHours >= 1) return $"{(int)span.TotalHours} giờ trước";
-            if (span.TotalMinutes >= 1) return $"{(int)span.TotalMinutes} phút trước";
+            var span = EduBridge.Helpers.TimeHelper.GetVietnamNow() - pastTime;
+            if (span.TotalDays > 1) return $"{(int)span.TotalDays} ngày trước";
+            if (span.TotalHours > 1) return $"{(int)span.TotalHours} giờ trước";
+            if (span.TotalMinutes > 1) return $"{(int)span.TotalMinutes} phút trước";
             return "Vừa xong";
         }
-    }
-
-    public class DashboardScheduleDto
-    {
-        public string ClassName { get; set; } = string.Empty;
-        public string Topic { get; set; } = string.Empty;
-        public string TimeRange { get; set; } = string.Empty;
-        public string Room { get; set; } = string.Empty;
-    }
-
-    public class DashboardAssignmentDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string ClassName { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public int Submitted { get; set; }
-        public int Total { get; set; }
-        public int PercentComplete => Total == 0 ? 0 : (int)((double)Submitted / Total * 100);
-    }
-
-    public class DashboardMessageDto
-    {
-        public string SenderName { get; set; } = string.Empty;
-        public string ParentInfo { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string TimeAgo { get; set; } = string.Empty;
-        public string Avatar { get; set; } = string.Empty;
     }
 }

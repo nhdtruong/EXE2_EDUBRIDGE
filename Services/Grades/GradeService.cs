@@ -19,6 +19,22 @@ namespace EduBridge.Services.Grades
             _context = context;
         }
 
+        public async Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return new List<TeacherClassDto>();
+
+            var classes = await _context.Classes
+                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            return classes.Select(c => new TeacherClassDto
+            {
+                ClassId = c.ClassId,
+                ClassName = c.ClassName
+            }).ToList();
+        }
+
         public async Task<List<StudentGradesDto>> GetGradesByClassAsync(int teacherUserId, int classId, CancellationToken cancellationToken = default)
         {
             var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
@@ -131,7 +147,7 @@ namespace EduBridge.Services.Grades
                         GradeName = gradeName,
                         Score = score.Value,
                         Comment = comment?.Trim(),
-                        CreatedAt = DateTime.Now
+                        CreatedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow()
                     };
                     _context.Grades.Add(grade);
                 }

@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using EduBridge.Contracts.Finance;
 using EduBridge.Services.Finance;
+using EduBridge.Services.Settings;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using EduBridge.Data;
-using Microsoft.EntityFrameworkCore;
+using System.Threading;
 
 namespace EduBridge.Pages
 {
@@ -14,29 +14,25 @@ namespace EduBridge.Pages
     public class AdminReceiptsPrintModel : PageModel
     {
         private readonly IReceiptService _receiptService;
-        private readonly AppDbContext _context;
+        private readonly ICenterSettingsService _centerSettingsService;
 
-        public AdminReceiptsPrintModel(IReceiptService receiptService, AppDbContext context)
+        public AdminReceiptsPrintModel(IReceiptService receiptService, ICenterSettingsService centerSettingsService)
         {
             _receiptService = receiptService;
-            _context = context;
+            _centerSettingsService = centerSettingsService;
         }
 
         public ReceiptPrintResponse ReceiptData { get; set; } = default!;
 
-        public async Task<IActionResult> OnGetAsync(int id)
+        public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
         {
             if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var ownerUserId))
                 return RedirectToPage("/Login");
 
-            var center = await _context.Centers.AsNoTracking()
-                .FirstOrDefaultAsync(c => c.OwnerUserId == ownerUserId && c.Status == "Active");
+            var centerId = await _centerSettingsService.GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
+            if (centerId == null) return RedirectToPage("/Login");
 
-            if (center == null) return RedirectToPage("/Login");
-            
-            var centerId = center.CenterId;
-
-            var result = await _receiptService.GetForPrintAsync(id, centerId);
+            var result = await _receiptService.GetForPrintAsync(id, centerId.Value);
             
             if (!result.IsSuccess || result.Value == null)
             {

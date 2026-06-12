@@ -4,6 +4,18 @@
     ViewData["Title"] = "Quản lý phụ huynh";
     Layout = "_AdminLayout";
     ViewData["ActivePage"] = "AdminParents";
+    var selectedStatusText = Model.StatusFilter switch
+    {
+        "Active" => "Đang hoạt động",
+        "Inactive" => "Tạm dừng",
+        _ => "Trạng thái"
+    };
+    var selectedChildrenText = Model.ChildrenFilter switch
+    {
+        "yes" => "Có học sinh",
+        "no" => "Chưa có học sinh",
+        _ => "Liên kết học sinh"
+    };
 }
 
 <div class="mb-5">
@@ -27,12 +39,38 @@
             <div>
                 <input asp-for="PhoneFilter" class="h-11 w-full rounded border border-gray-300 bg-white px-3 text-sm" placeholder="Số điện thoại">
             </div>
-            <select asp-for="StatusFilter" class="h-11 w-full rounded border border-gray-300 bg-white px-3 text-sm">
-                <option value="">Trạng thái</option><option value="Active">Đang hoạt động</option><option value="Inactive">Tạm dừng</option>
-            </select>
-            <select asp-for="ChildrenFilter" class="h-11 w-full rounded border border-gray-300 bg-white px-3 text-sm">
-                <option value="">Liên kết học sinh</option><option value="yes">Có học sinh</option><option value="no">Chưa có học sinh</option>
-            </select>
+            <div class="relative w-full" data-search-dropdown>
+                <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" data-filter-value="parent-status" />
+                <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between rounded border border-gray-300 bg-white px-3 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <span data-dropdown-label>@selectedStatusText</span>
+                    <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                    <div class="relative p-2">
+                        <input type="text" data-dropdown-search class="h-10 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <svg class="absolute right-4 top-4 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
+                    <button type="button" data-dropdown-option data-value="Active" data-label="Đang hoạt động" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang hoạt động</button>
+                    <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                </div>
+            </div>
+            <div class="relative w-full" data-search-dropdown>
+                <input type="hidden" name="ChildrenFilter" value="@Model.ChildrenFilter" data-filter-value="parent-children" />
+                <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between rounded border border-gray-300 bg-white px-3 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <span data-dropdown-label>@selectedChildrenText</span>
+                    <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                    <div class="relative p-2">
+                        <input type="text" data-dropdown-search class="h-10 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <svg class="absolute right-4 top-4 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <button type="button" data-dropdown-option data-value="" data-label="Liên kết học sinh" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
+                    <button type="button" data-dropdown-option data-value="yes" data-label="Có học sinh" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Có học sinh</button>
+                    <button type="button" data-dropdown-option data-value="no" data-label="Chưa có học sinh" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Chưa có học sinh</button>
+                </div>
+            </div>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <a asp-page="/AdminParents/Create" class="inline-flex h-10 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white"><span class="mr-2 text-lg">+</span>Thêm phụ huynh</a>
@@ -218,6 +256,69 @@
             document.querySelectorAll('[data-close-delete-confirm]').forEach(button => button.addEventListener('click', closeDelete));
             deleteModal?.addEventListener('click', event => {
                 if (event.target === deleteModal) closeDelete();
+            });
+
+            document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+                const container = dropdown.parentElement;
+                const hiddenInput = container.querySelector('[data-filter-value]') || dropdown.querySelector('[data-filter-value]');
+                const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+                const panel = dropdown.querySelector('[data-dropdown-panel]');
+                const label = dropdown.querySelector('[data-dropdown-label]');
+                const searchInput = dropdown.querySelector('[data-dropdown-search]');
+                const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+                function close() {
+                    panel.classList.add('hidden');
+                }
+
+                function open() {
+                    document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                    panel.classList.remove('hidden');
+                    searchInput.value = '';
+                    filterOptions('');
+                    searchInput.focus();
+                }
+
+                function filterOptions(keyword) {
+                    const normalizedKeyword = keyword.trim().toLowerCase();
+
+                    options.forEach(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        const labelText = (option.dataset.label || '').toLowerCase();
+                        const visible = !normalizedKeyword ||
+                            text.includes(normalizedKeyword) ||
+                            labelText.includes(normalizedKeyword);
+
+                        option.classList.toggle('hidden', !visible);
+                    });
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+
+                    if (panel.classList.contains('hidden')) {
+                        open();
+                    } else {
+                        close();
+                    }
+                });
+
+                searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+                searchInput.addEventListener('click', event => event.stopPropagation());
+
+                options.forEach(option => {
+                    option.addEventListener('click', () => {
+                        hiddenInput.value = option.dataset.value || '';
+                        label.textContent = option.dataset.label || option.textContent.trim();
+                        close();
+                    });
+                });
+
+                document.addEventListener('click', event => {
+                    if (!dropdown.contains(event.target)) {
+                        close();
+                    }
+                });
             });
         })();
     </script>

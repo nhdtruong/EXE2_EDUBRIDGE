@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using EduBridge.Data;
-using EduBridge.Models;
+
 using EduBridge.Services.Homeworks;
 using EduBridge.Models.DTOs.TeacherHomework;
 
@@ -15,30 +14,22 @@ namespace EduBridge.Pages
 {
     public class HomeworkModel : PageModel
     {
-        private readonly AppDbContext _context;
         private readonly IHomeworkService _homeworkService;
 
-        public HomeworkModel(AppDbContext context, IHomeworkService homeworkService)
+        public HomeworkModel(IHomeworkService homeworkService)
         {
-            _context = context;
             _homeworkService = homeworkService;
         }
 
         public List<HomeworkListItemDto> HomeworkList { get; set; } = new();
-        public List<Class> TeacherClasses { get; set; } = new();
+        public List<TeacherClassDto> TeacherClasses { get; set; } = new();
 
         public async Task<IActionResult> OnGetAsync()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
 
-            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == userId);
-            if (teacher == null) return RedirectToPage("/Login");
-
-            TeacherClasses = await _context.Classes
-                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
-                .ToListAsync();
-
+            TeacherClasses = await _homeworkService.GetTeacherClassesAsync(userId);
             HomeworkList = await _homeworkService.GetHomeworkListAsync(userId);
 
             return Page();
