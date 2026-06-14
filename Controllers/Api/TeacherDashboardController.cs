@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using EduBridge.Models.DTOs.TeacherDashboard;
 using EduBridge.Services.Dashboard;
+using EduBridge.Contracts.Classes;
 
 namespace EduBridge.Controllers.Api
 {
@@ -19,23 +20,23 @@ namespace EduBridge.Controllers.Api
         }
 
         [HttpGet]
-        public async Task<ActionResult<DashboardResponseDto>> GetDashboardData()
+        public async Task<ActionResult<ApiResponse<DashboardResponseDto>>> GetDashboardData()
         {
             // 1. Get logged-in user ID
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId))
             {
                 // Return unauthorized if user id is missing
-                return Unauthorized(new { message = "Không tìm thấy thông tin đăng nhập" });
+                return Unauthorized(new ApiResponse<DashboardResponseDto>(false, "Không tìm thấy thông tin đăng nhập", null));
             }
 
             var result = await _dashboardService.GetTeacherDashboardDataAsync(userId);
             if (!result.IsSuccess)
             {
-                return NotFound(new { message = result.Message });
+                return NotFound(new ApiResponse<DashboardResponseDto>(false, result.Message, null));
             }
 
-            return Ok(result.Value);
+            return Ok(new ApiResponse<DashboardResponseDto>(true, result.Message, result.Value));
         }
     }
 }

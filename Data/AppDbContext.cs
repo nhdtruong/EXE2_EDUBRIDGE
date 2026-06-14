@@ -388,6 +388,7 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.AttachmentUrl).HasMaxLength(500);
 
             entity.HasOne(d => d.Lesson).WithMany(p => p.Homeworks)
                 .HasForeignKey(d => d.LessonId)
@@ -411,6 +412,7 @@ public partial class AppDbContext : DbContext, IDataProtectionKeyContext
                 .HasMaxLength(20)
                 .HasDefaultValue("Submitted");
             entity.Property(e => e.SubmittedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.SubmissionFileUrl).HasMaxLength(500);
 
             entity.HasOne(d => d.Homework).WithMany(p => p.HomeworkSubmissions)
                 .HasForeignKey(d => d.HomeworkId)

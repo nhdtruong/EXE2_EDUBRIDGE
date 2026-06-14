@@ -15,6 +15,7 @@ namespace EduBridge.Models.DTOs.TeacherAttendance
         public int LessonId { get; set; }
         public string LessonTitle { get; set; } = string.Empty;
         public string DateString { get; set; } = string.Empty;
+        public bool CanEdit { get; set; } = true;
     }
 
     public class StudentAttendanceDto

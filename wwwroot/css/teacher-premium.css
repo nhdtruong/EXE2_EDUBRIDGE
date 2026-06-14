@@ -176,7 +176,7 @@ button {
 }
 
 /* Action Icon Buttons */
-.action-icon-btn, .edit-btn, .edit-grade-btn, .detail-btn, .view-history-detail {
+.action-icon-btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -193,9 +193,15 @@ button {
     text-decoration: none !important;
 }
 
-.action-icon-btn:hover, .edit-btn:hover, .edit-grade-btn:hover, .detail-btn:hover, .view-history-detail:hover {
+.action-icon-btn:hover {
     background: #dbeafe !important;
     color: var(--ds-primary-hover) !important;
+}
+
+/* Đồng bộ kích thước nút icon Giáo viên thành 32px giống Admin */
+.ds-icon-btn {
+    width: 32px !important;
+    height: 32px !important;
 }
 
 /* Inputs & Search & Forms - Synchronized with ds-input/ds-select */
