@@ -27,12 +27,12 @@ wait_for_sql() {
 run_sql_file() {
   local file="$1"
   echo "Applying ${file}"
-  "${SQLCMD}" -S "${DB_HOST},${DB_PORT}" -U "${DB_USER}" -P "${DB_PASSWORD}" -C -b -f 65001 -i "${file}"
+  "${SQLCMD}" -S "${DB_HOST},${DB_PORT}" -U "${DB_USER}" -P "${DB_PASSWORD}" -C -I -b -f 65001 -i "${file}"
 }
 
 run_sql_query() {
   local query="$1"
-  "${SQLCMD}" -S "${DB_HOST},${DB_PORT}" -U "${DB_USER}" -P "${DB_PASSWORD}" -C -b -h -1 -W -Q "${query}"
+  "${SQLCMD}" -S "${DB_HOST},${DB_PORT}" -U "${DB_USER}" -P "${DB_PASSWORD}" -C -I -b -h -1 -W -Q "${query}"
 }
 
 ensure_database() {
