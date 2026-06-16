@@ -875,15 +875,24 @@ END;
 GO
 
 /* Recreate filtered unique index: Teachers.TeacherCode */
-IF EXISTS (
-    SELECT 1
-    FROM sys.indexes
+DECLARE @TeacherCodeConstraint NVARCHAR(128);
+SELECT @TeacherCodeConstraint = kc.name
+FROM sys.key_constraints kc
+WHERE kc.parent_object_id = OBJECT_ID(N'dbo.Teachers')
+  AND kc.unique_index_id = INDEXPROPERTY(OBJECT_ID(N'dbo.Teachers'), N'UQ_Teachers_TeacherCode', 'IndexId');
+
+IF @TeacherCodeConstraint IS NOT NULL
+BEGIN
+    DECLARE @DropTeacherCodeConstraintSql NVARCHAR(MAX) =
+        N'ALTER TABLE dbo.Teachers DROP CONSTRAINT ' + QUOTENAME(@TeacherCodeConstraint);
+    EXEC sp_executesql @DropTeacherCodeConstraintSql;
+END
+ELSE IF EXISTS (
+    SELECT 1 FROM sys.indexes
     WHERE object_id = OBJECT_ID(N'dbo.Teachers')
       AND name = N'UQ_Teachers_TeacherCode'
 )
-BEGIN
     DROP INDEX UQ_Teachers_TeacherCode ON dbo.Teachers;
-END;
 GO
 
 CREATE UNIQUE INDEX UQ_Teachers_TeacherCode

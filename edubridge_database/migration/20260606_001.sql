@@ -521,10 +521,9 @@ WHERE cc.parent_object_id = OBJECT_ID(N'dbo.Enrollments')
 
 IF @StatusConstraintName IS NOT NULL
 BEGIN
-    EXEC (
-        N'ALTER TABLE dbo.Enrollments DROP CONSTRAINT '
-        + QUOTENAME(@StatusConstraintName)
-    );
+    DECLARE @DropEnrollmentStatusConstraintSql NVARCHAR(MAX) =
+        N'ALTER TABLE dbo.Enrollments DROP CONSTRAINT ' + QUOTENAME(@StatusConstraintName);
+    EXEC sp_executesql @DropEnrollmentStatusConstraintSql;
 END;
 GO
 

@@ -5,9 +5,9 @@ GO
 -- 0. XÓA DỮ LIỆU TEST CŨ KHÔNG HỢP LỆ
 -- ========================================================
 -- Phải xóa dữ liệu cũ vì nó không có CenterId (không thể mapping)
-DELETE FROM Receipts; -- (Nếu bảng này lỡ tạo ra một phần)
-DELETE FROM Payments;
-DELETE FROM Invoices;
+IF OBJECT_ID(N'dbo.Receipts', N'U') IS NOT NULL DELETE FROM Receipts;
+IF OBJECT_ID(N'dbo.Payments', N'U') IS NOT NULL DELETE FROM Payments;
+IF OBJECT_ID(N'dbo.Invoices', N'U') IS NOT NULL DELETE FROM Invoices;
 GO
 
 -- ========================================================

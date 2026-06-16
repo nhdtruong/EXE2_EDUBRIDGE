@@ -73,6 +73,28 @@ namespace EduBridge
 
             builder.Services.AddMemoryCache();
 
+            var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ??
+                new[]
+                {
+                    "http://localhost:8081",
+                    "http://127.0.0.1:8081",
+                    "http://localhost:19006",
+                    "http://127.0.0.1:19006",
+                    "http://localhost:19007",
+                    "http://127.0.0.1:19007"
+                };
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AppClients", policy =>
+                {
+                    policy.WithOrigins(corsOrigins)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders =
@@ -174,6 +196,16 @@ namespace EduBridge
                         IssuerSigningKey = new SymmetricSecurityKey(
                             System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "EduBridge-Development-Only-Replace-On-Server-2026"))
                     };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var token = context.Request.Query["access_token"];
+                            if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+                                context.Token = token;
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
 
             builder.Services.AddAuthorization(options =>
@@ -244,6 +276,8 @@ namespace EduBridge
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseCors("AppClients");
 
             app.UseRateLimiter();
 
