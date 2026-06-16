@@ -73,7 +73,13 @@ namespace EduBridge
 
             builder.Services.AddMemoryCache();
 
-            var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ??
+            var allowAnyCorsOrigin =
+                builder.Configuration.GetValue<bool>("Cors:AllowAnyOrigin");
+
+            var corsOrigins =
+                builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ??
+                builder.Configuration["Cors:AllowedOriginsCsv"]?
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ??
                 new[]
                 {
                     "http://localhost:8081",
@@ -88,6 +94,16 @@ namespace EduBridge
             {
                 options.AddPolicy("AppClients", policy =>
                 {
+                    if (allowAnyCorsOrigin)
+                    {
+                        policy
+                            .SetIsOriginAllowed(_ => true)
+                            .AllowAnyHeader()
+                            .AllowAnyMethod()
+                            .AllowCredentials();
+                        return;
+                    }
+
                     policy.WithOrigins(corsOrigins)
                         .AllowAnyHeader()
                         .AllowAnyMethod()
