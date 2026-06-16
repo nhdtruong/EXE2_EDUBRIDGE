@@ -1,9 +1,17 @@
 @page
 @model EduBridge.Pages.HomeworkModel
 @{
-    ViewData["Title"] = "Quản lý bài tập";
-    Layout = "_TeacherLayout";
-    ViewData["ActivePage"] = "Assignments";
+    if (User.IsInRole("PARENT"))
+    {
+        Layout = "_Layout";
+        ViewData["Title"] = "Bài tập của con";
+    }
+    else
+    {
+        Layout = "_TeacherLayout";
+        ViewData["Title"] = "Quản lý bài tập";
+        ViewData["ActivePage"] = "Assignments";
+    }
 }
 
 @functions {
@@ -14,6 +22,7 @@
             "Graded" => "badge-success",
             "Submitted" => "badge-warning",
             "NotSubmitted" => "badge-danger",
+            "Overdue" => "badge-dark",
             _ => "badge-default"
         };
     }
@@ -25,280 +34,674 @@
             "Graded" => "Đã chấm",
             "Submitted" => "Chờ chấm",
             "NotSubmitted" => "Chưa nộp",
+            "Overdue" => "Trễ hạn",
             _ => status
         };
     }
 }
 
-<!-- Header -->
-<div class="homework-header-section">
-    <div>
-        <h1 class="homework-main-title">Quản lý bài tập</h1>
-        <p class="homework-subtitle">Giao bài tập và chấm điểm</p>
-    </div>
-    <button class="btn-create-homework" data-bs-toggle="modal" data-bs-target="#createHomeworkModal">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-        Giao bài tập mới
-    </button>
-</div>
-
-<!-- Main Card -->
-<div class="homework-main-card">
-    <!-- List Header -->
-    <div class="homework-list-header">
-        <h3 class="list-title">Danh sách bài tập</h3>
-        <div class="search-wrapper">
-            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Tìm kiếm bài tập..." class="search-input-field" />
+@if (User.IsInRole("PARENT"))
+{
+    <!-- ==========================================
+         PARENT INTERFACE (MOBILE-FIRST & PREMIUM)
+         ========================================== -->
+    <div class="pb-20">
+        <!-- Header -->
+        <div class="mb-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-3xl p-6 text-white shadow-lg">
+            <h1 class="text-2xl font-bold mb-1">Bài tập của con</h1>
+            <p class="text-sm opacity-90">Theo dõi, tải đề bài PDF và nộp bài làm của các con cho giáo viên.</p>
         </div>
-    </div>
 
-    <!-- Assignments List -->
-    <div class="assignments-container">
-        @if (Model.HomeworkList.Any())
+        @if (Model.ParentHomeworkList.Any())
         {
-            foreach (var hw in Model.HomeworkList)
+            // Nhóm bài tập theo học sinh
+            var groupedHomework = Model.ParentHomeworkList.GroupBy(h => new { h.StudentId, h.StudentName });
+            
+            <!-- Student Tab Headers if multiple children -->
+            @if (groupedHomework.Count() > 1)
             {
-                var submitPct = hw.TotalStudents == 0 ? 0 : (double)hw.SubmittedCount / hw.TotalStudents * 100;
-                var gradePct = hw.SubmittedCount == 0 ? 0 : (double)hw.GradedCount / hw.SubmittedCount * 100;
-
-                <div class="assignment-row">
-                    <!-- Left: Info -->
-                    <div class="assignment-info">
-                        <div class="assignment-top">
-                            <div>
-                                <h4 class="assignment-name">@hw.Title</h4>
-                                <span class="class-badge">@hw.ClassName</span>
-                            </div>
-                            <button class="detail-btn" data-homework-id="@hw.HomeworkId" data-title="@hw.Title" data-class-name="@hw.ClassName">Chi tiết</button>
-                        </div>
-                        <p class="assignment-desc">@hw.Description</p>
-                        <div class="assignment-dates-row">
-                            <span>Giao: @hw.CreatedAtString</span>
-                            <span>Hạn: @hw.DueDateString</span>
-                        </div>
-                    </div>
-
-                    <!-- Right: Progress -->
-                    <div class="assignment-progress-row">
-                        <!-- Đã nộp -->
-                        <div class="progress-item">
-                            <label class="progress-item-label">Đã nộp</label>
-                            <div class="progress-bar-row">
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: @submitPct%;"></div>
-                                </div>
-                                <span class="progress-value">@hw.SubmittedCount/@hw.TotalStudents</span>
-                            </div>
-                        </div>
-
-                        <!-- Đã chấm -->
-                        <div class="progress-item">
-                            <label class="progress-item-label">Đã chấm</label>
-                            <div class="progress-bar-row">
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: @gradePct%;"></div>
-                                </div>
-                                <span class="progress-value">@hw.GradedCount/@hw.SubmittedCount</span>
-                            </div>
-                        </div>
-
-                        <!-- Cần chấm -->
-                        <div class="progress-item">
-                            <label class="progress-item-label">Cần chấm</label>
-                            <span class="pending-count">@hw.PendingCount bài</span>
-                        </div>
-                    </div>
+                <div class="flex gap-2 overflow-x-auto pb-3 mb-4 no-scrollbar">
+                    <button class="student-tab-btn active px-4 py-2 bg-blue-600 text-white rounded-full font-semibold text-sm whitespace-nowrap transition-all shadow-sm" data-student-id="all">
+                        Tất cả các con (@Model.ParentHomeworkList.Count)
+                    </button>
+                    @foreach (var studentGroup in groupedHomework)
+                    {
+                        <button class="student-tab-btn px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-full font-medium text-sm whitespace-nowrap transition-all hover:bg-gray-50" data-student-id="@studentGroup.Key.StudentId">
+                            @studentGroup.Key.StudentName
+                        </button>
+                    }
                 </div>
             }
+
+            <!-- Homework Cards Grid -->
+            <div class="grid gap-4 md:grid-cols-2" id="parentHomeworkGrid">
+                @foreach (var hw in Model.ParentHomeworkList)
+                {
+                    var isOverdue = hw.Status == "Overdue";
+                    var isGraded = hw.Status == "Graded";
+                    var isSubmitted = hw.Status == "Submitted";
+                    var isNotSubmitted = hw.Status == "NotSubmitted";
+                    
+                    <div class="homework-card bg-white rounded-2xl border border-gray-100 p-5 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5" data-student-id="@hw.StudentId">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <span class="inline-block px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600 font-semibold text-xs mb-2">@hw.ClassName</span>
+                                <h3 class="text-lg font-bold text-gray-900 leading-tight">@hw.Title</h3>
+                                <p class="text-xs text-gray-500 mt-1">Bài học: @hw.LessonTitle</p>
+                            </div>
+                            <!-- Status Badge -->
+                            <div>
+                                @if (isGraded)
+                                {
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span class="w-1.5 h-1.5 mr-1 bg-green-500 rounded-full"></span>
+                                        Đã chấm (@hw.Score đ)
+                                    </span>
+                                }
+                                else if (isSubmitted)
+                                {
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        <span class="w-1.5 h-1.5 mr-1 bg-yellow-500 rounded-full"></span>
+                                        Chờ chấm
+                                    </span>
+                                }
+                                else if (isOverdue)
+                                {
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <span class="w-1.5 h-1.5 mr-1 bg-gray-500 rounded-full"></span>
+                                        Trễ hạn
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        <span class="w-1.5 h-1.5 mr-1 bg-red-500 rounded-full"></span>
+                                        Chưa nộp
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Student name -->
+                        <div class="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg mb-3">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            <span>Học sinh: <strong class="text-gray-800">@hw.StudentName</strong></span>
+                        </div>
+
+                        <p class="text-sm text-gray-600 mb-4 whitespace-pre-line">@hw.Description</p>
+
+                        <!-- PDF Attachment from Teacher -->
+                        @if (!string.IsNullOrEmpty(hw.AttachmentUrl))
+                        {
+                            <div class="mb-4">
+                                <a href="@hw.AttachmentUrl" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 bg-red-50 text-red-700 rounded-xl text-sm font-semibold hover:bg-red-100 hover:text-red-800 transition-colors w-full justify-center">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    Tải bài tập PDF đề bài
+                                </a>
+                            </div>
+                        }
+
+                        <div class="border-t border-gray-100 pt-4 flex justify-between items-center text-xs">
+                            <span class="text-gray-500">Hạn nộp: <strong class="text-gray-700">@hw.DueDateString</strong></span>
+                            
+                            @if (isGraded)
+                            {
+                                <button class="px-4 py-2 bg-green-50 text-green-700 rounded-xl font-bold text-xs hover:bg-green-100 transition-all view-feedback-btn" data-score="@hw.Score" data-feedback="@hw.Feedback" data-file-url="@hw.SubmissionFileUrl" data-content="@hw.SubmissionContent" data-title="@hw.Title">
+                                    Xem điểm & Nhận xét
+                                </button>
+                            }
+                            else if (isSubmitted)
+                            {
+                                <button class="px-4 py-2 bg-yellow-50 text-yellow-700 rounded-xl font-bold text-xs hover:bg-yellow-100 transition-all view-feedback-btn" data-score="" data-feedback="" data-file-url="@hw.SubmissionFileUrl" data-content="@hw.SubmissionContent" data-title="@hw.Title">
+                                    Xem bài đã nộp
+                                </button>
+                            }
+                            else if (isOverdue)
+                            {
+                                <span class="text-red-500 font-bold">Đã đóng (Quá hạn)</span>
+                            }
+                            else
+                            {
+                                <button class="px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-all shadow-sm open-submit-modal-btn" data-homework-id="@hw.HomeworkId" data-student-id="@hw.StudentId" data-title="@hw.Title">
+                                    Nộp bài tập
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
         }
         else
         {
-            <div class="empty-state text-center py-5 text-muted">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <p>Chưa có bài tập nào được giao.</p>
+            <div class="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-500 shadow-sm">
+                <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <p class="font-medium text-gray-700">Chưa có bài tập nào được giao cho các con.</p>
             </div>
         }
     </div>
-</div>
 
-<!-- Add/Create Homework Modal -->
-<div class="modal fade" id="createHomeworkModal" tabindex="-1" aria-labelledby="createHomeworkModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                <h5 class="modal-title fw-bold" id="createHomeworkModalLabel">Giao bài tập mới</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" asp-page-handler="Create">
+    <!-- Parent Submit Homework Modal -->
+    <div class="modal fade" id="parentSubmitModal" tabindex="-1" aria-labelledby="parentSubmitModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+                <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 1.5rem;">
+                    <h5 class="modal-title fw-bold text-gray-900" id="parentSubmitModalLabel">Nộp bài tập cho con</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
                 <div class="modal-body" style="padding: 1.5rem;">
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger mb-3" style="border-radius: 12px; font-size: 0.9rem;">
-                            @TempData["ErrorMessage"]
+                    <p class="text-sm text-gray-500 mb-4" id="submitModalHWTitle"></p>
+                    
+                    <form id="parentSubmitForm">
+                        <input type="hidden" id="submitHomeworkId" />
+                        <input type="hidden" id="submitStudentId" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-gray-700 small">Chọn file bài làm (Ảnh hoặc file tài liệu)</label>
+                            <input type="file" class="form-control" id="submitFileInput" accept="image/*,.pdf,.docx,.xlsx,.pptx,.zip,.rar" required style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #cbd5e1;" />
+                            <span class="text-xs text-gray-400 d-block mt-1">Hỗ trợ các định dạng ảnh hoặc tài liệu PDF, DOCX, ZIP... Dung lượng tối đa 20MB.</span>
                         </div>
-                    }
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Lớp học</label>
-                        <select id="selectClass" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
-                            <option value="">-- Chọn lớp học --</option>
-                            @foreach (var cls in Model.TeacherClasses)
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-gray-700 small">Lời nhắn gửi giáo viên (tùy chọn)</label>
+                            <textarea class="form-control" id="submitContentInput" rows="3" placeholder="Nhập ghi chú hoặc lời nhắn..." style="border-radius: 12px; border-color: #cbd5e1;"></textarea>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" id="btnSubmitHomework" class="btn btn-primary bg-blue-600 border-none hover:bg-blue-700 py-3 font-semibold" style="border-radius: 12px;">
+                                Nộp bài làm
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Parent View Submission & Feedback Modal -->
+    <div class="modal fade" id="parentFeedbackModal" tabindex="-1" aria-labelledby="parentFeedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+                <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 1.5rem;">
+                    <h5 class="modal-title fw-bold text-gray-900" id="parentFeedbackModalLabel">Chi tiết bài làm đã nộp</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <h4 class="font-bold text-md mb-3 text-gray-800" id="feedbackModalHWTitle"></h4>
+                    
+                    <div class="mb-4">
+                        <h5 class="font-semibold text-xs text-gray-500 uppercase tracking-wider mb-2">Bài đã nộp</h5>
+                        <div id="feedbackSubmittedFileContainer"></div>
+                        <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100 whitespace-pre-line mt-2" id="feedbackSubmittedContent"></p>
+                    </div>
+
+                    <div id="feedbackEvaluationSection" class="border-t border-gray-100 pt-4" style="display: none;">
+                        <h5 class="font-semibold text-xs text-gray-500 uppercase tracking-wider mb-2">Đánh giá của giáo viên</h5>
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-xs text-gray-500">Điểm số:</span>
+                            <span class="inline-flex px-3 py-1 bg-green-100 text-green-800 rounded-full font-bold text-sm" id="feedbackScoreValue"></span>
+                        </div>
+                        <div class="text-sm text-gray-700 bg-green-50/50 p-4 rounded-xl border border-green-100/50 italic whitespace-pre-line" id="feedbackTextValue">
+                            Chưa có nhận xét cụ thể.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: none; padding: 1rem 1.5rem 1.5rem;">
+                    <button type="button" class="btn btn-secondary w-full" data-bs-dismiss="modal" style="border-radius: 12px; padding: 10px; font-weight: 600;">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- ==========================================
+         TEACHER INTERFACE (DESKTOP & DESIGN SYSTEM)
+         ========================================== -->
+    <div class="homework-header-section">
+        <div>
+            <h1 class="homework-main-title">Quản lý bài tập</h1>
+            <p class="homework-subtitle">Giao bài tập và chấm điểm</p>
+        </div>
+        <button class="btn-create-homework" data-bs-toggle="modal" data-bs-target="#createHomeworkModal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            Giao bài tập mới
+        </button>
+    </div>
+
+    <!-- Main Card -->
+    <div class="homework-main-card">
+        <!-- List Header -->
+        <div class="homework-list-header">
+            <h3 class="list-title">Danh sách bài tập</h3>
+            <div class="search-wrapper">
+                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" placeholder="Tìm kiếm bài tập..." class="search-input-field" />
+            </div>
+        </div>
+
+        <!-- Assignments List -->
+        <div class="assignments-container">
+            @if (Model.HomeworkList.Any())
+            {
+                foreach (var hw in Model.HomeworkList)
+                {
+                    var submitPct = hw.TotalStudents == 0 ? 0 : (double)hw.SubmittedCount / hw.TotalStudents * 100;
+                    var gradePct = hw.SubmittedCount == 0 ? 0 : (double)hw.GradedCount / hw.SubmittedCount * 100;
+
+                    <div class="assignment-row">
+                        <!-- Left: Info -->
+                        <div class="assignment-info">
+                            <div class="assignment-top">
+                                <div>
+                                    <h4 class="assignment-name">@hw.Title</h4>
+                                    <span class="class-badge">@hw.ClassName</span>
+                                </div>
+                                <button class="ds-icon-btn ds-icon-btn-view detail-btn" data-homework-id="@hw.HomeworkId" data-title="@hw.Title" data-class-name="@hw.ClassName" title="Xem chi tiết">
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
+                                        <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                    </svg>
+                                </button>
+                            </div>
+                            <p class="assignment-desc">@hw.Description</p>
+                            
+                            @if (!string.IsNullOrEmpty(hw.AttachmentUrl))
                             {
-                                <option value="@cls.ClassId">@cls.ClassName</option>
+                                <div class="mb-2">
+                                    <a href="@hw.AttachmentUrl" target="_blank" class="text-danger text-decoration-none fw-semibold text-sm d-inline-flex align-items-center gap-1">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        Xem tệp PDF đề bài đã giao
+                                    </a>
+                                </div>
                             }
-                        </select>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Buổi học (Lesson)</label>
-                        <select id="selectLesson" name="lessonId" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required disabled>
-                            <option value="">-- Vui lòng chọn lớp học trước --</option>
-                        </select>
-                    </div>
+                            <div class="assignment-dates-row">
+                                <span>Giao: @hw.CreatedAtString</span>
+                                <span>Hạn: @hw.DueDateString</span>
+                            </div>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Tiêu đề bài tập</label>
-                        <input type="text" name="title" class="form-control" placeholder="Nhập tiêu đề (vd: Bài tập về nhà hàm số)" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
-                    </div>
+                        <!-- Right: Progress -->
+                        <div class="assignment-progress-row">
+                            <!-- Đã nộp -->
+                            <div class="progress-item">
+                                <label class="progress-item-label">Đã nộp</label>
+                                <div class="progress-bar-row">
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar-fill" style="width: @submitPct%;"></div>
+                                    </div>
+                                    <span class="progress-value">@hw.SubmittedCount/@hw.TotalStudents</span>
+                                </div>
+                            </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Mô tả / Yêu cầu</label>
-                        <textarea name="description" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết, bài tập trang mấy..." style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;"></textarea>
-                    </div>
+                            <!-- Đã chấm -->
+                            <div class="progress-item">
+                                <label class="progress-item-label">Đã chấm</label>
+                                <div class="progress-bar-row">
+                                    <div class="progress-bar-bg">
+                                        <div class="progress-bar-fill" style="width: @gradePct%;"></div>
+                                    </div>
+                                    <span class="progress-value">@hw.GradedCount/@hw.SubmittedCount</span>
+                                </div>
+                            </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Hạn nộp (Due Date)</label>
-                        <input type="datetime-local" name="dueDate" class="form-control" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                            <!-- Cần chấm -->
+                            <div class="progress-item">
+                                <label class="progress-item-label">Cần chấm</label>
+                                <span class="pending-count">@hw.PendingCount bài</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state text-center py-5 text-muted">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <p>Chưa có bài tập nào được giao.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Add/Create Homework Modal -->
+    <div class="modal fade" id="createHomeworkModal" tabindex="-1" aria-labelledby="createHomeworkModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+                <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                    <h5 class="modal-title fw-bold" id="createHomeworkModalLabel">Giao bài tập mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="post" asp-page-handler="Create" enctype="multipart/form-data">
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger mb-3" style="border-radius: 12px; font-size: 0.9rem;">
+                                @TempData["ErrorMessage"]
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-sm">Lớp học</label>
+                            <select id="selectClass" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                                <option value="">-- Chọn lớp học --</option>
+                                @foreach (var cls in Model.TeacherClasses)
+                                {
+                                    <option value="@cls.ClassId">@cls.ClassName</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-sm">Buổi học (Lesson)</label>
+                            <select id="selectLesson" name="lessonId" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required disabled>
+                                <option value="">-- Vui lòng chọn lớp học trước --</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-sm">Tiêu đề bài tập</label>
+                            <input type="text" name="title" class="form-control" placeholder="Nhập tiêu đề (vd: Bài tập về nhà hàm số)" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-sm">Mô tả / Yêu cầu</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết, bài tập trang mấy..." style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-sm">Hạn nộp (Due Date)</label>
+                            <input type="datetime-local" name="dueDate" class="form-control" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-sm">Tài liệu đính kèm (File PDF đề bài)</label>
+                            <input type="file" name="pdfFile" class="form-control" accept=".pdf" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;">
+                            <span class="text-muted text-xs d-block mt-1">Chỉ chấp nhận file PDF, dung lượng tối đa 20MB.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                        <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Hủy</button>
+                        <button type="submit" class="btn-primary-green">Giao bài tập</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Homework Submission Detail Modal -->
+    <div class="modal fade" id="homeworkDetailModal" tabindex="-1" aria-labelledby="homeworkDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+                <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
+                    <div>
+                        <h5 class="modal-title fw-bold" id="homeworkDetailModalLabel">Chi tiết & Chấm điểm bài tập</h5>
+                        <span id="detailSubTitle" class="text-muted text-sm" style="font-weight: 600;"></span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="padding: 1.5rem; max-height: 450px; overflow-y: auto;">
+                    <div class="ds-table-wrap">
+                        <table class="ds-table" style="min-width: 700px;">
+                            <thead>
+                                <tr>
+                                    <th class="ds-table-center" style="width: 60px;">STT</th>
+                                    <th>Học sinh</th>
+                                    <th>Nội dung nộp</th>
+                                    <th class="ds-table-center" style="width: 120px;">Trạng thái</th>
+                                    <th style="width: 80px;">Điểm</th>
+                                    <th style="width: 180px;">Nhận xét</th>
+                                    <th class="ds-table-center" style="width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissionsTableBody">
+                                <!-- Sẽ được fill bằng JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Hủy</button>
-                    <button type="submit" class="btn-primary-green">Giao bài tập</button>
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Đóng</button>
                 </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Homework Submission Detail Modal -->
-<div class="modal fade" id="homeworkDetailModal" tabindex="-1" aria-labelledby="homeworkDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                <div>
-                    <h5 class="modal-title fw-bold" id="homeworkDetailModalLabel">Chi tiết & Chấm điểm bài tập</h5>
-                    <span id="detailSubTitle" class="text-muted text-sm" style="font-weight: 600;"></span>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" style="padding: 1.5rem; max-height: 450px; overflow-y: auto;">
-                <div class="table-responsive">
-                    <table class="table align-middle" style="min-width: 700px;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #e2e8f0;">
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Mã học sinh</th>
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Học sinh</th>
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Nội dung nộp</th>
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem;">Trạng thái</th>
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem; width: 80px;">Điểm</th>
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem; width: 180px;">Nhận xét</th>
-                                <th style="font-size: 0.8rem; color: #64748b; font-weight: 700; padding: 0.75rem; text-align: center;">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="submissionsTableBody">
-                            <!-- Sẽ được fill bằng JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Đóng</button>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Form ẩn phục vụ việc Submit chấm điểm -->
-<form id="hiddenGradeForm" method="post" asp-page-handler="Grade" style="display: none;">
-    <input type="hidden" name="homeworkId" id="gradeHomeworkId" />
-    <input type="hidden" name="studentId" id="gradeStudentId" />
-    <input type="hidden" name="score" id="gradeScore" />
-    <input type="hidden" name="feedback" id="gradeFeedback" />
-</form>
+    <!-- Form ẩn phục vụ việc Submit chấm điểm -->
+    <form id="hiddenGradeForm" method="post" asp-page-handler="Grade" style="display: none;">
+        <input type="hidden" name="homeworkId" id="gradeHomeworkId" />
+        <input type="hidden" name="studentId" id="gradeStudentId" />
+        <input type="hidden" name="score" id="gradeScore" />
+        <input type="hidden" name="feedback" id="gradeFeedback" />
+    </form>
+}
 
 @section Scripts {
-    @if (TempData["ErrorMessage"] != null)
+    @if (User.IsInRole("PARENT"))
     {
         <script>
             document.addEventListener("DOMContentLoaded", function() {
-                var createHomeworkModal = new bootstrap.Modal(document.getElementById('createHomeworkModal'));
-                createHomeworkModal.show();
+                // 1. Phân lọc theo Học sinh (con)
+                const tabBtns = document.querySelectorAll(".student-tab-btn");
+                const cards = document.querySelectorAll(".homework-card");
+
+                tabBtns.forEach(btn => {
+                    btn.addEventListener("click", function() {
+                        tabBtns.forEach(b => {
+                            b.classList.remove("active", "bg-blue-600", "text-white", "shadow-sm");
+                            b.classList.add("bg-white", "text-gray-700", "border-gray-200");
+                        });
+
+                        this.classList.add("active", "bg-blue-600", "text-white", "shadow-sm");
+                        this.classList.remove("bg-white", "text-gray-700", "border-gray-200");
+
+                        const studentId = this.getAttribute("data-student-id");
+                        
+                        cards.forEach(c => {
+                            if (studentId === "all" || c.getAttribute("data-student-id") === studentId) {
+                                c.style.display = "block";
+                            } else {
+                                c.style.display = "none";
+                            }
+                        });
+                    });
+                });
+
+                // 2. Nộp bài tập
+                const openSubmitBtns = document.querySelectorAll(".open-submit-modal-btn");
+                const submitModal = new bootstrap.Modal(document.getElementById("parentSubmitModal"));
+                const modalHwTitle = document.getElementById("submitModalHWTitle");
+                const submitForm = document.getElementById("parentSubmitForm");
+
+                openSubmitBtns.forEach(btn => {
+                    btn.addEventListener("click", function() {
+                        const hwId = this.getAttribute("data-homework-id");
+                        const studentId = this.getAttribute("data-student-id");
+                        const title = this.getAttribute("data-title");
+
+                        document.getElementById("submitHomeworkId").value = hwId;
+                        document.getElementById("submitStudentId").value = studentId;
+                        document.getElementById("submitFileInput").value = "";
+                        document.getElementById("submitContentInput").value = "";
+                        modalHwTitle.textContent = `Bài tập: ${title}`;
+
+                        submitModal.show();
+                    });
+                });
+
+                submitForm.addEventListener("submit", function(e) {
+                    e.preventDefault();
+
+                    const fileInput = document.getElementById("submitFileInput");
+                    const file = fileInput.files[0];
+                    if (!file) return;
+
+                    // Validate client size
+                    if (file.size > 20 * 1024 * 1024) {
+                        window.showToast("File vượt quá kích thước giới hạn (20MB).", false);
+                        return;
+                    }
+
+                    const hwId = document.getElementById("submitHomeworkId").value;
+                    const studentId = document.getElementById("submitStudentId").value;
+                    const content = document.getElementById("submitContentInput").value;
+
+                    const submitBtn = document.getElementById("btnSubmitHomework");
+                    const originalText = submitBtn.textContent;
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = "Đang tải tệp lên...";
+
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    // B1: Upload file
+                    fetch('/api/v1/parent/homework/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.success) {
+                            const fileUrl = res.data.fileUrl;
+                            submitBtn.textContent = "Đang nộp bài...";
+
+                            // B2: Submit bài tập
+                            return fetch('/api/v1/parent/homework/submit', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    homeworkId: parseInt(hwId),
+                                    studentId: parseInt(studentId),
+                                    submissionFileUrl: fileUrl,
+                                    submissionContent: content
+                                })
+                            });
+                        } else {
+                            throw new Error(res.message || "Lỗi upload file.");
+                        }
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+
+                        if (res.success) {
+                            submitModal.hide();
+                            window.showToast("Đã nộp bài làm thành công!");
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            window.showToast(res.message, false);
+                        }
+                    })
+                    .catch(err => {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalText;
+                        console.error(err);
+                        window.showToast(err.message || "Có lỗi xảy ra trong quá trình nộp bài.", false);
+                    });
+                });
+
+                // 3. Xem Feedback/Điểm/Bài đã nộp
+                const viewFeedbackBtns = document.querySelectorAll(".view-feedback-btn");
+                const feedbackModal = new bootstrap.Modal(document.getElementById("parentFeedbackModal"));
+
+                viewFeedbackBtns.forEach(btn => {
+                    btn.addEventListener("click", function() {
+                        const title = this.getAttribute("data-title");
+                        const score = this.getAttribute("data-score");
+                        const feedback = this.getAttribute("data-feedback");
+                        const fileUrl = this.getAttribute("data-file-url");
+                        const content = this.getAttribute("data-content");
+
+                        document.getElementById("feedbackModalHWTitle").textContent = title;
+                        
+                        // File đã nộp
+                        const fileContainer = document.getElementById("feedbackSubmittedFileContainer");
+                        fileContainer.innerHTML = "";
+                        if (fileUrl) {
+                            const isImg = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                            if (isImg) {
+                                fileContainer.innerHTML = `
+                                    <a href="${fileUrl}" target="_blank" class="block border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity">
+                                        <img src="${fileUrl}" alt="Bài làm" class="max-h-48 w-full object-cover" />
+                                    </a>
+                                `;
+                            } else {
+                                const fileName = fileUrl.split('_').slice(1).join('_') || "file_bai_lam";
+                                fileContainer.innerHTML = `
+                                    <a href="${fileUrl}" target="_blank" class="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl text-blue-600 hover:bg-gray-100 transition-colors text-sm font-semibold">
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <span class="text-truncate">${fileName}</span>
+                                    </a>
+                                `;
+                            }
+                        }
+
+                        // Lời nhắn
+                        const contentP = document.getElementById("feedbackSubmittedContent");
+                        if (content) {
+                            contentP.textContent = content;
+                            contentP.style.display = "block";
+                        } else {
+                            contentP.style.display = "none";
+                        }
+
+                        // Đánh giá điểm
+                        const evalSection = document.getElementById("feedbackEvaluationSection");
+                        if (score) {
+                            document.getElementById("feedbackScoreValue").textContent = score;
+                            document.getElementById("feedbackTextValue").textContent = feedback || "Chưa có nhận xét cụ thể.";
+                            evalSection.style.display = "block";
+                        } else {
+                            evalSection.style.display = "none";
+                        }
+
+                        feedbackModal.show();
+                    });
+                });
             });
         </script>
     }
+    else
+    {
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    var createHomeworkModal = new bootstrap.Modal(document.getElementById('createHomeworkModal'));
+                    createHomeworkModal.show();
+                });
+            </script>
+        }
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // 1. Tải Lessons khi chọn Lớp học
-            const selectClass = document.getElementById("selectClass");
-            const selectLesson = document.getElementById("selectLesson");
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // 1. Tải Lessons khi chọn Lớp học
+                const selectClass = document.getElementById("selectClass");
+                const selectLesson = document.getElementById("selectLesson");
 
-            selectClass.addEventListener("change", async function() {
-                const classId = this.value;
-                selectLesson.innerHTML = "";
-                selectLesson.disabled = true;
+                selectClass.addEventListener("change", async function() {
+                    const classId = this.value;
+                    selectLesson.innerHTML = "";
+                    selectLesson.disabled = true;
 
-                if (!classId) {
-                    selectLesson.innerHTML = '<option value="">-- Vui lòng chọn lớp học trước --</option>';
-                    return;
-                }
-
-                selectLesson.innerHTML = '<option value="">Đang tải các buổi học...</option>';
-
-                try {
-                    const response = await fetch(`/api/v1/teacher/homework/lessons?classId=${classId}`);
-                    const json = await response.json();
-                    
-                    if (json.success && json.data.length > 0) {
-                        let html = '<option value="">-- Chọn buổi học --</option>';
-                        json.data.forEach(l => {
-                            html += `<option value="${l.lessonId}">${l.lessonTitle} (${l.dateString})</option>`;
-                        });
-                        selectLesson.innerHTML = html;
-                        selectLesson.disabled = false;
-                    } else {
-                        selectLesson.innerHTML = '<option value="">Lớp học chưa có buổi học nào</option>';
+                    if (!classId) {
+                        selectLesson.innerHTML = '<option value="">-- Vui lòng chọn lớp học trước --</option>';
+                        return;
                     }
-                } catch (err) {
-                    console.error("Lỗi tải buổi học:", err);
-                    selectLesson.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-                }
-            });
 
-            // 2. Chi tiết và chấm điểm bài nộp
-            const detailButtons = document.querySelectorAll(".detail-btn");
-            const detailModalEl = document.getElementById("homeworkDetailModal");
-            const detailModal = new bootstrap.Modal(detailModalEl);
-            const submissionsTableBody = document.getElementById("submissionsTableBody");
-            const detailSubTitle = document.getElementById("detailSubTitle");
-
-            detailButtons.forEach(btn => {
-                btn.addEventListener("click", async function() {
-                    const homeworkId = this.getAttribute("data-homework-id");
-                    const title = this.getAttribute("data-title");
-                    const className = this.getAttribute("data-class-name");
-
-                    detailSubTitle.textContent = `Lớp: ${className} | Bài tập: ${title}`;
-                    submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Đang tải danh sách bài nộp...</td></tr>';
-                    
-                    detailModal.show();
+                    selectLesson.innerHTML = '<option value="">Đang tải các buổi học...</option>';
 
                     try {
-                        const response = await fetch(`/api/v1/teacher/homework/${homeworkId}/submissions`);
+                        const response = await fetch(`/api/v1/teacher/homework/lessons?classId=${classId}`);
                         const json = await response.json();
-
+                        
                         if (json.success && json.data.length > 0) {
+<<<<<<< HEAD
+                            let html = '<option value="">-- Chọn buổi học --</option>';
+                            json.data.forEach(l => {
+                                html += `<option value="${l.lessonId}">${l.lessonTitle} (${l.dateString})</option>`;
+=======
                             let html = "";
                             json.data.forEach(sub => {
                                 const submissionContent = sub.submissionContent || '<span class="text-muted italic">Chưa nộp bài</span>';
@@ -354,17 +757,164 @@
                                     
                                     document.getElementById("hiddenGradeForm").submit();
                                 });
+>>>>>>> e5417bb24ce6b520875746ee3d72982295df8d14
                             });
+                            selectLesson.innerHTML = html;
+                            selectLesson.disabled = false;
                         } else {
-                            submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Lớp học này chưa có học sinh nào.</td></tr>';
+                            selectLesson.innerHTML = '<option value="">Lớp học chưa có buổi học nào</option>';
                         }
                     } catch (err) {
-                        console.error("Lỗi tải bài nộp:", err);
-                        submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Có lỗi khi tải danh sách nộp bài.</td></tr>';
+                        console.error("Lỗi tải buổi học:", err);
+                        selectLesson.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
                     }
                 });
+
+                // 2. Chi tiết và chấm điểm bài nộp
+                const detailButtons = document.querySelectorAll(".detail-btn");
+                const detailModalEl = document.getElementById("homeworkDetailModal");
+                const detailModal = new bootstrap.Modal(detailModalEl);
+                const submissionsTableBody = document.getElementById("submissionsTableBody");
+                const detailSubTitle = document.getElementById("detailSubTitle");
+
+                detailButtons.forEach(btn => {
+                    btn.addEventListener("click", async function() {
+                        const homeworkId = this.getAttribute("data-homework-id");
+                        const title = this.getAttribute("data-title");
+                        const className = this.getAttribute("data-class-name");
+
+                        detailSubTitle.textContent = `Lớp: ${className} | Bài tập: ${title}`;
+                        submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Đang tải danh sách bài nộp...</td></tr>';
+                        
+                        detailModal.show();
+
+                        try {
+                            const response = await fetch(`/api/v1/teacher/homework/${homeworkId}/submissions`);
+                            const json = await response.json();
+
+                            if (json.success && json.data.length > 0) {
+                                let html = "";
+                                json.data.forEach((sub, index) => {
+                                    // Hỗ trợ fallback cho cả camelCase và PascalCase để đảm bảo hiển thị đúng bất chấp cấu hình JSON serializer
+                                    const sName = sub.studentName || sub.StudentName || "";
+                                    const sCode = sub.studentCode || sub.StudentCode || "";
+                                    const avatarText = sName.substring(0, Math.min(2, sName.length)).toUpperCase() || "??";
+                                    const sId = sub.studentId || sub.StudentId;
+                                    const status = sub.status || sub.Status || 'NotSubmitted';
+                                    const fileUrl = sub.submissionFileUrl || sub.SubmissionFileUrl;
+                                    const content = sub.submissionContent || sub.SubmissionContent;
+
+                                    let submissionContent = content || '<span class="text-muted italic">Chưa nộp bài</span>';
+                                    const badgeClass = status === 'Graded' ? 'ds-badge-success' : (status === 'Submitted' ? 'ds-badge-warning' : 'ds-badge-danger');
+                                    const statusText = status === 'Graded' ? 'Đã chấm' : (status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
+                                    
+                                    // Xử lý an toàn cho Score (Điểm số)
+                                    let scoreValue = '';
+                                    if (sub.score !== undefined && sub.score !== null) {
+                                        scoreValue = sub.score;
+                                    } else if (sub.Score !== undefined && sub.Score !== null) {
+                                        scoreValue = sub.Score;
+                                    }
+
+                                    // Xử lý an toàn cho Feedback (Nhận xét)
+                                    let feedbackValue = '';
+                                    if (sub.feedback !== undefined && sub.feedback !== null) {
+                                        feedbackValue = sub.feedback;
+                                    } else if (sub.Feedback !== undefined && sub.Feedback !== null) {
+                                        feedbackValue = sub.Feedback;
+                                    }
+
+                                    // Nếu có tệp đính kèm nộp bài
+                                    if (fileUrl) {
+                                        const isImg = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                                        if (isImg) {
+                                            submissionContent = `
+                                                <div class="mb-1 text-truncate" title="${content || ''}">${content || 'Nộp bằng ảnh'}</div>
+                                                <a href="${fileUrl}" target="_blank" class="d-block">
+                                                    <img src="${fileUrl}" style="max-height: 60px; border-radius: 6px; display: block; border: 1px solid #e2e8f0; object-fit: cover;" />
+                                                </a>
+                                            `;
+                                        } else {
+                                            const fileDisplay = fileUrl.split('_').slice(1).join('_') || "file_bai_lam";
+                                            submissionContent = `
+                                                <div class="mb-1 text-truncate" title="${content || ''}">${content || 'Nộp bằng file'}</div>
+                                                <a href="${fileUrl}" target="_blank" class="text-decoration-none text-primary d-inline-flex align-items-center gap-1 font-semibold text-xs">
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                                    Tải bài làm
+                                                </a>
+                                            `;
+                                        }
+                                    }
+
+                                    html += `
+                                        <tr>
+                                            <td class="ds-table-center">${index + 1}</td>
+                                            <td>
+                                                <div class="ds-entity">
+                                                    <div class="ds-avatar">${avatarText}</div>
+                                                    <div>
+                                                        <div class="ds-entity-title">${sName}</div>
+                                                        <div class="ds-entity-subtitle">Mã: ${sCode}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style="max-width: 250px;">${submissionContent}</td>
+                                            <td class="ds-table-center"><span class="ds-badge ${badgeClass}">${statusText}</span></td>
+                                            <td>
+                                                <input type="number" class="form-control score-input" style="height: 32px !important; padding: 0.25rem 0.5rem;" step="0.1" min="0" max="10" value="${scoreValue}" placeholder="Điểm" data-student-id="${sId}" />
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control feedback-input" style="height: 32px !important; padding: 0.25rem 0.5rem;" value="${feedbackValue}" placeholder="Nhận xét" data-student-id="${sId}" />
+                                            </td>
+                                            <td class="ds-table-center">
+                                                <div class="ds-table-actions">
+                                                    <button class="ds-btn ds-btn-primary ds-btn-sm save-grade-btn" style="height: 32px; border-radius: 6px; font-size: 0.8rem;" data-homework-id="${homeworkId}" data-student-id="${sId}">Lưu</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    `;
+                                });
+                                submissionsTableBody.innerHTML = html;
+
+                                // Đăng ký sự kiện click cho các nút Lưu điểm
+                                const saveBtns = submissionsTableBody.querySelectorAll(".save-grade-btn");
+                                saveBtns.forEach(saveBtn => {
+                                    saveBtn.addEventListener("click", function() {
+                                        const hwId = this.getAttribute("data-homework-id");
+                                        const sId = this.getAttribute("data-student-id");
+                                        
+                                        // Tìm ô input tương ứng
+                                        const scoreInput = submissionsTableBody.querySelector(`input.score-input[data-student-id="${sId}"]`);
+                                        const feedbackInput = submissionsTableBody.querySelector(`input.feedback-input[data-student-id="${sId}"]`);
+                                        
+                                        const score = scoreInput.value;
+                                        const feedback = feedbackInput.value;
+
+                                        if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
+                                            window.showToast("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.", false);
+                                            return;
+                                        }
+
+                                        // Điền dữ liệu vào form ẩn và Submit
+                                        document.getElementById("gradeHomeworkId").value = hwId;
+                                        document.getElementById("gradeStudentId").value = sId;
+                                        document.getElementById("gradeScore").value = score;
+                                        document.getElementById("gradeFeedback").value = feedback;
+                                        
+                                        document.getElementById("hiddenGradeForm").submit();
+                                    });
+                                });
+                            } else {
+                                submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Lớp học này chưa có học sinh nào.</td></tr>';
+                            }
+                        } catch (err) {
+                            console.error("Lỗi tải bài nộp:", err);
+                            submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-danger">Có lỗi khi tải danh sách nộp bài.</td></tr>';
+                        }
+                    });
+                });
             });
-        });
-    </script>
+        </script>
+    }
 }
 

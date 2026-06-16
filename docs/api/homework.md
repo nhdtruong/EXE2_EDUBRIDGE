@@ -1,28 +1,27 @@
 # API Bài Tập (Homework API)
 
-Module này cung cấp các API cho phép giáo viên quản lý bài tập, giao bài tập mới cho lớp học và chấm điểm bài nộp của học sinh.
+Module này cung cấp các API cho phép giáo viên quản lý bài tập, giao bài tập mới cho lớp học với file PDF đính kèm (giới hạn tối đa **20MB**), chấm điểm bài nộp và cho phép phụ huynh nộp bài cho con.
 
 ---
 
-## 1. Lấy danh sách bài tập
+## I. DÀNH CHO GIÁO VIÊN (TEACHER)
 
-### Endpoint
+### 1. Lấy danh sách bài tập của giáo viên
+
+#### Endpoint
 ```txt
 GET /api/v1/teacher/homework
 ```
 
-### Purpose
+#### Purpose
 Lấy danh sách tất cả các bài tập do giáo viên hiện tại quản lý và thông tin thống kê số lượng bài nộp (Đã nộp, Đã chấm, Chờ chấm, Tổng số học sinh).
 
-### Roles
+#### Roles
 ```txt
 TEACHER
 ```
 
-### Request
-Không yêu cầu Request Body (Lấy ID giáo viên đăng nhập qua Claims).
-
-### Response
+#### Response
 - **Mã phản hồi:** `200 OK`
 ```json
 {
@@ -35,6 +34,7 @@ Không yêu cầu Request Body (Lấy ID giáo viên đăng nhập qua Claims).
       "className": "Toán 10A",
       "title": "Bài tập hàm số bậc hai",
       "description": "Làm bài tập trắc nghiệm trang 45-46 sách giáo khoa.",
+      "attachmentUrl": "/uploads/homeworks/a89f92a3-bb81-4235-862d-0a8a72bca531_debai.pdf",
       "createdAtString": "07/06/2026 08:00",
       "dueDateString": "14/06/2026 23:59",
       "submittedCount": 15,
@@ -46,50 +46,41 @@ Không yêu cầu Request Body (Lấy ID giáo viên đăng nhập qua Claims).
 }
 ```
 
-### Error Cases
-- **401 Unauthorized:** Chưa đăng nhập hoặc phiên làm việc hết hạn.
-```json
-{
-  "success": false,
-  "message": "Không tìm thấy thông tin đăng nhập",
-  "data": null
-}
-```
-- **403 Forbidden:** Người dùng không có vai trò Giáo viên.
-
 ---
 
-## 2. Giao bài tập mới
+### 2. Giao bài tập mới
 
-### Endpoint
+#### Endpoint
 ```txt
 POST /api/v1/teacher/homework
 ```
 
-### Purpose
-Tạo mới một bài tập cho một buổi học của lớp do giáo viên phụ trách.
+#### Purpose
+Tạo mới một bài tập cho một buổi học của lớp do giáo viên phụ trách (có đính kèm file đề bài PDF).
 
-### Roles
+#### Roles
 ```txt
 TEACHER
 ```
 
-### Request DTO (`CreateHomeworkRequest`)
+#### Request DTO (`CreateHomeworkRequest` + `attachmentUrl`)
 ```json
 {
   "lessonId": 5,
   "title": "Bài tập hàm số bậc hai",
   "description": "Làm bài tập trắc nghiệm trang 45-46 sách giáo khoa.",
-  "dueDate": "2026-06-14T23:59:00"
+  "dueDate": "2026-06-14T23:59:00",
+  "attachmentUrl": "/uploads/homeworks/a89f92a3-bb81-4235-862d-0a8a72bca531_debai.pdf"
 }
 ```
 
-### Validation Rules
+#### Validation Rules
 - `lessonId`: Bắt buộc, ID buổi học hợp lệ và thuộc lớp học do giáo viên phụ trách.
 - `title`: Bắt buộc, không quá 200 ký tự.
 - `dueDate`: Bắt buộc, thời gian hết hạn nộp bài.
+- `attachmentUrl`: Tùy chọn, đường dẫn tệp PDF đề bài.
 
-### Response
+#### Response
 - **Mã phản hồi:** `200 OK`
 ```json
 {
@@ -99,38 +90,58 @@ TEACHER
 }
 ```
 
-### Error Cases
-- **400 Bad Request:** Dữ liệu đầu vào không hợp lệ hoặc buổi học không thuộc lớp học của giáo viên.
-```json
-{
-  "success": false,
-  "message": "Dữ liệu không hợp lệ",
-  "data": false
-}
-```
-- **401 Unauthorized:** Chưa đăng nhập.
-
 ---
 
-## 3. Lấy danh sách bài nộp và học sinh
+### 3. Tải lên tệp PDF đề bài (Giáo viên)
 
-### Endpoint
+#### Endpoint
 ```txt
-GET /api/v1/teacher/homework/{id}/submissions
+POST /api/v1/teacher/homework/upload
 ```
 
-### Purpose
-Lấy danh sách tất cả học sinh trong lớp gắn với bài tập đó kèm trạng thái nộp bài, điểm số và nhận xét (phục vụ màn hình chấm điểm).
+#### Purpose
+Giáo viên tải lên file PDF đề bài trước khi tạo bài tập. Tối đa **20MB** và chỉ cho phép file đuôi `.pdf` (Magic bytes kiểm tra hợp lệ).
 
-### Roles
+#### Roles
 ```txt
 TEACHER
 ```
 
-### Request
-Không yêu cầu Request Body. Tham số `id` là ID bài tập trên URL path.
+#### Request Body
+- Dạng `multipart/form-data` chứa:
+  - `file`: Tệp tin PDF đề bài.
 
-### Response
+#### Response
+- **Mã phản hồi:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Tải lên file thành công",
+  "data": {
+    "fileUrl": "/uploads/homeworks/a89f92a3-bb81-4235-862d-0a8a72bca531_debai.pdf",
+    "fileName": "debai.pdf"
+  }
+}
+```
+
+---
+
+### 4. Lấy danh sách bài nộp và học sinh của lớp
+
+#### Endpoint
+```txt
+GET /api/v1/teacher/homework/{id}/submissions
+```
+
+#### Purpose
+Lấy danh sách tất cả học sinh trong lớp gắn với bài tập đó kèm trạng thái nộp bài (Submitted, NotSubmitted, Graded, Overdue), đường dẫn file bài làm (hình ảnh hoặc tài liệu khác), điểm số và nhận xét.
+
+#### Roles
+```txt
+TEACHER
+```
+
+#### Response
 - **Mã phản hồi:** `200 OK`
 ```json
 {
@@ -142,7 +153,8 @@ Không yêu cầu Request Body. Tham số `id` là ID bài tập trên URL path.
       "studentName": "Nguyễn Văn A",
       "studentCode": "STD00001",
       "submissionId": 10,
-      "submissionContent": "Em xin nộp link bài làm: github.com/...",
+      "submissionContent": "Gửi thầy bài làm của con.",
+      "submissionFileUrl": "/uploads/homework_submissions/b90c12a8-aa82-4211-a89c_anh1.png",
       "status": "Submitted",
       "score": null,
       "feedback": null,
@@ -154,6 +166,7 @@ Không yêu cầu Request Body. Tham số `id` là ID bài tập trên URL path.
       "studentCode": "STD00002",
       "submissionId": null,
       "submissionContent": null,
+      "submissionFileUrl": null,
       "status": "NotSubmitted",
       "score": null,
       "feedback": null,
@@ -163,28 +176,21 @@ Không yêu cầu Request Body. Tham số `id` là ID bài tập trên URL path.
 }
 ```
 
-### Error Cases
-- **401 Unauthorized:** Chưa đăng nhập.
-- **404 Not Found:** Bài tập không tồn tại hoặc không thuộc lớp học do giáo viên giảng dạy.
-
 ---
 
-## 4. Chấm điểm bài nộp
+### 5. Chấm điểm bài nộp
 
-### Endpoint
+#### Endpoint
 ```txt
 PUT /api/v1/teacher/homework/{id}/submissions/{studentId}/grade
 ```
 
-### Purpose
-Thực hiện chấm điểm và ghi nhận nhận xét/phản hồi cho bài tập của một học sinh.
-
-### Roles
+#### Roles
 ```txt
 TEACHER
 ```
 
-### Request DTO (`GradeSubmissionRequest`)
+#### Request DTO (`GradeSubmissionRequest`)
 ```json
 {
   "score": 9.5,
@@ -192,46 +198,26 @@ TEACHER
 }
 ```
 
-### Validation Rules
-- `score`: Bắt buộc, giá trị thập phân nằm trong khoảng `[0, 10]`.
-- `feedback`: Chuỗi nhận xét (tùy chọn).
-
-### Response
-- **Mã phản hồi:** `200 OK`
-```json
-{
-  "success": true,
-  "message": "Chấm điểm thành công",
-  "data": true
-}
-```
-
-### Error Cases
-- **400 Bad Request:** Điểm số nằm ngoài phạm vi cho phép hoặc thông tin không hợp lệ.
-- **401 Unauthorized:** Chưa đăng nhập.
-- **404 Not Found:** Bài tập hoặc bài nộp của học sinh không hợp lệ.
-
 ---
 
-## 5. Lấy danh sách bài học của lớp học làm tùy chọn giao bài tập
+## II. DÀNH CHO PHỤ HUYNH (PARENT)
 
-### Endpoint
+### 1. Lấy danh sách bài tập của các con
+
+#### Endpoint
 ```txt
-GET /api/v1/teacher/homework/lessons
+GET /api/v1/parent/homework
 ```
 
-### Query Parameters
-- `classId`: Bắt buộc, ID lớp học.
+#### Purpose
+Lấy danh sách bài tập từ các lớp học mà các con của phụ huynh này đang tham gia, kèm thông tin bài nộp hiện tại (nếu có).
 
-### Purpose
-Lấy danh sách các buổi học của một lớp học để điền vào dropdown list khi giáo viên chuẩn bị giao bài tập cho lớp đó.
-
-### Roles
+#### Roles
 ```txt
-TEACHER
+PARENT
 ```
 
-### Response
+#### Response
 - **Mã phản hồi:** `200 OK`
 ```json
 {
@@ -239,14 +225,104 @@ TEACHER
   "message": "Success",
   "data": [
     {
-      "lessonId": 5,
+      "homeworkId": 1,
+      "title": "Bài tập hàm số bậc hai",
+      "description": "Làm bài tập trắc nghiệm trang 45-46 sách giáo khoa.",
+      "className": "Toán 10A",
       "lessonTitle": "Buổi 5 - Tìm hiểu về Hàm số bậc hai",
-      "dateString": "07/06/2026"
+      "attachmentUrl": "/uploads/homeworks/a89f92a3-bb81-4235-862d-0a8a72bca531_debai.pdf",
+      "dueDate": "2026-06-14T23:59:00",
+      "dueDateString": "14/06/2026 23:59",
+      "studentId": 1,
+      "studentName": "Phạm Quốc Bảo",
+      "submissionId": null,
+      "submissionContent": null,
+      "submissionFileUrl": null,
+      "submittedAtString": null,
+      "status": "NotSubmitted", // Trạng thái: NotSubmitted, Submitted, Graded, Overdue
+      "score": null,
+      "feedback": null
     }
   ]
 }
 ```
 
-### Error Cases
-- **401 Unauthorized:** Chưa đăng nhập.
-- **404 Not Found:** Lớp học không hợp lệ hoặc giáo viên không phụ trách lớp này.
+---
+
+### 2. Tải lên tệp bài làm (Phụ huynh)
+
+#### Endpoint
+```txt
+POST /api/v1/parent/homework/upload
+```
+
+#### Purpose
+Phụ huynh tải lên tệp bài làm (hình ảnh hoặc tài liệu khác) của học sinh, giới hạn tối đa **20MB**.
+
+#### Roles
+```txt
+PARENT
+```
+
+#### Request Body
+- Dạng `multipart/form-data` chứa:
+  - `file`: File bài làm (Ảnh hoặc tài liệu tài liệu).
+
+#### Response
+- **Mã phản hồi:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Tải lên file thành công",
+  "data": {
+    "fileUrl": "/uploads/homework_submissions/b90c12a8-aa82-4211-a89c_anh1.png",
+    "fileName": "anh1.png"
+  }
+}
+```
+
+---
+
+### 3. Nộp bài làm (Phụ huynh)
+
+#### Endpoint
+```txt
+POST /api/v1/parent/homework/submit
+```
+
+#### Purpose
+Phụ huynh thực hiện gửi thông tin nộp bài làm của học sinh. Nếu quá hạn nộp, API sẽ trả về lỗi không cho phép nộp bài.
+
+#### Roles
+```txt
+PARENT
+```
+
+#### Request DTO (`SubmitHomeworkRequestDto`)
+```json
+{
+  "homeworkId": 1,
+  "studentId": 1,
+  "submissionFileUrl": "/uploads/homework_submissions/b90c12a8-aa82-4211-a89c_anh1.png",
+  "submissionContent": "Con gửi bài làm ạ"
+}
+```
+
+#### Validation Rules
+- `homeworkId`: Bắt buộc.
+- `studentId`: Bắt buộc, phải thuộc quyền quản lý của phụ huynh.
+- `submissionFileUrl`: Bắt buộc, đường dẫn file đã tải lên trước đó.
+
+#### Response
+- **Mã phản hồi:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Nộp bài tập thành công",
+  "data": true
+}
+```
+
+#### Error Cases
+- **400 Bad Request:** Thời gian nộp quá hạn (`DueDate`), học sinh không thuộc quyền quản lý, hoặc bài tập không thuộc lớp học sinh đang học.
+- **401 Unauthorized:** Phụ huynh chưa đăng nhập.

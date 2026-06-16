@@ -38,7 +38,9 @@ namespace EduBridge.Services.Storage
                 await fileStream.CopyToAsync(stream, cancellationToken);
             }
 
-            return $"/uploads/{folderName}/{uniqueFileName}";
+            // URL encode tên file để đảm bảo tên có dấu tiếng Việt hoặc ký tự đặc biệt hoạt động đúng
+            var encodedFileName = Uri.EscapeDataString(uniqueFileName);
+            return $"/uploads/{folderName}/{encodedFileName}";
         }
 
         public async Task<string> SaveFileAsync(IFormFile file, string folderName, CancellationToken cancellationToken = default)
@@ -55,8 +57,8 @@ namespace EduBridge.Services.Storage
             if (string.IsNullOrWhiteSpace(fileUrl))
                 return Task.CompletedTask;
 
-            // Extract relative path
-            var relativePath = fileUrl.TrimStart('/');
+            // Decode URL để lấy đường dẫn file vật lý thực tế
+            var relativePath = Uri.UnescapeDataString(fileUrl.TrimStart('/'));
             var absolutePath = Path.Combine(_environment.WebRootPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
 
             if (File.Exists(absolutePath))

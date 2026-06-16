@@ -4,14 +4,6 @@
     ViewData["Title"] = "Sổ điểm";
     Layout = "_TeacherLayout";
     ViewData["ActivePage"] = "Grades";
-
-    string GetScoreColor(decimal? score) {
-        if (!score.HasValue) return "score-empty";
-        if (score >= 9.0m) return "score-green";
-        if (score >= 7.0m) return "score-blue";
-        if (score >= 5.0m) return "score-orange";
-        return "score-red";
-    }
 }
 
 <!-- Header -->
@@ -48,49 +40,26 @@
     </div>
 
     <!-- Table -->
-    <div class="grades-table-wrapper">
-        <table class="grades-table">
+    <div class="ds-table-wrap">
+        <table class="ds-table">
             <thead>
                 <tr>
+                    <th class="ds-table-center" style="width: 80px;">STT</th>
                     <th>Học sinh</th>
-                    <th>KT 1</th>
-                    <th>KT 2</th>
-                    <th>Giữa kỳ</th>
-                    <th>Cuối kỳ</th>
-                    <th>TB</th>
-                    <th>Thao tác</th>
+                    <th class="ds-table-center" style="width: 100px;">KT 1</th>
+                    <th class="ds-table-center" style="width: 100px;">KT 2</th>
+                    <th class="ds-table-center" style="width: 120px;">Giữa kỳ</th>
+                    <th class="ds-table-center" style="width: 120px;">Cuối kỳ</th>
+                    <th class="ds-table-center" style="width: 100px;">TB</th>
+                    <th class="ds-table-center" style="width: 100px;">Thao tác</th>
                 </tr>
             </thead>
-            <tbody>
-                @if (Model.StudentsGrades.Any())
-                {
-                    @foreach(var std in Model.StudentsGrades)
-                    {
-                        <tr data-student-id="@std.StudentId">
-                            <td class="student-name">
-                                @std.StudentName
-                                <div class="student-code text-muted small">@std.StudentCode</div>
-                            </td>
-                            <td class="score-cell"><span class="score-badge @GetScoreColor(std.ScoreKT1)">@(std.ScoreKT1?.ToString("F1") ?? "-")</span></td>
-                            <td class="score-cell"><span class="score-badge @GetScoreColor(std.ScoreKT2)">@(std.ScoreKT2?.ToString("F1") ?? "-")</span></td>
-                            <td class="score-cell"><span class="score-badge @GetScoreColor(std.ScoreMidterm)">@(std.ScoreMidterm?.ToString("F1") ?? "-")</span></td>
-                            <td class="score-cell"><span class="score-badge @GetScoreColor(std.ScoreFinal)">@(std.ScoreFinal?.ToString("F1") ?? "-")</span></td>
-                            <td class="score-cell"><span class="score-badge @GetScoreColor(std.AverageScore)">@(std.AverageScore?.ToString("F1") ?? "-")</span></td>
-                            <td class="action-cell">
-                                <button class="btn-action edit-grade-btn" data-id="@std.StudentId">Chỉnh sửa</button>
-                            </td>
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Không có học sinh nào trong lớp.</td>
-                    </tr>
-                }
+            <tbody id="gradesTableBody">
+                <!-- Nạp động bằng JavaScript để hỗ trợ phân trang -->
             </tbody>
         </table>
     </div>
+    <div id="gradesPagination" class="ds-pagination"></div>
 </div>
 
 <!-- Modal Chỉnh sửa điểm -->
@@ -173,9 +142,28 @@
 @section Scripts {
     <script>
         // Lưu trữ danh sách học sinh và điểm số của lớp học hiện tại
-        let studentGradesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StudentsGrades));
+        let rawGradesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StudentsGrades));
+        let studentGradesData = (rawGradesData || []).map(std => ({
+            StudentId: std.StudentId !== undefined ? std.StudentId : std.studentId,
+            StudentName: std.StudentName !== undefined ? std.StudentName : std.studentName,
+            StudentCode: std.StudentCode !== undefined ? std.StudentCode : std.studentCode,
+            ScoreKT1: std.ScoreKT1 !== undefined ? std.ScoreKT1 : std.scoreKT1,
+            CommentKT1: std.CommentKT1 !== undefined ? std.CommentKT1 : std.commentKT1,
+            ScoreKT2: std.ScoreKT2 !== undefined ? std.ScoreKT2 : std.scoreKT2,
+            CommentKT2: std.CommentKT2 !== undefined ? std.CommentKT2 : std.commentKT2,
+            ScoreMidterm: std.ScoreMidterm !== undefined ? std.ScoreMidterm : std.scoreMidterm,
+            CommentMidterm: std.CommentMidterm !== undefined ? std.CommentMidterm : std.commentMidterm,
+            ScoreFinal: std.ScoreFinal !== undefined ? std.ScoreFinal : std.scoreFinal,
+            CommentFinal: std.CommentFinal !== undefined ? std.CommentFinal : std.commentFinal,
+            AverageScore: std.AverageScore !== undefined ? std.AverageScore : std.averageScore
+        }));
+        let gradesCurrentPage = 1;
+        let gradesPageSize = 10;
+        let filteredGrades = [...studentGradesData];
 
         document.addEventListener("DOMContentLoaded", function () {
+            renderGradesTable();
+
             // Sự kiện thay đổi Lớp học
             document.getElementById("classSelect").addEventListener("change", function () {
                 const classId = this.value;
@@ -185,15 +173,13 @@
             // Tìm kiếm học sinh trực tiếp bằng Javascript
             document.getElementById("studentSearchInput").addEventListener("input", function () {
                 const query = this.value.trim().toLowerCase();
-                const filtered = studentGradesData.filter(std => 
+                filteredGrades = studentGradesData.filter(std => 
                     std.StudentName.toLowerCase().includes(query) || 
                     std.StudentCode.toLowerCase().includes(query)
                 );
-                renderGradesTable(filtered);
+                gradesCurrentPage = 1;
+                renderGradesTable();
             });
-
-            // Sự kiện click nút Chỉnh sửa của dòng học sinh ban đầu
-            registerEditButtons();
 
             // Nút Nhập điểm nhanh (mở của học sinh đầu tiên trong bảng)
             document.getElementById("btnEnterGrades").addEventListener("click", function () {
@@ -238,7 +224,9 @@
                             CommentFinal: std.commentFinal,
                             AverageScore: std.averageScore
                         }));
-                        renderGradesTable(studentGradesData);
+                        filteredGrades = [...studentGradesData];
+                        gradesCurrentPage = 1;
+                        renderGradesTable();
                         // Reset input tìm kiếm
                         document.getElementById("studentSearchInput").value = "";
                     } else {
@@ -251,37 +239,118 @@
                 });
         }
 
-        // Render bảng điểm bằng JS
-        function renderGradesTable(studentsList) {
-            const tbody = document.querySelector(".grades-table tbody");
+        // Render bảng điểm bằng JS kèm phân trang
+        function renderGradesTable() {
+            const tbody = document.getElementById("gradesTableBody");
+            const paginationEl = document.getElementById("gradesPagination");
+            if (!tbody) return;
             tbody.innerHTML = "";
             
-            if (studentsList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Không tìm thấy học sinh nào.</td></tr>`;
+            const totalItems = filteredGrades.length;
+            const totalPages = Math.ceil(totalItems / gradesPageSize) || 1;
+
+            if (gradesCurrentPage > totalPages) gradesCurrentPage = totalPages;
+            if (gradesCurrentPage < 1) gradesCurrentPage = 1;
+
+            const start = (gradesCurrentPage - 1) * gradesPageSize;
+            const end = Math.min(start + gradesPageSize, totalItems);
+            const pageItems = filteredGrades.slice(start, end);
+
+            if (pageItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Không tìm thấy học sinh nào.</td></tr>`;
+                if (paginationEl) paginationEl.innerHTML = "";
                 return;
             }
 
-            studentsList.forEach(std => {
+            pageItems.forEach((std, index) => {
+                const indexGlobal = start + index + 1;
                 const tr = document.createElement("tr");
                 tr.setAttribute("data-student-id", std.StudentId);
+                const stdName = std.StudentName || "";
+                const avatarText = stdName.substring(0, Math.min(2, stdName.length)).toUpperCase() || "??";
                 tr.innerHTML = `
-                    <td class="student-name">
-                        ${std.StudentName}
-                        <div class="student-code text-muted small">${std.StudentCode}</div>
+                    <td class="ds-table-center">${indexGlobal}</td>
+                    <td>
+                        <div class="ds-entity">
+                            <div class="ds-avatar">${avatarText}</div>
+                            <div>
+                                <div class="ds-entity-title">${stdName}</div>
+                                <div class="ds-entity-subtitle">Mã: ${std.StudentCode || ""}</div>
+                            </div>
+                        </div>
                     </td>
-                    <td class="score-cell"><span class="score-badge ${getScoreColor(std.ScoreKT1)}">${formatScore(std.ScoreKT1)}</span></td>
-                    <td class="score-cell"><span class="score-badge ${getScoreColor(std.ScoreKT2)}">${formatScore(std.ScoreKT2)}</span></td>
-                    <td class="score-cell"><span class="score-badge ${getScoreColor(std.ScoreMidterm)}">${formatScore(std.ScoreMidterm)}</span></td>
-                    <td class="score-cell"><span class="score-badge ${getScoreColor(std.ScoreFinal)}">${formatScore(std.ScoreFinal)}</span></td>
-                    <td class="score-cell"><span class="score-badge ${getScoreColor(std.AverageScore)}">${formatScore(std.AverageScore)}</span></td>
-                    <td class="action-cell">
-                        <button class="btn-action edit-grade-btn" data-id="${std.StudentId}">Chỉnh sửa</button>
+                    <td class="ds-table-center score-cell"><span class="score-badge ${getScoreColor(std.ScoreKT1)}">${formatScore(std.ScoreKT1)}</span></td>
+                    <td class="ds-table-center score-cell"><span class="score-badge ${getScoreColor(std.ScoreKT2)}">${formatScore(std.ScoreKT2)}</span></td>
+                    <td class="ds-table-center score-cell"><span class="score-badge ${getScoreColor(std.ScoreMidterm)}">${formatScore(std.ScoreMidterm)}</span></td>
+                    <td class="ds-table-center score-cell"><span class="score-badge ${getScoreColor(std.ScoreFinal)}">${formatScore(std.ScoreFinal)}</span></td>
+                    <td class="ds-table-center score-cell"><span class="score-badge ${getScoreColor(std.AverageScore)}">${formatScore(std.AverageScore)}</span></td>
+                    <td class="ds-table-center">
+                        <div class="ds-table-actions">
+                            <button class="ds-icon-btn ds-icon-btn-view edit-grade-btn" data-id="${std.StudentId}" title="Chỉnh sửa điểm">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
+                                    <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
             registerEditButtons();
+            renderGradesPagination(totalPages, totalItems);
+        }
+
+        function renderGradesPagination(totalPages, totalItems) {
+            const container = document.getElementById("gradesPagination");
+            if (!container) return;
+
+            let html = `<div class="ds-pagination-pages">`;
+            html += `<a class="ds-page-link ${gradesCurrentPage === 1 ? 'ds-page-link-disabled' : ''}" data-page="1">«</a>`;
+            html += `<a class="ds-page-link ${gradesCurrentPage === 1 ? 'ds-page-link-disabled' : ''}" data-page="${gradesCurrentPage - 1}">‹</a>`;
+
+            let startPage = Math.max(1, gradesCurrentPage - 2);
+            let endPage = Math.min(totalPages, startPage + 4);
+            if (endPage - startPage < 4) {
+                startPage = Math.max(1, endPage - 4);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<a class="ds-page-link ${i === gradesCurrentPage ? 'ds-page-link-active' : ''}" data-page="${i}">${i}</a>`;
+            }
+
+            html += `<a class="ds-page-link ${gradesCurrentPage === totalPages ? 'ds-page-link-disabled' : ''}" data-page="${gradesCurrentPage + 1}">›</a>`;
+            html += `<a class="ds-page-link ${gradesCurrentPage === totalPages ? 'ds-page-link-disabled' : ''}" data-page="${totalPages}">»</a>`;
+            html += `</div>`;
+
+            html += `
+                <div class="ds-pagination-meta">
+                    <span>Tổng số: ${totalItems} bản ghi</span>
+                    <select class="ds-page-size">
+                        <option value="5" ${gradesPageSize === 5 ? 'selected' : ''}>5</option>
+                        <option value="10" ${gradesPageSize === 10 ? 'selected' : ''}>10</option>
+                        <option value="20" ${gradesPageSize === 20 ? 'selected' : ''}>20</option>
+                        <option value="50" ${gradesPageSize === 50 ? 'selected' : ''}>50</option>
+                    </select>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            container.querySelectorAll(".ds-page-link:not(.ds-page-link-disabled)").forEach(link => {
+                link.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    gradesCurrentPage = parseInt(this.getAttribute("data-page"));
+                    renderGradesTable();
+                });
+            });
+
+            container.querySelector(".ds-page-size").addEventListener("change", function() {
+                gradesPageSize = parseInt(this.value);
+                gradesCurrentPage = 1;
+                renderGradesTable();
+            });
         }
 
         // Đăng ký sự kiện click cho các nút sửa

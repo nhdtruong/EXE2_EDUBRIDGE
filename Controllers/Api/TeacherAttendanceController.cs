@@ -61,13 +61,20 @@ namespace EduBridge.Controllers.Api
                 return BadRequest(new ApiResponse<bool>(false, "Dữ liệu không hợp lệ", false));
             }
 
-            var result = await _attendanceService.SaveAttendanceAsync(userId, request);
-            if (!result)
+            try
             {
-                return BadRequest(new ApiResponse<bool>(false, "Không thể lưu điểm danh cho buổi học này", false));
-            }
+                var result = await _attendanceService.SaveAttendanceAsync(userId, request);
+                if (!result)
+                {
+                    return BadRequest(new ApiResponse<bool>(false, "Không thể lưu điểm danh cho buổi học này", false));
+                }
 
-            return Ok(new ApiResponse<bool>(true, "Lưu điểm danh thành công", true));
+                return Ok(new ApiResponse<bool>(true, "Lưu điểm danh thành công", true));
+            }
+            catch (System.InvalidOperationException ex)
+            {
+                return BadRequest(new ApiResponse<bool>(false, ex.Message, false));
+            }
         }
 
         [HttpGet("history")]

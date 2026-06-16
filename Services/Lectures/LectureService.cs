@@ -54,7 +54,6 @@ namespace EduBridge.Services.Lectures
                 .Where(l => classIds.Contains(l.ClassId))
                 .OrderByDescending(l => l.LessonDate)
                 .ThenByDescending(l => l.CreatedAt)
-                .Take(20)
                 .ToListAsync(cancellationToken);
 
             var lectureHistories = lessons.Select(l => new LectureHistoryDto

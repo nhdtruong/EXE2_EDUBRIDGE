@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -20,6 +20,8 @@ public partial class HomeworkSubmission
     public string? Feedback { get; set; }
 
     public string Status { get; set; } = null!;
+
+    public string? SubmissionFileUrl { get; set; }
 
     public virtual Homework Homework { get; set; } = null!;
 

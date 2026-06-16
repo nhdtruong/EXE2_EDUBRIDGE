@@ -71,6 +71,7 @@ public sealed class TeacherDashboardService : ITeacherDashboardService
         var recentHomeworks = await _context.Homeworks
             .Include(h => h.Lesson)
             .ThenInclude(l => l.Class)
+            .Include(h => h.HomeworkSubmissions)
             .Where(h => lessonIds.Contains(h.LessonId))
             .OrderByDescending(h => h.CreatedAt)
             .Take(5)
@@ -83,14 +84,23 @@ public sealed class TeacherDashboardService : ITeacherDashboardService
             .ToListAsync(cancellationToken);
         var enrollmentDict = enrollmentCounts.ToDictionary(x => x.ClassId, x => x.Count);
 
-        var recentAssignments = recentHomeworks.Select(h => new TeacherDashboardAssignmentDto(
-            Title: h.Title,
-            ClassName: h.Lesson.Class.ClassName,
-            CreatedAt: h.CreatedAt,
-            Submitted: 0,
-            Total: enrollmentDict.GetValueOrDefault(h.Lesson.ClassId, 0),
-            PercentComplete: enrollmentDict.GetValueOrDefault(h.Lesson.ClassId, 0) == 0 ? 0 : 0
-        )).ToList();
+        var recentAssignments = recentHomeworks.Select(h => {
+            var submitted = h.HomeworkSubmissions.Count;
+            var total = enrollmentDict.GetValueOrDefault(h.Lesson.ClassId, 0);
+            var percent = total == 0 ? 0 : (int)((double)submitted / total * 100);
+            return new TeacherDashboardAssignmentDto(
+                Title: h.Title,
+                ClassName: h.Lesson.Class.ClassName,
+                CreatedAt: h.CreatedAt,
+                Submitted: submitted,
+                Total: total,
+                PercentComplete: percent
+            );
+        }).ToList();
+
+        // Tính số bài tập nộp chưa được chấm điểm (Status == "Submitted")
+        var ungradedAssignments = await _context.HomeworkSubmissions
+            .CountAsync(s => lessonIds.Contains(s.Homework.LessonId) && s.Status == "Submitted", cancellationToken);
 
         var rawMessages = await _context.Messages
             .Include(m => m.SenderUser)
@@ -114,7 +124,7 @@ public sealed class TeacherDashboardService : ITeacherDashboardService
             teacherName,
             totalClasses,
             totalStudents,
-            0, // UngradedAssignments
+            ungradedAssignments,
             unreadMessages,
             todaySchedules,
             recentAssignments,
