@@ -65,6 +65,7 @@ namespace EduBridge
             builder.Services.AddScoped<IFinanceSummaryService, FinanceSummaryService>();
             builder.Services.AddScoped<ICenterSettingsService, CenterSettingsService>();
             builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            builder.Services.AddScoped<EduBridge.Services.ParentApp.IParentAppService, EduBridge.Services.ParentApp.ParentAppService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)

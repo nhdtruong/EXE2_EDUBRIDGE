@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using EduBridge.Services.Classes;
 using EduBridge.Contracts.Classes;
 using EduBridge.Contracts.Parents;
 using EduBridge.Services.Parents;
