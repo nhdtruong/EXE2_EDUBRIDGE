@@ -603,9 +603,17 @@ ELSE IF EXISTS (
     DROP INDEX UQ_Teachers_TeacherCode ON dbo.Teachers;
 GO
 
-CREATE UNIQUE INDEX UQ_Teachers_TeacherCode
-ON dbo.Teachers(TeacherCode)
-WHERE IsDeleted = 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Teachers')
+      AND name = N'UQ_Teachers_TeacherCode'
+)
+BEGIN
+    CREATE UNIQUE INDEX UQ_Teachers_TeacherCode
+    ON dbo.Teachers(TeacherCode)
+    WHERE IsDeleted = 0;
+END;
 GO
 
 /* Recreate filtered unique index: Users.Email */
@@ -620,10 +628,18 @@ BEGIN
 END;
 GO
 
-CREATE UNIQUE INDEX UX_Users_Email_NotNull
-ON dbo.Users(Email)
-WHERE Email IS NOT NULL
-  AND IsDeleted = 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Users')
+      AND name = N'UX_Users_Email_NotNull'
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_Users_Email_NotNull
+    ON dbo.Users(Email)
+    WHERE Email IS NOT NULL
+      AND IsDeleted = 0;
+END;
 GO
 
 /* Recreate filtered unique index: Users.NormalizedPhoneNumber */
@@ -638,10 +654,18 @@ BEGIN
 END;
 GO
 
-CREATE UNIQUE INDEX UX_Users_NormalizedPhoneNumber_NotNull
-ON dbo.Users(NormalizedPhoneNumber)
-WHERE NormalizedPhoneNumber IS NOT NULL
-  AND IsDeleted = 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Users')
+      AND name = N'UX_Users_NormalizedPhoneNumber_NotNull'
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_Users_NormalizedPhoneNumber_NotNull
+    ON dbo.Users(NormalizedPhoneNumber)
+    WHERE NormalizedPhoneNumber IS NOT NULL
+      AND IsDeleted = 0;
+END;
 GO
 
 /* Recreate filtered unique index: Users.IdentityNumber */
@@ -656,10 +680,18 @@ BEGIN
 END;
 GO
 
-CREATE UNIQUE INDEX UX_Users_IdentityNumber_NotNull
-ON dbo.Users(IdentityNumber)
-WHERE IdentityNumber IS NOT NULL
-  AND IsDeleted = 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Users')
+      AND name = N'UX_Users_IdentityNumber_NotNull'
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_Users_IdentityNumber_NotNull
+    ON dbo.Users(IdentityNumber)
+    WHERE IdentityNumber IS NOT NULL
+      AND IsDeleted = 0;
+END;
 GO
 
 /* Useful query indexes for soft delete */
@@ -754,9 +786,17 @@ BEGIN
 END;
 GO
 
-CREATE UNIQUE INDEX UQ_Teachers_TeacherCode
-ON dbo.Teachers(TeacherCode)
-WHERE IsDeleted = 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Teachers')
+      AND name = N'UQ_Teachers_TeacherCode'
+)
+BEGIN
+    CREATE UNIQUE INDEX UQ_Teachers_TeacherCode
+    ON dbo.Teachers(TeacherCode)
+    WHERE IsDeleted = 0;
+END;
 GO
 
 
@@ -957,9 +997,17 @@ BEGIN
 END;
 GO
 
-CREATE UNIQUE INDEX UX_Students_CenterId_StudentCode_NotDeleted
-ON dbo.Students(CenterId, StudentCode)
-WHERE IsDeleted = 0;
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Students')
+      AND name = N'UX_Students_CenterId_StudentCode_NotDeleted'
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_Students_CenterId_StudentCode_NotDeleted
+    ON dbo.Students(CenterId, StudentCode)
+    WHERE IsDeleted = 0;
+END;
 GO 
 
 
