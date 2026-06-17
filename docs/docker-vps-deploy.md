@@ -131,6 +131,7 @@ http://YOUR_VPS_IP:8080/Login
 ## 8. DB không bị mất khi deploy
 
 - SQL Server dùng volume `edubridge_sql_data`
+- workflow chạy `db-init` riêng trước khi khởi động app
 - `db-init` chỉ tạo DB nếu chưa có
 - migration SQL được track bằng `dbo.__SchemaMigrations`
 - script đã chạy rồi sẽ không chạy lại

@@ -89,5 +89,7 @@ jobs:
 
             echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml up -d sqlserver redis
+            docker compose -f docker-compose.prod.yml run --rm db-init
+            docker compose -f docker-compose.prod.yml up -d app
             docker image prune -f

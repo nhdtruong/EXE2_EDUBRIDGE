@@ -13,7 +13,8 @@ WHERE ClassCode = 'CLS001';
 
 IF @ClassId IS NULL
 BEGIN
-    THROW 50001, 'Không tìm thấy lớp CLS001.', 1;
+    PRINT N'Không tìm thấy lớp CLS001. Bỏ qua phần seed Lessons/Attendance mẫu trong migration 20260521_001.';
+    GOTO SkipAttendanceSeed;
 END;
 
 DECLARE @LessonDates TABLE
@@ -98,6 +99,9 @@ WHERE NOT EXISTS
 );
 GO
 
+
+SkipAttendanceSeed:
+GO
 
 /* =========================================================
    THÊM BẢNG INVOICES & PAYMENTS
