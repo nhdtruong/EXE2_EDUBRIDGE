@@ -140,6 +140,38 @@ BEGIN
 END;
 GO
 
+DECLARE @dropEmailDependenciesSql NVARCHAR(MAX) = N'';
+
+SELECT @dropEmailDependenciesSql = @dropEmailDependenciesSql +
+    CASE
+        WHEN kc.name IS NOT NULL THEN
+            N'ALTER TABLE dbo.Users DROP CONSTRAINT ' + QUOTENAME(kc.name) + N';' + CHAR(13)
+        ELSE
+            N'DROP INDEX ' + QUOTENAME(i.name) + N' ON dbo.Users;' + CHAR(13)
+    END
+FROM sys.indexes i
+LEFT JOIN sys.key_constraints kc
+    ON kc.parent_object_id = i.object_id
+   AND kc.unique_index_id = i.index_id
+JOIN sys.index_columns ic
+    ON ic.object_id = i.object_id
+   AND ic.index_id = i.index_id
+JOIN sys.columns c
+    ON c.object_id = ic.object_id
+   AND c.column_id = ic.column_id
+WHERE i.object_id = OBJECT_ID(N'dbo.Users')
+  AND c.name = N'Email'
+  AND i.is_primary_key = 0
+  AND i.name NOT IN (N'IX_Users_Email')
+GROUP BY i.name, kc.name;
+
+IF @dropEmailDependenciesSql <> N''
+BEGIN
+    PRINT @dropEmailDependenciesSql;
+    EXEC sp_executesql @dropEmailDependenciesSql;
+END;
+GO
+
 ALTER TABLE dbo.Users
 ALTER COLUMN Email NVARCHAR(150) NULL;
 GO

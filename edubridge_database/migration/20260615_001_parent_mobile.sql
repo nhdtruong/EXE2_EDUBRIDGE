@@ -20,6 +20,15 @@ BEGIN
         CONSTRAINT FK_LeaveRequests_Reviewer FOREIGN KEY(ReviewedByUserId) REFERENCES Users(UserId),
         CONSTRAINT CK_LeaveRequests_Status CHECK(Status IN ('Pending','Approved','Rejected'))
     );
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.LeaveRequests')
+      AND name = N'IX_LeaveRequests_Student_CreatedAt'
+)
+BEGIN
     CREATE INDEX IX_LeaveRequests_Student_CreatedAt ON dbo.LeaveRequests(StudentId, CreatedAt DESC);
 END
 GO
@@ -36,6 +45,15 @@ BEGIN
         UpdatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
         CONSTRAINT FK_DevicePushTokens_User FOREIGN KEY(UserId) REFERENCES Users(UserId)
     );
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.DevicePushTokens')
+      AND name = N'IX_DevicePushTokens_User_Active'
+)
+BEGIN
     CREATE INDEX IX_DevicePushTokens_User_Active ON dbo.DevicePushTokens(UserId, IsActive);
 END
 GO

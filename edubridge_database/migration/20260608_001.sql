@@ -4,10 +4,8 @@ GO
 -- ========================================================
 -- 0. XÓA DỮ LIỆU TEST CŨ KHÔNG HỢP LỆ
 -- ========================================================
--- Phải xóa dữ liệu cũ vì nó không có CenterId (không thể mapping)
-IF OBJECT_ID(N'dbo.Receipts', N'U') IS NOT NULL DELETE FROM Receipts;
-IF OBJECT_ID(N'dbo.Payments', N'U') IS NOT NULL DELETE FROM Payments;
-IF OBJECT_ID(N'dbo.Invoices', N'U') IS NOT NULL DELETE FROM Invoices;
+-- Không xóa dữ liệu production trong migration.
+PRINT N'Bỏ qua bước xóa dữ liệu test cũ trong migration 20260608_001.';
 GO
 
 -- ========================================================
@@ -23,17 +21,45 @@ GO
 -- ========================================================
 -- 2. CẬP NHẬT BẢNG INVOICES
 -- ========================================================
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Invoices]') AND name = 'CenterId')
+IF COL_LENGTH(N'dbo.Invoices', N'CenterId') IS NULL
 BEGIN
-    ALTER TABLE Invoices
-    ADD 
-        CenterId INT NOT NULL,
-        InvoiceCode NVARCHAR(30) NOT NULL,
-        EnrollmentId INT NULL,
-        Description NVARCHAR(500) NULL,
-        DiscountNote NVARCHAR(500) NULL,
-        CreatedByUserId INT NOT NULL,
-        UpdatedAt DATETIME NULL;
+    ALTER TABLE dbo.Invoices ADD CenterId INT NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Invoices', N'InvoiceCode') IS NULL
+BEGIN
+    ALTER TABLE dbo.Invoices ADD InvoiceCode NVARCHAR(30) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Invoices', N'EnrollmentId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Invoices ADD EnrollmentId INT NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Invoices', N'Description') IS NULL
+BEGIN
+    ALTER TABLE dbo.Invoices ADD Description NVARCHAR(500) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Invoices', N'DiscountNote') IS NULL
+BEGIN
+    ALTER TABLE dbo.Invoices ADD DiscountNote NVARCHAR(500) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Invoices', N'CreatedByUserId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Invoices ADD CreatedByUserId INT NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Invoices', N'UpdatedAt') IS NULL
+BEGIN
+    ALTER TABLE dbo.Invoices ADD UpdatedAt DATETIME NULL;
 END
 GO
 
@@ -62,15 +88,33 @@ GO
 -- ========================================================
 -- 3. CẬP NHẬT BẢNG PAYMENTS
 -- ========================================================
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Payments]') AND name = 'CenterId')
+IF COL_LENGTH(N'dbo.Payments', N'CenterId') IS NULL
 BEGIN
-    ALTER TABLE Payments
-    ADD 
-        CenterId INT NOT NULL,
-        ReceivedByUserId INT NOT NULL,
-        Status NVARCHAR(20) NOT NULL DEFAULT 'Confirmed',
-        TransactionReference NVARCHAR(100) NULL,
-        CreatedAt DATETIME NOT NULL DEFAULT SYSDATETIME();
+    ALTER TABLE dbo.Payments ADD CenterId INT NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Payments', N'ReceivedByUserId') IS NULL
+BEGIN
+    ALTER TABLE dbo.Payments ADD ReceivedByUserId INT NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Payments', N'Status') IS NULL
+BEGIN
+    ALTER TABLE dbo.Payments ADD Status NVARCHAR(20) NOT NULL DEFAULT 'Confirmed';
+END
+GO
+
+IF COL_LENGTH(N'dbo.Payments', N'TransactionReference') IS NULL
+BEGIN
+    ALTER TABLE dbo.Payments ADD TransactionReference NVARCHAR(100) NULL;
+END
+GO
+
+IF COL_LENGTH(N'dbo.Payments', N'CreatedAt') IS NULL
+BEGIN
+    ALTER TABLE dbo.Payments ADD CreatedAt DATETIME NOT NULL DEFAULT SYSDATETIME();
 END
 GO
 
@@ -116,7 +160,11 @@ BEGIN
         CONSTRAINT FK_Receipts_VoidedByUser FOREIGN KEY (VoidedByUserId) REFERENCES Users(UserId)
     );
 
-    -- Thêm Unique Index cho Receipts
+END
+GO
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Receipts]') AND name = N'UX_Receipts_CenterId_ReceiptNumber')
+BEGIN
     CREATE UNIQUE NONCLUSTERED INDEX UX_Receipts_CenterId_ReceiptNumber ON Receipts(CenterId, ReceiptNumber);
 END
 GO
