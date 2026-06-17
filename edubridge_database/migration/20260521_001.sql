@@ -14,39 +14,40 @@ WHERE ClassCode = 'CLS001';
 IF @ClassId IS NULL
 BEGIN
     PRINT N'Không tìm thấy lớp CLS001. Bỏ qua phần seed Lessons/Attendance mẫu trong migration 20260521_001.';
-    GOTO SkipAttendanceSeed;
 END;
+ELSE
+BEGIN
+    DECLARE @LessonDates TABLE
+    (
+        LessonDate DATE,
+        LessonTitle NVARCHAR(200)
+    );
 
-DECLARE @LessonDates TABLE
-(
-    LessonDate DATE,
-    LessonTitle NVARCHAR(200)
-);
+    INSERT INTO @LessonDates (LessonDate, LessonTitle)
+    VALUES
+    ('2026-05-15', N'Buổi học ngày 15/05'),
+    ('2026-05-16', N'Buổi học ngày 16/05'),
+    ('2026-05-17', N'Buổi học ngày 17/05'),
+    ('2026-05-18', N'Buổi học ngày 18/05'),
+    ('2026-05-19', N'Buổi học ngày 19/05'),
+    ('2026-05-20', N'Buổi học ngày 20/05'),
+    ('2026-05-21', N'Buổi học ngày 21/05');
 
-INSERT INTO @LessonDates (LessonDate, LessonTitle)
-VALUES
-('2026-05-15', N'Buổi học ngày 15/05'),
-('2026-05-16', N'Buổi học ngày 16/05'),
-('2026-05-17', N'Buổi học ngày 17/05'),
-('2026-05-18', N'Buổi học ngày 18/05'),
-('2026-05-19', N'Buổi học ngày 19/05'),
-('2026-05-20', N'Buổi học ngày 20/05'),
-('2026-05-21', N'Buổi học ngày 21/05');
-
-INSERT INTO Lessons (ClassId, LessonTitle, LessonDate, LessonContent)
-SELECT
-    @ClassId,
-    d.LessonTitle,
-    d.LessonDate,
-    N'Dữ liệu test biểu đồ điểm danh'
-FROM @LessonDates d
-WHERE NOT EXISTS
-(
-    SELECT 1
-    FROM Lessons l
-    WHERE l.ClassId = @ClassId
-      AND l.LessonDate = d.LessonDate
-);
+    INSERT INTO Lessons (ClassId, LessonTitle, LessonDate, LessonContent)
+    SELECT
+        @ClassId,
+        d.LessonTitle,
+        d.LessonDate,
+        N'Dữ liệu test biểu đồ điểm danh'
+    FROM @LessonDates d
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM Lessons l
+        WHERE l.ClassId = @ClassId
+          AND l.LessonDate = d.LessonDate
+    );
+END;
 GO
 
 USE EduBridgeDB;
@@ -58,49 +59,48 @@ SELECT @ClassId = ClassId
 FROM Classes
 WHERE ClassCode = 'CLS001';
 
-;WITH TargetLessons AS
-(
-    SELECT LessonId, LessonDate
-    FROM Lessons
-    WHERE ClassId = @ClassId
-      AND LessonDate BETWEEN '2026-05-15' AND '2026-05-21'
-),
-TargetStudents AS
-(
-    SELECT StudentId, StudentCode
-    FROM Students
-    WHERE StudentCode IN ('STD001', 'STD002')
-),
-AttendanceSeed AS
-(
-    SELECT l.LessonId, s.StudentId,
-           CASE
-               WHEN l.LessonDate IN ('2026-05-15', '2026-05-18', '2026-05-19') THEN N'Có mặt'
-               WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD001' THEN N'Có mặt'
-               WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD002' THEN N'Vắng'
-               WHEN l.LessonDate IN ('2026-05-17', '2026-05-21') THEN N'Có mặt'
-               ELSE N'Có mặt'
-           END AS Status
-    FROM TargetLessons l
-    CROSS JOIN TargetStudents s
-)
-INSERT INTO Attendance (LessonId, StudentId, Status)
-SELECT
-    a.LessonId,
-    a.StudentId,
-    a.Status
-FROM AttendanceSeed a
-WHERE NOT EXISTS
-(
-    SELECT 1
-    FROM Attendance existing
-    WHERE existing.LessonId = a.LessonId
-      AND existing.StudentId = a.StudentId
-);
-GO
-
-
-SkipAttendanceSeed:
+IF @ClassId IS NOT NULL
+BEGIN
+    ;WITH TargetLessons AS
+    (
+        SELECT LessonId, LessonDate
+        FROM Lessons
+        WHERE ClassId = @ClassId
+          AND LessonDate BETWEEN '2026-05-15' AND '2026-05-21'
+    ),
+    TargetStudents AS
+    (
+        SELECT StudentId, StudentCode
+        FROM Students
+        WHERE StudentCode IN ('STD001', 'STD002')
+    ),
+    AttendanceSeed AS
+    (
+        SELECT l.LessonId, s.StudentId,
+               CASE
+                   WHEN l.LessonDate IN ('2026-05-15', '2026-05-18', '2026-05-19') THEN N'Có mặt'
+                   WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD001' THEN N'Có mặt'
+                   WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD002' THEN N'Vắng'
+                   WHEN l.LessonDate IN ('2026-05-17', '2026-05-21') THEN N'Có mặt'
+                   ELSE N'Có mặt'
+               END AS Status
+        FROM TargetLessons l
+        CROSS JOIN TargetStudents s
+    )
+    INSERT INTO Attendance (LessonId, StudentId, Status)
+    SELECT
+        a.LessonId,
+        a.StudentId,
+        a.Status
+    FROM AttendanceSeed a
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM Attendance existing
+        WHERE existing.LessonId = a.LessonId
+          AND existing.StudentId = a.StudentId
+    );
+END;
 GO
 
 /* =========================================================
