@@ -150,6 +150,7 @@ namespace EduBridge
             {
                 options.Conventions.AuthorizeFolder("/");
                 options.Conventions.AllowAnonymousToPage("/Login");
+                options.Conventions.AllowAnonymousToPage("/Privacy");
                 options.Conventions.AllowAnonymousToPage("/AccessDenied");
                 options.Conventions.AllowAnonymousToPage("/NotFound");
                 options.Conventions.AllowAnonymousToPage("/Error");
