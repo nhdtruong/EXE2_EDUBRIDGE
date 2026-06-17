@@ -72,7 +72,11 @@ apply_script_once() {
   fi
 
   run_sql_file "${file}"
-  run_sql_query "USE [${DB_NAME}]; INSERT INTO dbo.__SchemaMigrations (ScriptName) VALUES (N'${name}');"
+  run_sql_query "USE [${DB_NAME}];
+IF NOT EXISTS (SELECT 1 FROM dbo.__SchemaMigrations WHERE ScriptName = N'${name}')
+BEGIN
+    INSERT INTO dbo.__SchemaMigrations (ScriptName) VALUES (N'${name}');
+END"
 }
 
 main() {
