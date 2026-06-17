@@ -657,24 +657,49 @@ GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Invoices)
 BEGIN
-    INSERT INTO dbo.Invoices
-        (StudentId, ClassId, Amount, DiscountAmount, DueDate, Status)
-    SELECT TOP 1
-        s.StudentId,
-        c.ClassId,
-        ISNULL(co.TuitionFee, 7000000),
-        0,
-        CAST(GETDATE() AS DATE),
-        N'Paid'
-    FROM dbo.Students s
-    JOIN dbo.Enrollments e
-        ON e.StudentId = s.StudentId
-    JOIN dbo.Classes c
-        ON c.ClassId = e.ClassId
-    JOIN dbo.Courses co
-        ON co.CourseId = c.CourseId
-    WHERE e.Status = N'Đang học'
-    ORDER BY s.StudentId;
+    IF COL_LENGTH(N'dbo.Invoices', N'CenterId') IS NOT NULL
+    BEGIN
+        INSERT INTO dbo.Invoices
+            (StudentId, ClassId, CenterId, Amount, DiscountAmount, DueDate, Status)
+        SELECT TOP 1
+            s.StudentId,
+            c.ClassId,
+            c.CenterId,
+            ISNULL(co.TuitionFee, 7000000),
+            0,
+            CAST(GETDATE() AS DATE),
+            N'Paid'
+        FROM dbo.Students s
+        JOIN dbo.Enrollments e
+            ON e.StudentId = s.StudentId
+        JOIN dbo.Classes c
+            ON c.ClassId = e.ClassId
+        JOIN dbo.Courses co
+            ON co.CourseId = c.CourseId
+        WHERE e.Status = N'Đang học'
+        ORDER BY s.StudentId;
+    END;
+    ELSE
+    BEGIN
+        INSERT INTO dbo.Invoices
+            (StudentId, ClassId, Amount, DiscountAmount, DueDate, Status)
+        SELECT TOP 1
+            s.StudentId,
+            c.ClassId,
+            ISNULL(co.TuitionFee, 7000000),
+            0,
+            CAST(GETDATE() AS DATE),
+            N'Paid'
+        FROM dbo.Students s
+        JOIN dbo.Enrollments e
+            ON e.StudentId = s.StudentId
+        JOIN dbo.Classes c
+            ON c.ClassId = e.ClassId
+        JOIN dbo.Courses co
+            ON co.CourseId = c.CourseId
+        WHERE e.Status = N'Đang học'
+        ORDER BY s.StudentId;
+    END;
 END;
 GO
 
