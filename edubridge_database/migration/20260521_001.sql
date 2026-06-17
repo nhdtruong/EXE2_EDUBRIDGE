@@ -109,59 +109,110 @@ GO
 USE EduBridgeDB;
 GO
 
-CREATE TABLE Invoices (
-    InvoiceId INT IDENTITY(1,1) PRIMARY KEY,
-    StudentId INT NOT NULL,
-    ClassId INT NOT NULL,
-    Amount DECIMAL(18,2) NOT NULL,
-    DiscountAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
-    FinalAmount AS (Amount - DiscountAmount) PERSISTED,
-    DueDate DATE NULL,
-    Status NVARCHAR(20) NOT NULL DEFAULT N'Unpaid',
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+IF OBJECT_ID(N'dbo.Invoices', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Invoices (
+        InvoiceId INT IDENTITY(1,1) PRIMARY KEY,
+        StudentId INT NOT NULL,
+        ClassId INT NOT NULL,
+        Amount DECIMAL(18,2) NOT NULL,
+        DiscountAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
+        FinalAmount AS (Amount - DiscountAmount) PERSISTED,
+        DueDate DATE NULL,
+        Status NVARCHAR(20) NOT NULL DEFAULT N'Unpaid',
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 
-    CONSTRAINT FK_Invoices_Students
-        FOREIGN KEY (StudentId) REFERENCES Students(StudentId),
+        CONSTRAINT FK_Invoices_Students
+            FOREIGN KEY (StudentId) REFERENCES Students(StudentId),
 
-    CONSTRAINT FK_Invoices_Classes
-        FOREIGN KEY (ClassId) REFERENCES Classes(ClassId),
+        CONSTRAINT FK_Invoices_Classes
+            FOREIGN KEY (ClassId) REFERENCES Classes(ClassId),
 
-    CONSTRAINT CK_Invoices_Status
-        CHECK (Status IN (N'Unpaid', N'Partial', N'Paid', N'Cancelled'))
-);
+        CONSTRAINT CK_Invoices_Status
+            CHECK (Status IN (N'Unpaid', N'Partial', N'Paid', N'Cancelled'))
+    );
+END;
 
-CREATE TABLE Payments (
-    PaymentId INT IDENTITY(1,1) PRIMARY KEY,
-    InvoiceId INT NOT NULL,
-    Amount DECIMAL(18,2) NOT NULL,
-    PaidAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    PaymentMethod NVARCHAR(30) NULL,
-    Note NVARCHAR(255) NULL,
+IF OBJECT_ID(N'dbo.Payments', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Payments (
+        PaymentId INT IDENTITY(1,1) PRIMARY KEY,
+        InvoiceId INT NOT NULL,
+        Amount DECIMAL(18,2) NOT NULL,
+        PaidAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        PaymentMethod NVARCHAR(30) NULL,
+        Note NVARCHAR(255) NULL,
 
-    CONSTRAINT FK_Payments_Invoices
-        FOREIGN KEY (InvoiceId) REFERENCES Invoices(InvoiceId),
+        CONSTRAINT FK_Payments_Invoices
+            FOREIGN KEY (InvoiceId) REFERENCES dbo.Invoices(InvoiceId),
 
-    CONSTRAINT CK_Payments_Amount
-        CHECK (Amount > 0)
-);
+        CONSTRAINT CK_Payments_Amount
+            CHECK (Amount > 0)
+    );
+END;
 
-CREATE INDEX IX_Invoices_StudentId ON Invoices(StudentId);
-CREATE INDEX IX_Invoices_ClassId ON Invoices(ClassId);
-CREATE INDEX IX_Invoices_Status ON Invoices(Status);
-CREATE INDEX IX_Payments_InvoiceId ON Payments(InvoiceId);
-CREATE INDEX IX_Payments_PaidAt ON Payments(PaidAt);
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Invoices')
+      AND name = N'IX_Invoices_StudentId'
+)
+BEGIN
+    CREATE INDEX IX_Invoices_StudentId ON dbo.Invoices(StudentId);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Invoices')
+      AND name = N'IX_Invoices_ClassId'
+)
+BEGIN
+    CREATE INDEX IX_Invoices_ClassId ON dbo.Invoices(ClassId);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Invoices')
+      AND name = N'IX_Invoices_Status'
+)
+BEGIN
+    CREATE INDEX IX_Invoices_Status ON dbo.Invoices(Status);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Payments')
+      AND name = N'IX_Payments_InvoiceId'
+)
+BEGIN
+    CREATE INDEX IX_Payments_InvoiceId ON dbo.Payments(InvoiceId);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Payments')
+      AND name = N'IX_Payments_PaidAt'
+)
+BEGIN
+    CREATE INDEX IX_Payments_PaidAt ON dbo.Payments(PaidAt);
+END;
 GO
 
 
-CREATE VIEW vw_RevenueByPayment AS
+IF OBJECT_ID(N'dbo.vw_RevenueByPayment', N'V') IS NOT NULL
+BEGIN
+    DROP VIEW dbo.vw_RevenueByPayment;
+END;
+GO
+
+CREATE VIEW dbo.vw_RevenueByPayment AS
 SELECT
     c.CenterId,
     CAST(p.PaidAt AS DATE) AS PaidDate,
     YEAR(p.PaidAt) AS PaidYear,
     MONTH(p.PaidAt) AS PaidMonth,
     SUM(p.Amount) AS RevenueAmount
-FROM Payments p
-JOIN Invoices i ON i.InvoiceId = p.InvoiceId
+FROM dbo.Payments p
+JOIN dbo.Invoices i ON i.InvoiceId = p.InvoiceId
 JOIN Classes cl ON cl.ClassId = i.ClassId
 JOIN Centers c ON c.CenterId = cl.CenterId
 WHERE i.Status <> N'Cancelled'
