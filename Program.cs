@@ -22,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics;
 using System.Threading.RateLimiting;
 
 namespace EduBridge
@@ -151,6 +152,7 @@ namespace EduBridge
                 options.Conventions.AllowAnonymousToPage("/Login");
                 options.Conventions.AllowAnonymousToPage("/AccessDenied");
                 options.Conventions.AllowAnonymousToPage("/NotFound");
+                options.Conventions.AllowAnonymousToPage("/Error");
                 options.Conventions.AuthorizePage("/AdminDashboard", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminClasses", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminStudents", "AdminOnly");
@@ -243,7 +245,37 @@ namespace EduBridge
 
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Error");
+                app.UseExceptionHandler(errorApp =>
+                {
+                    errorApp.Run(async context =>
+                    {
+                        var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+                        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+                        if (exceptionFeature?.Error != null)
+                        {
+                            logger.LogError(
+                                exceptionFeature.Error,
+                                "Unhandled exception for request {Method} {Path}",
+                                context.Request.Method,
+                                context.Request.Path);
+                        }
+
+                        if (context.Request.Path.StartsWithSegments("/api"))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                            context.Response.ContentType = "application/json";
+                            await context.Response.WriteAsJsonAsync(new
+                            {
+                                message = "Internal server error",
+                                traceId = context.TraceIdentifier
+                            });
+                            return;
+                        }
+
+                        context.Response.Redirect("/Error");
+                    });
+                });
                 app.UseHsts();
             }
             else
