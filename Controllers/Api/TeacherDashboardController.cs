@@ -36,11 +36,7 @@ namespace EduBridge.Controllers.Api
                 return NotFound(new ApiResponse<DashboardResponseDto>(false, result.Message, null));
             }
 
-<<<<<<< HEAD
             return Ok(new ApiResponse<DashboardResponseDto>(true, result.Message, result.Value));
-=======
-            return Ok(result.Value);
->>>>>>> e5417bb24ce6b520875746ee3d72982295df8d14
         }
     }
 }
