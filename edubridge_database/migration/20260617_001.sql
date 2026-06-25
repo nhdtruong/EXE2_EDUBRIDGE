@@ -1,19 +1,24 @@
 USE EduBridgeDB;
 GO
 -- 1. Thêm cột StaffCode vào bảng CenterUsers
-ALTER TABLE CenterUsers 
-ADD StaffCode NVARCHAR(30) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[CenterUsers]') AND name = 'StaffCode')
+BEGIN
+    ALTER TABLE CenterUsers 
+    ADD StaffCode NVARCHAR(30) NULL;
+END
 GO
 
--- 2. Tạo Unique Index đảm bảo mã nhân sự không được trùng nhau trong cùng một trung tâm
-CREATE UNIQUE NONCLUSTERED INDEX UX_CenterUsers_CenterId_StaffCode 
-ON CenterUsers(CenterId, StaffCode) 
-WHERE StaffCode IS NOT NULL;
+-- 1. Xóa bỏ Unique Index cũ nếu tồn tại
+IF EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[CenterUsers]') AND name = 'UX_CenterUsers_CenterId_StaffCode')
+BEGIN
+    DROP INDEX UX_CenterUsers_CenterId_StaffCode ON CenterUsers;
+END
 GO
-
--- 1. Xóa bỏ Unique Index cũ
-DROP INDEX UX_CenterUsers_CenterId_StaffCode ON CenterUsers;
 
 -- 2. Tạo lại Index mới (không Unique) để đảm bảo hiệu suất truy vấn
-CREATE NONCLUSTERED INDEX IX_CenterUsers_CenterId_StaffCode 
-ON CenterUsers (CenterId, StaffCode);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[CenterUsers]') AND name = 'IX_CenterUsers_CenterId_StaffCode')
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_CenterUsers_CenterId_StaffCode 
+    ON CenterUsers (CenterId, StaffCode);
+END
+GO
