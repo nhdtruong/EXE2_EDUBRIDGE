@@ -103,3 +103,18 @@ Tất cả các response sẽ được bọc trong một chuẩn chung:
 **Response:** `List<ParentChatMessageDto>`
 
 > **Lưu ý nghiệp vụ Chat:** Các API phía trên được dùng để lấy lịch sử. Quá trình gửi/nhận tin nhắn realtime được thực hiện thông qua kết nối **SignalR** tới `/chatHub`.
+
+---
+
+## Mobile V1 Additive APIs
+
+Các API dưới đây được bổ sung riêng cho Parent App, không thay đổi contract API Web hiện có.
+
+- `GET /api/v1/parent/children/{studentId}/lessons`: Nhật ký bài học read-only.
+- `POST /api/v1/parent/chat/read?contactUserId={teacherUserId}`: Đánh dấu chat đã đọc.
+- `POST /api/v1/parent/chat/upload`: Upload ảnh chat, multipart field `file`.
+- `GET /api/v1/parent/children/{studentId}/leave-requests`: Danh sách yêu cầu xin nghỉ.
+- `POST /api/v1/parent/children/{studentId}/leave-requests`: Gửi yêu cầu theo `lessonId`, hoặc theo `lessonDate` để chọn buổi đầu tiên trong ngày.
+- `POST /api/v1/parent/devices`: Đăng ký Expo push token.
+
+Hai API cuối yêu cầu chạy migration `edubridge_database/migration/20260615_001_parent_mobile.sql`.

@@ -37,6 +37,17 @@ public class ParentAcademicController : ControllerBase
             : BadRequest(new ApiResponse<List<ParentGradeDto>>(false, result.Message, null, result.Errors));
     }
 
+    [HttpGet("lessons")]
+    public async Task<ActionResult<ApiResponse<List<ParentLessonDiaryDto>>>> GetLessons(int studentId, CancellationToken cancellationToken)
+    {
+        var parentId = GetUserId();
+        if (parentId == 0) return Unauthorized();
+        var result = await _parentAppService.GetLessonDiaryAsync(parentId, studentId, cancellationToken);
+        return result.IsSuccess
+            ? Ok(new ApiResponse<List<ParentLessonDiaryDto>>(true, result.Message, result.Value))
+            : BadRequest(new ApiResponse<List<ParentLessonDiaryDto>>(false, result.Message, null, result.Errors));
+    }
+
     [HttpGet("homeworks")]
     public async Task<ActionResult<ApiResponse<List<ParentHomeworkDto>>>> GetHomeworks(int studentId, CancellationToken cancellationToken)
     {

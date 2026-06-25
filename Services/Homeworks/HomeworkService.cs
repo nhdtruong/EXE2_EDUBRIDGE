@@ -80,7 +80,8 @@ namespace EduBridge.Services.Homeworks
                     SubmittedCount = submittedCount,
                     TotalStudents = totalStudents,
                     GradedCount = gradedCount,
-                    PendingCount = pendingCount
+                    PendingCount = pendingCount,
+                    IsOverdue = h.DueDate.HasValue && h.DueDate.Value < EduBridge.Helpers.TimeHelper.GetVietnamNow()
                 });
             }
 

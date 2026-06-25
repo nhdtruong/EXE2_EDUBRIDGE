@@ -35,7 +35,25 @@ BEGIN
             UNIQUE(HomeworkId, StudentId)
     );
 
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.HomeworkSubmissions')
+      AND name = N'IX_HomeworkSubmissions_HomeworkId'
+)
+BEGIN
     CREATE INDEX IX_HomeworkSubmissions_HomeworkId ON dbo.HomeworkSubmissions(HomeworkId);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.HomeworkSubmissions')
+      AND name = N'IX_HomeworkSubmissions_StudentId'
+)
+BEGIN
     CREATE INDEX IX_HomeworkSubmissions_StudentId ON dbo.HomeworkSubmissions(StudentId);
 END;
 GO
@@ -43,20 +61,7 @@ GO
 /* =========================================================
    2. Chèn dữ liệu mẫu cho bài tập HomeworkId = 1
    ========================================================= */
-IF EXISTS (SELECT 1 FROM dbo.Homework WHERE HomeworkId = 1)
-BEGIN
-    -- Chỉ chèn nếu chưa có dữ liệu mẫu
-    IF NOT EXISTS (SELECT 1 FROM dbo.HomeworkSubmissions WHERE HomeworkId = 1)
-    BEGIN
-        -- STD001 (StudentId = 1): Đã nộp và đã chấm
-        INSERT INTO dbo.HomeworkSubmissions (HomeworkId, StudentId, SubmissionContent, SubmittedAt, Score, Feedback, Status)
-        VALUES (1, 1, N'Hello teacher, here is my voice message.', DATEADD(day, -2, GETDATE()), 9.0, N'Phát âm rõ ràng, trôi chảy!', N'Graded');
-
-        -- STD002 (StudentId = 2): Đã nộp nhưng chưa chấm (Pending)
-        INSERT INTO dbo.HomeworkSubmissions (HomeworkId, StudentId, SubmissionContent, SubmittedAt, Score, Feedback, Status)
-        VALUES (1, 2, N'I have finished the homework video link: drive.google.com/xyz', DATEADD(day, -1, GETDATE()), NULL, NULL, N'Submitted');
-    END;
-END;
+PRINT N'Bo qua seed HomeworkSubmissions mau trong migration 20260607_002_homework_submission. Du lieu test duoc quan ly o script seed rieng.';
 GO
 
 COMMIT TRANSACTION;

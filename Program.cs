@@ -22,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Diagnostics;
 using System.Threading.RateLimiting;
 
 namespace EduBridge
@@ -73,11 +74,26 @@ namespace EduBridge
 
             builder.Services.AddMemoryCache();
 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AppClients", policy =>
+                {
+                    policy
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                });
+            });
+
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders =
                     ForwardedHeaders.XForwardedFor |
                     ForwardedHeaders.XForwardedProto;
+
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
             });
 
             builder.Services.Configure<FormOptions>(options =>
@@ -134,8 +150,10 @@ namespace EduBridge
             {
                 options.Conventions.AuthorizeFolder("/");
                 options.Conventions.AllowAnonymousToPage("/Login");
+                options.Conventions.AllowAnonymousToPage("/Privacy");
                 options.Conventions.AllowAnonymousToPage("/AccessDenied");
                 options.Conventions.AllowAnonymousToPage("/NotFound");
+                options.Conventions.AllowAnonymousToPage("/Error");
                 options.Conventions.AuthorizePage("/AdminDashboard", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminClasses", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminStudents", "AdminOnly");
@@ -173,6 +191,16 @@ namespace EduBridge
                         ValidAudience = builder.Configuration["Jwt:Audience"] ?? "EduBridgeUsers",
                         IssuerSigningKey = new SymmetricSecurityKey(
                             System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "EduBridge-Development-Only-Replace-On-Server-2026"))
+                    };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var token = context.Request.Query["access_token"];
+                            if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+                                context.Token = token;
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -221,7 +249,37 @@ namespace EduBridge
 
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler("/Error");
+                app.UseExceptionHandler(errorApp =>
+                {
+                    errorApp.Run(async context =>
+                    {
+                        var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
+                        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+
+                        if (exceptionFeature?.Error != null)
+                        {
+                            logger.LogError(
+                                exceptionFeature.Error,
+                                "Unhandled exception for request {Method} {Path}",
+                                context.Request.Method,
+                                context.Request.Path);
+                        }
+
+                        if (context.Request.Path.StartsWithSegments("/api"))
+                        {
+                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                            context.Response.ContentType = "application/json";
+                            await context.Response.WriteAsJsonAsync(new
+                            {
+                                message = "Internal server error",
+                                traceId = context.TraceIdentifier
+                            });
+                            return;
+                        }
+
+                        context.Response.Redirect("/Error");
+                    });
+                });
                 app.UseHsts();
             }
             else
@@ -284,6 +342,8 @@ namespace EduBridge
             });
 
             app.UseRouting();
+
+            app.UseCors("AppClients");
 
             app.UseRateLimiter();
 

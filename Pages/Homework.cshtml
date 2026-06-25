@@ -350,6 +350,23 @@ else
                                 <label class="progress-item-label">Cần chấm</label>
                                 <span class="pending-count">@hw.PendingCount bài</span>
                             </div>
+
+                            <!-- Chưa nộp -->
+                            <div class="progress-item">
+                                <label class="progress-item-label">Chưa nộp</label>
+                                @if (hw.IsOverdue)
+                                {
+                                    <span class="text-danger fw-semibold" style="font-size: 0.9rem;">
+                                        @(hw.TotalStudents - hw.SubmittedCount) học sinh (Trễ hạn)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fw-semibold" style="font-size: 0.9rem;">
+                                        @(hw.TotalStudents - hw.SubmittedCount) học sinh
+                                    </span>
+                                }
+                            </div>
                         </div>
                     </div>
                 }
@@ -697,67 +714,9 @@ else
                         const json = await response.json();
                         
                         if (json.success && json.data.length > 0) {
-<<<<<<< HEAD
                             let html = '<option value="">-- Chọn buổi học --</option>';
                             json.data.forEach(l => {
                                 html += `<option value="${l.lessonId}">${l.lessonTitle} (${l.dateString})</option>`;
-=======
-                            let html = "";
-                            json.data.forEach(sub => {
-                                const submissionContent = sub.submissionContent || '<span class="text-muted italic">Chưa nộp bài</span>';
-                                const statusClass = sub.status === 'Graded' ? 'badge-success' : (sub.status === 'Submitted' ? 'badge-warning' : 'badge-danger');
-                                const statusText = sub.status === 'Graded' ? 'Đã chấm' : (sub.status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
-                                const scoreValue = sub.score !== null ? sub.score : '';
-                                const feedbackValue = sub.feedback || '';
-
-                                html += `
-                                    <tr style="border-bottom: 1px solid #f1f5f9;">
-                                        <td style="padding: 0.75rem;"><strong>${sub.studentCode}</strong></td>
-                                        <td style="padding: 0.75rem;">${sub.studentName}</td>
-                                        <td style="padding: 0.75rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${sub.submissionContent || ''}">${submissionContent}</td>
-                                        <td style="padding: 0.75rem;"><span class="${statusClass}">${statusText}</span></td>
-                                        <td style="padding: 0.75rem;">
-                                            <input type="number" class="form-control score-input" style="padding: 0.35rem 0.5rem; border-radius: 8px;" step="0.1" min="0" max="10" value="${scoreValue}" placeholder="Điểm" data-student-id="${sub.studentId}" />
-                                        </td>
-                                        <td style="padding: 0.75rem;">
-                                            <input type="text" class="form-control feedback-input" style="padding: 0.35rem 0.5rem; border-radius: 8px;" value="${feedbackValue}" placeholder="Nhận xét" data-student-id="${sub.studentId}" />
-                                        </td>
-                                        <td style="padding: 0.75rem; text-align: center;">
-                                            <button class="btn btn-primary btn-sm save-grade-btn" style="padding: 0.35rem 0.75rem; border-radius: 8px; font-size: 0.8rem;" data-homework-id="${homeworkId}" data-student-id="${sub.studentId}">Lưu</button>
-                                        </td>
-                                    </tr>
-                                `;
-                            });
-                            submissionsTableBody.innerHTML = html;
-
-                            // Đăng ký sự kiện click cho các nút Lưu điểm
-                            const saveBtns = submissionsTableBody.querySelectorAll(".save-grade-btn");
-                            saveBtns.forEach(saveBtn => {
-                                saveBtn.addEventListener("click", function() {
-                                    const hwId = this.getAttribute("data-homework-id");
-                                    const sId = this.getAttribute("data-student-id");
-                                    
-                                    // Tìm ô input tương ứng
-                                    const scoreInput = submissionsTableBody.querySelector(`input.score-input[data-student-id="${sId}"]`);
-                                    const feedbackInput = submissionsTableBody.querySelector(`input.feedback-input[data-student-id="${sId}"]`);
-                                    
-                                    const score = scoreInput.value;
-                                    const feedback = feedbackInput.value;
-
-                                    if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
-                                        window.showToast("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.", false);
-                                        return;
-                                    }
-
-                                    // Điền dữ liệu vào form ẩn và Submit
-                                    document.getElementById("gradeHomeworkId").value = hwId;
-                                    document.getElementById("gradeStudentId").value = sId;
-                                    document.getElementById("gradeScore").value = score;
-                                    document.getElementById("gradeFeedback").value = feedback;
-                                    
-                                    document.getElementById("hiddenGradeForm").submit();
-                                });
->>>>>>> e5417bb24ce6b520875746ee3d72982295df8d14
                             });
                             selectLesson.innerHTML = html;
                             selectLesson.disabled = false;
@@ -805,15 +764,20 @@ else
                                     const content = sub.submissionContent || sub.SubmissionContent;
 
                                     let submissionContent = content || '<span class="text-muted italic">Chưa nộp bài</span>';
+                                    if (content && content.includes("Giáo viên chủ động chấm điểm trực tiếp")) {
+                                        submissionContent = '<span class="text-muted italic text-warning">Chưa nộp bài (Chấm trực tiếp)</span>';
+                                    }
                                     const badgeClass = status === 'Graded' ? 'ds-badge-success' : (status === 'Submitted' ? 'ds-badge-warning' : 'ds-badge-danger');
                                     const statusText = status === 'Graded' ? 'Đã chấm' : (status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
                                     
                                     // Xử lý an toàn cho Score (Điểm số)
                                     let scoreValue = '';
-                                    if (sub.score !== undefined && sub.score !== null) {
-                                        scoreValue = sub.score;
-                                    } else if (sub.Score !== undefined && sub.Score !== null) {
-                                        scoreValue = sub.Score;
+                                    const rawScore = sub.score !== undefined && sub.score !== null ? sub.score
+                                                   : (sub.Score !== undefined && sub.Score !== null ? sub.Score : null);
+                                    if (rawScore !== null && rawScore !== undefined) {
+                                        // Chuẩn hóa: thay dấu phẩy thành dấu chấm, parse về số thực
+                                        const parsed = parseFloat(String(rawScore).replace(',', '.'));
+                                        if (!isNaN(parsed)) scoreValue = parsed;
                                     }
 
                                     // Xử lý an toàn cho Feedback (Nhận xét)
@@ -890,8 +854,9 @@ else
                                         const score = scoreInput.value;
                                         const feedback = feedbackInput.value;
 
-                                        if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
-                                            window.showToast("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.", false);
+                                        // Điểm số không bắt buộc; chỉ validate khoảng nếu có nhập
+                                        if (score !== "" && (isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10)) {
+                                            window.showToast("Điểm số không hợp lệ. Vui lòng nhập số từ 0 đến 10.", false);
                                             return;
                                         }
 

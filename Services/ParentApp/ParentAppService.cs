@@ -64,7 +64,6 @@ public class ParentAppService : IParentAppService
         var upcomingLessonsDto = new List<ParentUpcomingLessonDto>();
         foreach (var lesson in upcomingLessons)
         {
-            // Tìm học sinh thuộc lớp này
             var enrolledStudentsInClass = students
                 .Where(s => s.Enrollments.Any(e => e.ClassId == lesson.ClassId && e.Status == "Đang học"))
                 .ToList();
@@ -160,14 +159,128 @@ public class ParentAppService : IParentAppService
                 ClassId = e.ClassId,
                 ClassCode = e.Class.ClassCode,
                 ClassName = e.Class.ClassName,
-                CourseName = e.Class.Course?.CourseName ?? "",
-                TeacherName = e.Class.Teacher?.User?.FullName ?? "",
+                CourseName = e.Class.Course?.CourseName ?? string.Empty,
+                TeacherName = e.Class.Teacher?.User?.FullName ?? string.Empty,
                 Status = e.Status,
                 EnrolledAt = e.EnrollDate.ToDateTime(TimeOnly.MinValue)
             }).OrderByDescending(c => c.EnrolledAt).ToList()
         };
 
         return ClassOperationResult<ParentChildDetailDto>.Success(dto, "Thành công");
+    }
+
+    public async Task<ClassOperationResult<List<ParentClassOverviewDto>>> GetClassesAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default)
+    {
+        var hasAccess = await _context.Students
+            .AsNoTracking()
+            .AnyAsync(s => s.StudentId == studentId && s.ParentUserId == parentUserId && !s.IsDeleted, cancellationToken);
+
+        if (!hasAccess)
+            return ClassOperationResult<List<ParentClassOverviewDto>>.Failure("Không tìm thấy học sinh hoặc bạn không có quyền truy cập.");
+
+        var classes = await _context.Enrollments
+            .AsNoTracking()
+            .Where(e => e.StudentId == studentId && !e.Student.IsDeleted)
+            .OrderByDescending(e => e.EnrollDate)
+            .Select(e => new ParentClassOverviewDto
+            {
+                ClassId = e.ClassId,
+                StudentId = e.StudentId,
+                StudentName = e.Student.FullName,
+                ClassCode = e.Class.ClassCode,
+                ClassName = e.Class.ClassName,
+                CourseName = e.Class.Course != null ? e.Class.Course.CourseName : string.Empty,
+                TeacherName = e.Class.Teacher != null ? e.Class.Teacher.User.FullName : string.Empty,
+                Status = e.Status
+            })
+            .ToListAsync(cancellationToken);
+
+        return ClassOperationResult<List<ParentClassOverviewDto>>.Success(classes, "Thành công");
+    }
+
+    public async Task<ClassOperationResult<ParentClassDetailDto>> GetClassDetailAsync(int parentUserId, int studentId, int classId, CancellationToken cancellationToken = default)
+    {
+        var enrollment = await _context.Enrollments
+            .AsNoTracking()
+            .Include(e => e.Student)
+            .Include(e => e.Class)
+                .ThenInclude(c => c.Course)
+            .Include(e => e.Class)
+                .ThenInclude(c => c.Teacher)
+                    .ThenInclude(t => t.User)
+            .FirstOrDefaultAsync(
+                e => e.StudentId == studentId
+                    && e.ClassId == classId
+                    && e.Student.ParentUserId == parentUserId
+                    && !e.Student.IsDeleted,
+                cancellationToken);
+
+        if (enrollment == null)
+            return ClassOperationResult<ParentClassDetailDto>.Failure("Không tìm thấy lớp học hoặc bạn không có quyền truy cập.");
+
+        var today = DateOnly.FromDateTime(EduBridge.Helpers.TimeHelper.GetVietnamNow());
+
+        var upcomingLessons = await _context.Lessons
+            .AsNoTracking()
+            .Where(l => l.ClassId == classId && l.LessonDate >= today)
+            .OrderBy(l => l.LessonDate)
+            .ThenBy(l => l.StartTime)
+            .Take(20)
+            .Select(l => new ParentScheduleDto
+            {
+                LessonId = l.LessonId,
+                ClassId = l.ClassId,
+                ClassName = l.Class.ClassName,
+                LessonTitle = l.LessonTitle,
+                LessonDate = l.LessonDate,
+                StartTime = l.StartTime,
+                EndTime = l.EndTime,
+                RoomName = l.Class.RoomNavigation != null ? l.Class.RoomNavigation.RoomName : l.Class.Room,
+                TeacherName = l.Class.Teacher != null ? l.Class.Teacher.User.FullName : "Chưa phân công"
+            })
+            .ToListAsync(cancellationToken);
+
+        var attendanceHistory = await _context.Attendances
+            .AsNoTracking()
+            .Where(a => a.StudentId == studentId && a.Lesson.ClassId == classId)
+            .OrderByDescending(a => a.Lesson.LessonDate)
+            .ThenByDescending(a => a.Lesson.StartTime)
+            .Take(50)
+            .Select(a => new ParentAttendanceDto
+            {
+                AttendanceId = a.AttendanceId,
+                LessonId = a.LessonId,
+                ClassName = a.Lesson.Class.ClassName,
+                LessonTitle = a.Lesson.LessonTitle,
+                LessonDate = a.Lesson.LessonDate,
+                Status = a.Status,
+                Note = a.Note
+            })
+            .ToListAsync(cancellationToken);
+
+        var dto = new ParentClassDetailDto
+        {
+            ClassId = enrollment.ClassId,
+            StudentId = enrollment.StudentId,
+            StudentName = enrollment.Student.FullName,
+            ClassCode = enrollment.Class.ClassCode,
+            ClassName = enrollment.Class.ClassName,
+            CourseName = enrollment.Class.Course != null ? enrollment.Class.Course.CourseName : string.Empty,
+            TeacherName = enrollment.Class.Teacher != null ? enrollment.Class.Teacher.User.FullName : string.Empty,
+            Status = enrollment.Status,
+            UpcomingLessons = upcomingLessons,
+            AttendanceHistory = attendanceHistory,
+            AttendanceSummary = new ParentClassAttendanceSummaryDto
+            {
+                TotalLessons = attendanceHistory.Count,
+                PresentCount = attendanceHistory.Count(a => a.Status == "Có mặt"),
+                AbsentCount = attendanceHistory.Count(a => a.Status == "Vắng"),
+                LateCount = attendanceHistory.Count(a => a.Status == "Muộn"),
+                ExcusedCount = attendanceHistory.Count(a => a.Status == "Có phép")
+            }
+        };
+
+        return ClassOperationResult<ParentClassDetailDto>.Success(dto, "Thành công");
     }
 
     public async Task<ClassOperationResult<List<ParentScheduleDto>>> GetScheduleAsync(int parentUserId, int? studentId, DateOnly? fromDate, DateOnly? toDate, CancellationToken cancellationToken = default)
@@ -254,6 +367,34 @@ public class ParentAppService : IParentAppService
             .ToListAsync(cancellationToken);
 
         return ClassOperationResult<List<ParentAttendanceDto>>.Success(attendances, "Thành công");
+    }
+
+    public async Task<ClassOperationResult<List<ParentLessonDiaryDto>>> GetLessonDiaryAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default)
+    {
+        var classIds = await _context.Enrollments
+            .Where(e => e.StudentId == studentId && e.Student.ParentUserId == parentUserId && !e.Student.IsDeleted)
+            .Select(e => e.ClassId)
+            .ToListAsync(cancellationToken);
+
+        if (classIds.Count == 0)
+            return ClassOperationResult<List<ParentLessonDiaryDto>>.Failure("Không có quyền truy cập học sinh này.");
+
+        var lessons = await _context.Lessons.AsNoTracking()
+            .Where(l => classIds.Contains(l.ClassId) && l.LessonDate <= DateOnly.FromDateTime(EduBridge.Helpers.TimeHelper.GetVietnamNow()))
+            .OrderByDescending(l => l.LessonDate).ThenByDescending(l => l.StartTime).Take(100)
+            .Select(l => new ParentLessonDiaryDto
+            {
+                LessonId = l.LessonId,
+                ClassName = l.Class.ClassName,
+                TeacherName = l.Class.Teacher != null ? l.Class.Teacher.User.FullName : string.Empty,
+                LessonTitle = l.LessonTitle,
+                LessonContent = l.LessonContent,
+                LessonDate = l.LessonDate,
+                StartTime = l.StartTime,
+                EndTime = l.EndTime
+            }).ToListAsync(cancellationToken);
+
+        return ClassOperationResult<List<ParentLessonDiaryDto>>.Success(lessons, "Thành công");
     }
 
     public async Task<ClassOperationResult<List<ParentGradeDto>>> GetGradesAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default)
@@ -368,7 +509,7 @@ public class ParentAppService : IParentAppService
     {
         var notification = await _context.Notifications
             .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == parentUserId, cancellationToken);
-        
+
         if (notification == null) return ClassOperationResult<bool>.Failure("Không tìm thấy thông báo.");
 
         notification.IsRead = true;
@@ -378,7 +519,6 @@ public class ParentAppService : IParentAppService
 
     public async Task<ClassOperationResult<List<ParentChatConversationDto>>> GetChatConversationsAsync(int parentUserId, CancellationToken cancellationToken = default)
     {
-        // Get all teachers teaching this parent's students
         var studentIds = await _context.Students
             .Where(s => s.ParentUserId == parentUserId && s.Status == "Active" && !s.IsDeleted)
             .Select(s => s.StudentId)
@@ -430,6 +570,9 @@ public class ParentAppService : IParentAppService
 
     public async Task<ClassOperationResult<List<ParentChatMessageDto>>> GetChatMessagesAsync(int parentUserId, int teacherUserId, CancellationToken cancellationToken = default)
     {
+        if (!await CanParentChatWithTeacherAsync(parentUserId, teacherUserId, cancellationToken))
+            return ClassOperationResult<List<ParentChatMessageDto>>.Failure("Không có quyền truy cập cuộc hội thoại này.");
+
         var messages = await _context.Messages
             .Where(m => (m.SenderUserId == parentUserId && m.ReceiverUserId == teacherUserId) ||
                         (m.SenderUserId == teacherUserId && m.ReceiverUserId == parentUserId))
@@ -447,4 +590,21 @@ public class ParentAppService : IParentAppService
 
         return ClassOperationResult<List<ParentChatMessageDto>>.Success(messages, "Thành công");
     }
+
+    public async Task<ClassOperationResult<bool>> MarkChatAsReadAsync(int parentUserId, int teacherUserId, CancellationToken cancellationToken = default)
+    {
+        if (!await CanParentChatWithTeacherAsync(parentUserId, teacherUserId, cancellationToken))
+            return ClassOperationResult<bool>.Failure("Không có quyền truy cập cuộc hội thoại này.");
+
+        await _context.Messages
+            .Where(m => m.SenderUserId == teacherUserId && m.ReceiverUserId == parentUserId && !m.IsRead)
+            .ExecuteUpdateAsync(update => update.SetProperty(m => m.IsRead, true), cancellationToken);
+        return ClassOperationResult<bool>.Success(true, "Thành công");
+    }
+
+    private Task<bool> CanParentChatWithTeacherAsync(int parentUserId, int teacherUserId, CancellationToken cancellationToken) =>
+        _context.Enrollments.AnyAsync(e =>
+            e.Student.ParentUserId == parentUserId && !e.Student.IsDeleted && e.Status == "Đang học" &&
+            e.Class.Teacher != null && e.Class.Teacher.UserId == teacherUserId,
+            cancellationToken);
 }

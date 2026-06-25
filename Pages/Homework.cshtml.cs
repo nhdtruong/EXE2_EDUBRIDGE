@@ -104,7 +104,7 @@ namespace EduBridge.Pages
             return RedirectToPage();
         }
 
-        public async Task<IActionResult> OnPostGradeAsync(int homeworkId, int studentId, decimal score, string? feedback)
+        public async Task<IActionResult> OnPostGradeAsync(int homeworkId, int studentId, string score, string? feedback)
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!int.TryParse(userIdStr, out int userId)) return RedirectToPage("/Login");
@@ -115,9 +115,31 @@ namespace EduBridge.Pages
                 return RedirectToPage();
             }
 
+            decimal? scoreVal = null;
+
+            if (!string.IsNullOrWhiteSpace(score))
+            {
+                // Chuẩn hóa dấu thập phân (hỗ trợ cả "," và ".")
+                var normalizedScore = score.Replace(',', '.');
+
+                if (!decimal.TryParse(normalizedScore, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                {
+                    TempData["ErrorMessage"] = "Điểm số không hợp lệ. Vui lòng nhập số từ 0 đến 10.";
+                    return RedirectToPage();
+                }
+
+                if (parsed < 0 || parsed > 10)
+                {
+                    TempData["ErrorMessage"] = "Điểm số phải từ 0 đến 10.";
+                    return RedirectToPage();
+                }
+
+                scoreVal = parsed;
+            }
+
             var request = new GradeSubmissionRequest
             {
-                Score = score,
+                Score = scoreVal,
                 Feedback = feedback
             };
 

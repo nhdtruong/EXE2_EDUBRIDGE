@@ -1,0 +1,75 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: edubridge-sqlserver
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_PID: ${MSSQL_PID:-Developer}
+    volumes:
+      - edubridge_sql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: edubridge-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - edubridge_redis_data:/data
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: edubridge-db-init
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      DB_HOST: sqlserver
+      DB_PORT: 1433
+      DB_NAME: ${DB_NAME:-EduBridgeDB}
+      DB_USER: sa
+      ENABLE_MOCK_SEED: ${ENABLE_MOCK_SEED:-false}
+    volumes:
+      - ./docker/init-db.sh:/work/init-db.sh:ro
+      - ./edubridge_database:/work/edubridge_database:ro
+    entrypoint: ["/bin/bash", "/work/init-db.sh"]
+    restart: "no"
+
+  app:
+    image: ${APP_IMAGE}
+    container_name: edubridge-app
+    restart: unless-stopped
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      AllowedHosts: ${ALLOWED_HOSTS:-*}
+      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=${DB_NAME:-EduBridgeDB};User ID=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;
+      ConnectionStrings__RedisConnection: redis:6379
+      Jwt__Issuer: ${JWT_ISSUER:-EduBridge}
+      Jwt__Audience: ${JWT_AUDIENCE:-EduBridge.Mobile}
+      Jwt__Key: ${JWT_KEY}
+      Jwt__AccessTokenMinutes: ${JWT_ACCESS_TOKEN_MINUTES:-1440}
+      Cors__AllowAnyOrigin: ${CORS_ALLOW_ANY_ORIGIN:-true}
+      Cors__AllowedOriginsCsv: ${CORS_ALLOWED_ORIGINS:-}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - edubridge_uploads:/app/wwwroot/uploads
+
+volumes:
+  edubridge_sql_data:
+  edubridge_redis_data:
+  edubridge_uploads:

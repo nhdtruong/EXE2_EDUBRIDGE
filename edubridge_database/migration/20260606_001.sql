@@ -14,56 +14,56 @@ BEGIN TRY
         WHERE RoomId IS NULL
     )
     BEGIN
-        THROW 50001,
-            N'Không thể bắt buộc RoomId vì vẫn còn lớp chưa được gán phòng.',
-            1;
-    END;
-
-    /* Xóa index đang phụ thuộc RoomId */
-    IF EXISTS (
-        SELECT 1
-        FROM sys.indexes
-        WHERE object_id = OBJECT_ID(N'dbo.Classes')
-          AND name = N'IX_Classes_RoomId'
-    )
+        PRINT N'Bỏ qua bước bắt buộc RoomId trong migration 20260606_001 vì vẫn còn lớp chưa được gán phòng.';
+    END
+    ELSE
     BEGIN
-        DROP INDEX IX_Classes_RoomId
-        ON dbo.Classes;
+        /* Xóa index đang phụ thuộc RoomId */
+        IF EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE object_id = OBJECT_ID(N'dbo.Classes')
+              AND name = N'IX_Classes_RoomId'
+        )
+        BEGIN
+            DROP INDEX IX_Classes_RoomId
+            ON dbo.Classes;
+        END;
+
+        /* Xóa index kiểm tra phòng nếu đã tồn tại */
+        IF EXISTS (
+            SELECT 1
+            FROM sys.indexes
+            WHERE object_id = OBJECT_ID(N'dbo.Classes')
+              AND name = N'IX_Classes_Center_Room_Status'
+        )
+        BEGIN
+            DROP INDEX IX_Classes_Center_Room_Status
+            ON dbo.Classes;
+        END;
+
+        /* Bắt buộc lớp phải có phòng */
+        ALTER TABLE dbo.Classes
+        ALTER COLUMN RoomId INT NOT NULL;
+
+        /* Tạo lại index FK RoomId */
+        CREATE INDEX IX_Classes_RoomId
+        ON dbo.Classes(RoomId);
+
+        /* Index hỗ trợ kiểm tra lịch phòng */
+        CREATE INDEX IX_Classes_Center_Room_Status
+        ON dbo.Classes (
+            CenterId,
+            RoomId,
+            Status,
+            ClassId
+        )
+        INCLUDE (
+            TeacherId,
+            StartDate,
+            EndDate
+        );
     END;
-
-    /* Xóa index kiểm tra phòng nếu đã tồn tại */
-    IF EXISTS (
-        SELECT 1
-        FROM sys.indexes
-        WHERE object_id = OBJECT_ID(N'dbo.Classes')
-          AND name = N'IX_Classes_Center_Room_Status'
-    )
-    BEGIN
-        DROP INDEX IX_Classes_Center_Room_Status
-        ON dbo.Classes;
-    END;
-
-    /* Bắt buộc lớp phải có phòng */
-    ALTER TABLE dbo.Classes
-    ALTER COLUMN RoomId INT NOT NULL;
-
-    /* Tạo lại index FK RoomId */
-    CREATE INDEX IX_Classes_RoomId
-    ON dbo.Classes(RoomId);
-
-    /* Index hỗ trợ kiểm tra lịch phòng */
-    CREATE INDEX IX_Classes_Center_Room_Status
-    ON dbo.Classes (
-        CenterId,
-        RoomId,
-        Status,
-        ClassId
-    )
-    INCLUDE (
-        TeacherId,
-        StartDate,
-        EndDate
-    );
 
     /* Index hỗ trợ kiểm tra lịch giáo viên */
     IF NOT EXISTS (
@@ -521,10 +521,9 @@ WHERE cc.parent_object_id = OBJECT_ID(N'dbo.Enrollments')
 
 IF @StatusConstraintName IS NOT NULL
 BEGIN
-    EXEC (
-        N'ALTER TABLE dbo.Enrollments DROP CONSTRAINT '
-        + QUOTENAME(@StatusConstraintName)
-    );
+    DECLARE @DropEnrollmentStatusConstraintSql NVARCHAR(MAX) =
+        N'ALTER TABLE dbo.Enrollments DROP CONSTRAINT ' + QUOTENAME(@StatusConstraintName);
+    EXEC sp_executesql @DropEnrollmentStatusConstraintSql;
 END;
 GO
 
