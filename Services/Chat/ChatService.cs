@@ -102,6 +102,91 @@ namespace EduBridge.Services.Chat
             return conversations;
         }
 
+        public async Task<List<ConversationDto>> GetParentConversationsAsync(int parentUserId, CancellationToken cancellationToken = default)
+        {
+            // Lấy danh sách các học sinh thuộc phụ huynh này
+            var students = await _context.Students
+                .Where(s => s.ParentUserId == parentUserId && !s.IsDeleted)
+                .ToListAsync(cancellationToken);
+
+            if (!students.Any()) return new List<ConversationDto>();
+
+            var studentIds = students.Select(s => s.StudentId).ToList();
+
+            // Lấy các lớp học đang học của các học sinh này
+            var enrollments = await _context.Enrollments
+                .Include(e => e.Class)
+                .ThenInclude(c => c.Teacher)
+                .ThenInclude(t => t.User)
+                .Where(e => studentIds.Contains(e.StudentId) && e.Status == "Đang học" && !e.Class.IsDeleted && e.Class.Teacher != null)
+                .ToListAsync(cancellationToken);
+
+            if (!enrollments.Any()) return new List<ConversationDto>();
+
+            // Nhóm theo Giáo viên
+            var groupedByTeacher = enrollments
+                .GroupBy(e => new { e.Class.Teacher.UserId, TeacherName = e.Class.Teacher.User.FullName })
+                .ToList();
+
+            var teacherUserIds = groupedByTeacher.Select(g => g.Key.UserId).ToList();
+
+            // Tải tất cả tin nhắn liên quan giữa phụ huynh này và các giáo viên
+            var allMessages = await _context.Messages
+                .Where(m => (m.SenderUserId == parentUserId && teacherUserIds.Contains(m.ReceiverUserId)) ||
+                            (m.ReceiverUserId == parentUserId && teacherUserIds.Contains(m.SenderUserId)))
+                .OrderByDescending(m => m.SentAt)
+                .ToListAsync(cancellationToken);
+
+            var conversations = groupedByTeacher.Select(group =>
+            {
+                var teacherUserId = group.Key.UserId;
+                var teacherName = group.Key.TeacherName;
+
+                // Danh sách các học sinh của phụ huynh này đang học lớp của giáo viên đó
+                var studentNames = string.Join(", ", group
+                    .Select(e => students.FirstOrDefault(s => s.StudentId == e.StudentId)?.FullName)
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .Distinct());
+
+                // Tin nhắn giữa phụ huynh và giáo viên này
+                var teacherMessages = allMessages
+                    .Where(m => (m.SenderUserId == parentUserId && m.ReceiverUserId == teacherUserId) ||
+                                (m.SenderUserId == teacherUserId && m.ReceiverUserId == parentUserId))
+                    .ToList();
+
+                var lastMsg = teacherMessages.FirstOrDefault();
+
+                // Đếm tin nhắn chưa đọc mà giáo viên gửi cho phụ huynh
+                var unreadCount = teacherMessages
+                    .Count(m => m.SenderUserId == teacherUserId && m.ReceiverUserId == parentUserId && !m.IsRead);
+
+                return new
+                {
+                    TeacherUserId = teacherUserId,
+                    TeacherName = teacherName,
+                    StudentNames = studentNames,
+                    LastMessage = lastMsg?.Content,
+                    LastMsgAt = lastMsg?.SentAt,
+                    UnreadCount = unreadCount
+                };
+            })
+            .OrderByDescending(c => c.LastMsgAt.HasValue)
+            .ThenByDescending(c => c.LastMsgAt)
+            .ThenBy(c => c.TeacherName)
+            .Select(c => new ConversationDto
+            {
+                ParentUserId = c.TeacherUserId, // Dùng ParentUserId để giữ nguyên cấu trúc DTO cho UI dễ đọc
+                ParentName = c.TeacherName,
+                StudentNames = c.StudentNames,
+                LastMessage = c.LastMessage,
+                LastMessageTime = c.LastMsgAt?.ToString("dd/MM/yyyy HH:mm"),
+                UnreadCount = c.UnreadCount
+            })
+            .ToList();
+
+            return conversations;
+        }
+
         public async Task<List<ChatMessageDto>> GetChatHistoryAsync(int currentUserId, int contactUserId, CancellationToken cancellationToken = default)
         {
             var messages = await _context.Messages

@@ -98,7 +98,7 @@ namespace EduBridge
 
             builder.Services.Configure<FormOptions>(options =>
             {
-                options.MultipartBodyLengthLimit = 5 * 1024 * 1024;
+                options.MultipartBodyLengthLimit = 20 * 1024 * 1024;
             });
 
             builder.Services.AddDataProtection()
@@ -216,7 +216,10 @@ namespace EduBridge
                     policy.RequireRole("PARENT"));
             });
 
-            var signalRBuilder = builder.Services.AddSignalR();
+            var signalRBuilder = builder.Services.AddSignalR(options =>
+            {
+                options.EnableDetailedErrors = true;
+            });
             var redisConnection = builder.Configuration.GetConnectionString("RedisConnection");
             if (!string.IsNullOrWhiteSpace(redisConnection))
             {
@@ -299,7 +302,44 @@ namespace EduBridge
             });
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+
+            // Cấu hình static files với MIME types mở rộng để serve tất cả loại file upload
+            var fileExtensionContentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+            // Thêm các MIME types phổ biến không có sẵn
+            fileExtensionContentTypeProvider.Mappings.TryAdd(".rar", "application/x-rar-compressed");
+            fileExtensionContentTypeProvider.Mappings.TryAdd(".7z", "application/x-7z-compressed");
+            fileExtensionContentTypeProvider.Mappings.TryAdd(".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            fileExtensionContentTypeProvider.Mappings.TryAdd(".xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            fileExtensionContentTypeProvider.Mappings.TryAdd(".pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+            fileExtensionContentTypeProvider.Mappings.TryAdd(".apk", "application/vnd.android.package-archive");
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                ContentTypeProvider = fileExtensionContentTypeProvider,
+                ServeUnknownFileTypes = true, // Cho phép serve các file type không xác định
+                DefaultContentType = "application/octet-stream", // Default là download
+                OnPrepareResponse = ctx =>
+                {
+                    // Với files trong thư mục uploads, thêm header để force download cho các file không phải ảnh/video
+                    if (ctx.Context.Request.Path.StartsWithSegments("/uploads"))
+                    {
+                        var contentType = ctx.Context.Response.ContentType ?? "";
+                        bool isInlineable = contentType.StartsWith("image/") ||
+                                           contentType.StartsWith("video/") ||
+                                           contentType.StartsWith("audio/") ||
+                                           contentType == "application/pdf";
+                        if (!isInlineable)
+                        {
+                            var fileName = System.IO.Path.GetFileName(ctx.File.PhysicalPath ?? ctx.File.Name);
+                            // Tách tên file gốc (bỏ prefix GUID_)
+                            var originalName = System.Text.RegularExpressions.Regex.Replace(fileName, @"^[0-9a-fA-F\-]{36}_", "");
+                            ctx.Context.Response.Headers["Content-Disposition"] = $"attachment; filename*=UTF-8''{Uri.EscapeDataString(originalName)}";
+                        }
+                        // Cache control cho uploads
+                        ctx.Context.Response.Headers["Cache-Control"] = "public,max-age=3600";
+                    }
+                }
+            });
 
             app.UseRouting();
 

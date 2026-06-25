@@ -51,11 +51,13 @@ namespace EduBridge.Services.Attendance
                 .ThenByDescending(l => l.CreatedAt)
                 .ToListAsync(cancellationToken);
 
+            var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
             return lessons.Select(l => new LessonDropdownDto
             {
                 LessonId = l.LessonId,
                 LessonTitle = l.LessonTitle,
-                DateString = l.LessonDate.ToString("dd/MM/yyyy")
+                DateString = l.LessonDate.ToString("dd/MM/yyyy"),
+                CanEdit = now <= l.LessonDate.ToDateTime(l.EndTime ?? new TimeOnly(23, 59, 59)).AddHours(48)
             }).ToList();
         }
 
@@ -125,6 +127,13 @@ namespace EduBridge.Services.Attendance
             if (lesson == null || lesson.Class.TeacherId != teacher.TeacherId || lesson.Class.IsDeleted)
             {
                 return false;
+            }
+
+            var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
+            var lessonEnd = lesson.LessonDate.ToDateTime(lesson.EndTime ?? new TimeOnly(23, 59, 59));
+            if (now > lessonEnd.AddHours(48))
+            {
+                throw new InvalidOperationException("Đã quá hạn 48 giờ kể từ khi buổi học kết thúc. Không thể chỉnh sửa điểm danh.");
             }
 
             var studentIdsInClass = await _context.Enrollments

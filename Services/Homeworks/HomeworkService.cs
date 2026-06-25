@@ -76,6 +76,7 @@ namespace EduBridge.Services.Homeworks
                     Description = h.Description ?? string.Empty,
                     CreatedAtString = h.CreatedAt.ToString("dd/MM/yyyy"),
                     DueDateString = h.DueDate.HasValue ? h.DueDate.Value.ToString("dd/MM/yyyy HH:mm") : "Không có hạn",
+                    AttachmentUrl = h.AttachmentUrl,
                     SubmittedCount = submittedCount,
                     TotalStudents = totalStudents,
                     GradedCount = gradedCount,
@@ -86,7 +87,7 @@ namespace EduBridge.Services.Homeworks
             return result;
         }
 
-        public async Task<bool> CreateHomeworkAsync(int teacherUserId, CreateHomeworkRequest request, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateHomeworkAsync(int teacherUserId, CreateHomeworkRequest request, string? attachmentUrl, CancellationToken cancellationToken = default)
         {
             var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
             if (teacher == null) return false;
@@ -106,6 +107,7 @@ namespace EduBridge.Services.Homeworks
                 Title = request.Title.Trim(),
                 Description = request.Description?.Trim(),
                 DueDate = request.DueDate,
+                AttachmentUrl = attachmentUrl,
                 CreatedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow()
             };
 
@@ -154,6 +156,7 @@ namespace EduBridge.Services.Homeworks
                         StudentCode = student.StudentCode,
                         SubmissionId = sub.SubmissionId,
                         SubmissionContent = sub.SubmissionContent,
+                        SubmissionFileUrl = sub.SubmissionFileUrl,
                         Status = sub.Status,
                         Score = sub.Score,
                         Feedback = sub.Feedback,
@@ -169,6 +172,7 @@ namespace EduBridge.Services.Homeworks
                         StudentCode = student.StudentCode,
                         SubmissionId = null,
                         SubmissionContent = null,
+                        SubmissionFileUrl = null,
                         Status = "NotSubmitted",
                         Score = null,
                         Feedback = null,
@@ -250,6 +254,143 @@ namespace EduBridge.Services.Homeworks
                 LessonTitle = l.LessonTitle,
                 DateString = l.LessonDate.ToString("dd/MM/yyyy")
             }).ToList();
+        }
+
+        public async Task<List<ParentHomeworkItemDto>> GetParentHomeworksAsync(int parentUserId, CancellationToken cancellationToken = default)
+        {
+            var students = await _context.Students
+                .Where(s => s.ParentUserId == parentUserId && !s.IsDeleted && s.Status == "Active")
+                .ToListAsync(cancellationToken);
+
+            if (!students.Any()) return new List<ParentHomeworkItemDto>();
+
+            var studentIds = students.Select(s => s.StudentId).ToList();
+
+            var enrollments = await _context.Enrollments
+                .Include(e => e.Class)
+                .Where(e => studentIds.Contains(e.StudentId) && e.Status == "Đang học" && !e.Class.IsDeleted && e.Class.Status == "Active")
+                .ToListAsync(cancellationToken);
+
+            if (!enrollments.Any()) return new List<ParentHomeworkItemDto>();
+
+            var classIds = enrollments.Select(e => e.ClassId).Distinct().ToList();
+
+            var homeworks = await _context.Homeworks
+                .Include(h => h.Lesson)
+                    .ThenInclude(l => l.Class)
+                .Where(h => classIds.Contains(h.Lesson.ClassId))
+                .OrderByDescending(h => h.CreatedAt)
+                .ToListAsync(cancellationToken);
+
+            var homeworkIds = homeworks.Select(h => h.HomeworkId).ToList();
+
+            var submissions = await _context.HomeworkSubmissions
+                .Where(s => homeworkIds.Contains(s.HomeworkId) && studentIds.Contains(s.StudentId))
+                .ToListAsync(cancellationToken);
+
+            var result = new List<ParentHomeworkItemDto>();
+            var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
+
+            foreach (var enrollment in enrollments)
+            {
+                var student = students.First(s => s.StudentId == enrollment.StudentId);
+                var studentClassHomeworks = homeworks.Where(h => h.Lesson.ClassId == enrollment.ClassId);
+
+                foreach (var h in studentClassHomeworks)
+                {
+                    var sub = submissions.FirstOrDefault(s => s.HomeworkId == h.HomeworkId && s.StudentId == student.StudentId);
+
+                    string status = "NotSubmitted";
+                    if (sub != null)
+                    {
+                        status = sub.Status; 
+                    }
+                    else if (h.DueDate.HasValue && h.DueDate.Value < now)
+                    {
+                        status = "Overdue";
+                    }
+
+                    result.Add(new ParentHomeworkItemDto
+                    {
+                        HomeworkId = h.HomeworkId,
+                        Title = h.Title,
+                        Description = h.Description ?? string.Empty,
+                        ClassName = h.Lesson.Class.ClassName,
+                        LessonTitle = h.Lesson.LessonTitle,
+                        AttachmentUrl = h.AttachmentUrl,
+                        DueDate = h.DueDate,
+                        DueDateString = h.DueDate.HasValue ? h.DueDate.Value.ToString("dd/MM/yyyy HH:mm") : "Không có hạn",
+                        StudentId = student.StudentId,
+                        StudentName = student.FullName,
+                        SubmissionId = sub?.SubmissionId,
+                        SubmissionContent = sub?.SubmissionContent,
+                        SubmissionFileUrl = sub?.SubmissionFileUrl,
+                        SubmittedAtString = sub?.SubmittedAt.ToString("dd/MM/yyyy HH:mm"),
+                        Status = status,
+                        Score = sub?.Score,
+                        Feedback = sub?.Feedback
+                    });
+                }
+            }
+
+            return result.OrderByDescending(r => r.HomeworkId).ToList();
+        }
+
+        public async Task<bool> SubmitHomeworkAsync(int parentUserId, SubmitHomeworkRequestDto request, CancellationToken cancellationToken = default)
+        {
+            var student = await _context.Students
+                .FirstOrDefaultAsync(s => s.StudentId == request.StudentId && s.ParentUserId == parentUserId && !s.IsDeleted && s.Status == "Active", cancellationToken);
+            if (student == null) return false;
+
+            var homework = await _context.Homeworks
+                .Include(h => h.Lesson)
+                .FirstOrDefaultAsync(h => h.HomeworkId == request.HomeworkId, cancellationToken);
+            if (homework == null) return false;
+
+            var isEnrolled = await _context.Enrollments
+                .AnyAsync(e => e.ClassId == homework.Lesson.ClassId && e.StudentId == request.StudentId && e.Status == "Đang học", cancellationToken);
+            if (!isEnrolled) return false;
+
+            var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
+            if (homework.DueDate.HasValue && homework.DueDate.Value < now)
+            {
+                return false;
+            }
+
+            var submission = await _context.HomeworkSubmissions
+                .FirstOrDefaultAsync(s => s.HomeworkId == request.HomeworkId && s.StudentId == request.StudentId, cancellationToken);
+
+            if (submission != null)
+            {
+                if (submission.Status == "Graded")
+                {
+                    return false;
+                }
+
+                submission.SubmissionContent = request.SubmissionContent?.Trim();
+                submission.SubmissionFileUrl = request.SubmissionFileUrl.Trim();
+                submission.SubmittedAt = now;
+                submission.Status = "Submitted";
+
+                _context.HomeworkSubmissions.Update(submission);
+            }
+            else
+            {
+                submission = new HomeworkSubmission
+                {
+                    HomeworkId = request.HomeworkId,
+                    StudentId = request.StudentId,
+                    SubmissionContent = request.SubmissionContent?.Trim(),
+                    SubmissionFileUrl = request.SubmissionFileUrl.Trim(),
+                    SubmittedAt = now,
+                    Status = "Submitted"
+                };
+
+                _context.HomeworkSubmissions.Add(submission);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
         }
     }
 }

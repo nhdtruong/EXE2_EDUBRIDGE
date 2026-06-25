@@ -1,11 +1,15 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using EduBridge.Contracts.Classes;
 using EduBridge.Models.DTOs.TeacherHomework;
 using EduBridge.Services.Homeworks;
+using EduBridge.Services.Storage;
 
 namespace EduBridge.Controllers.Api
 {
@@ -15,10 +19,12 @@ namespace EduBridge.Controllers.Api
     public class TeacherHomeworkController : ControllerBase
     {
         private readonly IHomeworkService _homeworkService;
+        private readonly IFileStorageService _storageService;
 
-        public TeacherHomeworkController(IHomeworkService homeworkService)
+        public TeacherHomeworkController(IHomeworkService homeworkService, IFileStorageService storageService)
         {
             _homeworkService = homeworkService;
+            _storageService = storageService;
         }
 
         [HttpGet]
@@ -46,7 +52,7 @@ namespace EduBridge.Controllers.Api
                 return BadRequest(new ApiResponse<bool>(false, "Dữ liệu không hợp lệ", false));
             }
 
-            var result = await _homeworkService.CreateHomeworkAsync(userId, request);
+            var result = await _homeworkService.CreateHomeworkAsync(userId, request, request.AttachmentUrl);
             if (!result)
             {
                 return BadRequest(new ApiResponse<bool>(false, "Không thể tạo bài tập mới", false));
@@ -100,6 +106,42 @@ namespace EduBridge.Controllers.Api
 
             var response = await _homeworkService.GetLessonsByClassAsync(userId, classId);
             return Ok(new ApiResponse<List<LessonDropdownOptionDto>>(true, "Success", response));
+        }
+
+        [HttpPost("upload")]
+        public async Task<ActionResult<ApiResponse<object>>> UploadFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new ApiResponse<object>(false, "Không có file nào được chọn", null));
+            }
+
+            // Giới hạn 20MB
+            if (file.Length > 20 * 1024 * 1024)
+            {
+                return BadRequest(new ApiResponse<object>(false, "File vượt quá kích thước giới hạn (20MB)", null));
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLower();
+            if (extension != ".pdf")
+            {
+                return BadRequest(new ApiResponse<object>(false, "Chỉ chấp nhận file định dạng PDF", null));
+            }
+
+            try
+            {
+                var fileUrl = await _storageService.SaveFileAsync(file, "homeworks");
+
+                return Ok(new ApiResponse<object>(true, "Tải lên tài liệu thành công", new
+                {
+                    fileUrl,
+                    fileName = file.FileName
+                }));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<object>(false, ex.Message ?? "Lỗi tải lên file.", null));
+            }
         }
     }
 }

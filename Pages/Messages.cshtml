@@ -2,20 +2,30 @@
 @model EduBridge.Pages.MessagesModel
 @{
     ViewData["Title"] = "Tin nhắn";
-    Layout = "_TeacherLayout";
-    ViewData["ActivePage"] = "Messages";
+    if (User.IsInRole("PARENT"))
+    {
+        Layout = "_Layout";
+    }
+    else
+    {
+        Layout = "_TeacherLayout";
+        ViewData["ActivePage"] = "Messages";
+    }
 }
 
 <!-- Header -->
 <div class="messages-header-section">
     <div>
         <h1 class="messages-main-title">Tin nhắn</h1>
-        <p class="messages-subtitle">Trao đổi với phụ huynh</p>
+        <p class="messages-subtitle">@(User.IsInRole("PARENT") ? "Trao đổi với giáo viên" : "Trao đổi với phụ huynh")</p>
     </div>
-    <button class="btn-notification" id="btnBroadcastMessage">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        Gửi thông báo chung
-    </button>
+    @if (!User.IsInRole("PARENT"))
+    {
+        <button class="btn-notification" id="btnBroadcastMessage">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            Gửi thông báo chung
+        </button>
+    }
 </div>
 
 <!-- Main Layout -->
@@ -23,10 +33,10 @@
     <!-- Left Sidebar: Conversations -->
     <div class="messages-sidebar">
         <div class="messages-sidebar-header">
-            <h3 class="messages-sidebar-title">Cuộc hội thoại</h3>
+            <h3 class="messages-sidebar-title">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
             <div class="search-wrapper">
                 <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="text" id="conversationSearchInput" placeholder="Tìm kiếm phụ huynh..." class="search-input-field" />
+                <input type="text" id="conversationSearchInput" placeholder="@(User.IsInRole("PARENT") ? "Tìm kiếm giáo viên..." : "Tìm kiếm phụ huynh...")" class="search-input-field" />
             </div>
         </div>
 
@@ -44,8 +54,8 @@
                     P
                 </div>
                 <div>
-                    <h3 class="chat-username" id="activeChatUsername">Họ tên phụ huynh</h3>
-                    <p class="chat-userinfo" id="activeChatStudentInfo">Phụ huynh: Tên học sinh</p>
+                    <h3 class="chat-username" id="activeChatUsername">Họ tên</h3>
+                    <p class="chat-userinfo" id="activeChatStudentInfo">Thông tin lớp học</p>
                 </div>
             </div>
         </div>
@@ -76,7 +86,7 @@
         <div class="text-center text-muted py-5">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-3 text-gray-300" style="opacity: 0.5;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             <h4 class="fw-semibold text-dark mb-1">Chưa chọn cuộc hội thoại</h4>
-            <p class="text-sm text-gray-500">Vui lòng chọn một phụ huynh từ danh sách bên trái để bắt đầu nhắn tin.</p>
+            <p class="text-sm text-gray-500">@(User.IsInRole("PARENT") ? "Vui lòng chọn một giáo viên từ danh sách bên trái để bắt đầu nhắn tin." : "Vui lòng chọn một phụ huynh từ danh sách bên trái để bắt đầu nhắn tin.")</p>
         </div>
     </div>
 </div>
@@ -132,6 +142,7 @@
 
     <script>
         const currentUserId = @Model.CurrentUserId;
+        const isParent = @(User.IsInRole("PARENT") ? "true" : "false");
         let selectedParentUserId = null;
         let conversationsData = [];
         let connection = null;
@@ -155,7 +166,7 @@
                 }
             });
 
-            // 4. Tìm kiếm phụ huynh ở sidebar
+            // 4. Tìm kiếm phụ huynh/giáo viên ở sidebar
             document.getElementById("conversationSearchInput").addEventListener("input", function () {
                 const query = this.value.trim().toLowerCase();
                 const filtered = conversationsData.filter(c => 
@@ -165,91 +176,97 @@
                 renderConversations(filtered);
             });
 
-            // 5. Mở Modal gửi thông báo chung
-            document.getElementById("btnBroadcastMessage").addEventListener("click", function () {
-                // Tải danh sách lớp học của giáo viên
-                const classSelect = document.getElementById("broadcastClassSelect");
-                classSelect.innerHTML = `<option value="">-- Đang tải danh sách lớp --</option>`;
-                
-                fetch('/api/v1/teacher/notifications/classes')
+            // 5. Mở Modal gửi thông báo chung (chỉ dành cho giáo viên)
+            const btnBroadcast = document.getElementById("btnBroadcastMessage");
+            if (btnBroadcast) {
+                btnBroadcast.addEventListener("click", function () {
+                    // Tải danh sách lớp học của giáo viên
+                    const classSelect = document.getElementById("broadcastClassSelect");
+                    classSelect.innerHTML = `<option value="">-- Đang tải danh sách lớp --</option>`;
+                    
+                    fetch('/api/v1/teacher/notifications/classes')
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.success) {
+                                classSelect.innerHTML = `<option value="">-- Chọn lớp học --</option>`;
+                                res.data.forEach(c => {
+                                    const opt = document.createElement("option");
+                                    opt.value = c.classId;
+                                    opt.textContent = c.className;
+                                    classSelect.appendChild(opt);
+                                });
+                            } else {
+                                showToast(res.message, false);
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showToast("Không thể tải danh sách lớp học", false);
+                        });
+
+                    const modal = new bootstrap.Modal(document.getElementById('broadcastModal'));
+                    modal.show();
+                });
+            }
+
+            // 6. Gửi thông báo chung (chỉ dành cho giáo viên)
+            const btnSubmitBroadcast = document.getElementById("btnSubmitBroadcast");
+            if (btnSubmitBroadcast) {
+                btnSubmitBroadcast.addEventListener("click", function () {
+                    const classId = document.getElementById("broadcastClassSelect").value;
+                    const title = document.getElementById("broadcastTitle").value.trim();
+                    const content = document.getElementById("broadcastContent").value.trim();
+
+                    if (!classId) {
+                        showToast("Vui lòng chọn lớp học", false);
+                        return;
+                    }
+                    if (!title) {
+                        showToast("Vui lòng nhập tiêu đề thông báo", false);
+                        return;
+                    }
+                    if (!content) {
+                        showToast("Vui lòng nhập nội dung thông báo", false);
+                        return;
+                    }
+
+                    const btn = this;
+                    btn.disabled = true;
+                    btn.textContent = "Đang gửi...";
+
+                    fetch('/api/v1/teacher/notifications/broadcast', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ classId: parseInt(classId), title: title, content: content })
+                    })
                     .then(res => res.json())
                     .then(res => {
+                        btn.disabled = false;
+                        btn.textContent = "Gửi thông báo";
                         if (res.success) {
-                            classSelect.innerHTML = `<option value="">-- Chọn lớp học --</option>`;
-                            res.data.forEach(c => {
-                                const opt = document.createElement("option");
-                                opt.value = c.classId;
-                                opt.textContent = c.className;
-                                classSelect.appendChild(opt);
-                            });
+                            showToast("Đã gửi thông báo chung thành công đến toàn bộ phụ huynh của lớp!", true);
+                            // Đóng modal
+                            const modalEl = document.getElementById('broadcastModal');
+                            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
+                            // Reset form
+                            document.getElementById("broadcastClassSelect").value = "";
+                            document.getElementById("broadcastTitle").value = "";
+                            document.getElementById("broadcastContent").value = "";
                         } else {
                             showToast(res.message, false);
                         }
                     })
                     .catch(err => {
+                        btn.disabled = false;
+                        btn.textContent = "Gửi thông báo";
                         console.error(err);
-                        showToast("Không thể tải danh sách lớp học", false);
+                        showToast("Lỗi gửi thông báo chung", false);
                     });
-
-                const modal = new bootstrap.Modal(document.getElementById('broadcastModal'));
-                modal.show();
-            });
-
-            // 6. Gửi thông báo chung
-            document.getElementById("btnSubmitBroadcast").addEventListener("click", function () {
-                const classId = document.getElementById("broadcastClassSelect").value;
-                const title = document.getElementById("broadcastTitle").value.trim();
-                const content = document.getElementById("broadcastContent").value.trim();
-
-                if (!classId) {
-                    showToast("Vui lòng chọn lớp học", false);
-                    return;
-                }
-                if (!title) {
-                    showToast("Vui lòng nhập tiêu đề thông báo", false);
-                    return;
-                }
-                if (!content) {
-                    showToast("Vui lòng nhập nội dung thông báo", false);
-                    return;
-                }
-
-                const btn = this;
-                btn.disabled = true;
-                btn.textContent = "Đang gửi...";
-
-                fetch('/api/v1/teacher/notifications/broadcast', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ classId: parseInt(classId), title: title, content: content })
-                })
-                .then(res => res.json())
-                .then(res => {
-                    btn.disabled = false;
-                    btn.textContent = "Gửi thông báo";
-                    if (res.success) {
-                        showToast("Đã gửi thông báo chung thành công đến toàn bộ phụ huynh của lớp!", true);
-                        // Đóng modal
-                        const modalEl = document.getElementById('broadcastModal');
-                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                        if (modalInstance) {
-                            modalInstance.hide();
-                        }
-                        // Reset form
-                        document.getElementById("broadcastClassSelect").value = "";
-                        document.getElementById("broadcastTitle").value = "";
-                        document.getElementById("broadcastContent").value = "";
-                    } else {
-                        showToast(res.message, false);
-                    }
-                })
-                .catch(err => {
-                    btn.disabled = false;
-                    btn.textContent = "Gửi thông báo";
-                    console.error(err);
-                    showToast("Lỗi gửi thông báo chung", false);
                 });
-            });
+            }
 
             // 7. Click nút đính kèm file
             document.getElementById("btnAttachFile").addEventListener("click", function () {
@@ -261,6 +278,13 @@
                 const file = this.files[0];
                 if (!file) return;
 
+                // Client-side validation: Giới hạn 10MB
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast("File vượt quá kích thước giới hạn (10MB).", false);
+                    this.value = "";
+                    return;
+                }
+
                 const formData = new FormData();
                 formData.append("file", file);
 
@@ -269,7 +293,9 @@
                 btn.disabled = true;
                 btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width: 14px; height: 14px;"></span>`;
 
-                fetch('/api/v1/teacher/chat/upload', {
+                const uploadUrl = isParent ? '/api/v1/parent/chat/upload' : '/api/v1/teacher/chat/upload';
+
+                fetch(uploadUrl, {
                     method: 'POST',
                     body: formData
                 })
@@ -280,22 +306,30 @@
                     // Reset input file
                     document.getElementById("chatFileInput").value = "";
 
-                    if (res.success) {
-                        const fileUrl = res.data.fileUrl;
-                        const fileName = res.data.fileName;
+                    const isSuccess = res.success || res.Success;
+                    const messageText = res.message || res.Message;
+
+                    if (isSuccess) {
+                        const dataObj = res.data || res.Data;
+                        if (!dataObj) {
+                            showToast("Dữ liệu phản hồi từ server trống.", false);
+                            return;
+                        }
+                        const fileUrl = dataObj.fileUrl || dataObj.FileUrl;
+                        const fileName = dataObj.fileName || dataObj.FileName;
                         
                         // Gửi qua SignalR
                         if (connection && connection.state === signalR.HubConnectionState.Connected) {
                             connection.invoke("SendMessage", selectedParentUserId, "[FILE]" + fileName + "|" + fileUrl)
                                 .catch(err => {
-                                    console.error(err);
-                                    showToast("Không thể gửi tin nhắn chứa file. Thử lại sau.", false);
+                                    console.error("Lỗi SignalR SendMessage:", err);
+                                    showToast("Không thể gửi tin nhắn chứa file qua SignalR. Chi tiết: " + err.message, false);
                                 });
                         } else {
                             showToast("Mất kết nối realtime. Hãy thử lại.", false);
                         }
                     } else {
-                        showToast(res.message, false);
+                        showToast(messageText || "Lỗi tải lên file", false);
                     }
                 })
                 .catch(err => {
@@ -359,7 +393,8 @@
 
         // Tải danh sách cuộc hội thoại
         function loadConversations(activeUserId = null) {
-            fetch('/api/v1/teacher/chat/conversations')
+            const conversationsUrl = isParent ? '/api/v1/parent/chat/conversations' : '/api/v1/teacher/chat/conversations';
+            fetch(conversationsUrl)
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
@@ -398,6 +433,8 @@
                 item.className = `message-item ${isActive ? "message-item-active" : ""}`;
                 item.setAttribute("data-parent-id", c.parentUserId);
                 
+                const studentLabel = isParent ? `Lớp: ${c.studentNames}` : `PH: ${c.studentNames}`;
+
                 item.innerHTML = `
                     <div class="message-avatar" style="position: relative;">
                         ${avatarChar}
@@ -408,7 +445,7 @@
                             <h4 class="message-item-name">${c.parentName}</h4>
                             ${c.unreadCount > 0 ? `<span class="unread-badge">${c.unreadCount}</span>` : ''}
                         </div>
-                        <p class="message-item-student">PH: ${c.studentNames}</p>
+                        <p class="message-item-student">${studentLabel}</p>
                         <p class="message-item-preview">${lastMsgPreview}</p>
                         <p class="message-item-time">${timeText}</p>
                     </div>
@@ -432,7 +469,7 @@
 
             // Cập nhật Header
             document.getElementById("activeChatUsername").textContent = parentName;
-            document.getElementById("activeChatStudentInfo").textContent = `Phụ huynh: ${studentNames}`;
+            document.getElementById("activeChatStudentInfo").textContent = isParent ? `Lớp: ${studentNames}` : `Phụ huynh: ${studentNames}`;
             document.getElementById("activeChatAvatar").innerHTML = `
                 ${parentName ? parentName.charAt(0).toUpperCase() : "P"}
                 <span style="position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; background-color: #22c55e; border: 2px solid white; border-radius: 50%;"></span>
@@ -454,7 +491,9 @@
             // Tải lịch sử tin nhắn
             document.getElementById("messagesBodyContainer").innerHTML = `<div class="text-center py-4 text-muted">Đang tải lịch sử tin nhắn...</div>`;
             
-            fetch(`/api/v1/teacher/chat/history?contactUserId=${parentUserId}`)
+            const historyUrl = isParent ? `/api/v1/parent/chat/history?contactUserId=${parentUserId}` : `/api/v1/teacher/chat/history?contactUserId=${parentUserId}`;
+
+            fetch(historyUrl)
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
@@ -501,7 +540,17 @@
             }
 
             const bubbleWrapper = document.createElement("div");
-            bubbleWrapper.className = `message-bubble-wrapper ${m.isOutgoing ? "message-teacher" : "message-parent"}`;
+            
+            // Đặt bubble wrapper class
+            let bubbleClass = "message-parent";
+            if (isParent) {
+                // Nếu ta là Phụ huynh, outgoing message (từ ta gửi đi) là của Parent, incoming là Teacher
+                bubbleClass = m.isOutgoing ? "message-parent" : "message-teacher";
+            } else {
+                // Nếu ta là Giáo viên, outgoing message (từ ta gửi đi) là của Teacher, incoming là Parent
+                bubbleClass = m.isOutgoing ? "message-teacher" : "message-parent";
+            }
+            bubbleWrapper.className = `message-bubble-wrapper ${bubbleClass}`;
             
             // Format time từ dd/MM/yyyy HH:mm chỉ lấy HH:mm
             const timeParts = m.sentAtString.split(" ");
@@ -517,6 +566,7 @@
                 
                 const lowerName = fileName.toLowerCase();
                 const isImage = lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg") || lowerName.endsWith(".png") || lowerName.endsWith(".gif") || lowerName.endsWith(".webp");
+                const isVideo = lowerName.endsWith(".mp4") || lowerName.endsWith(".webm") || lowerName.endsWith(".ogg") || lowerName.endsWith(".mov");
 
                 if (isImage) {
                     contentHtml = `
@@ -527,19 +577,36 @@
                         </div>
                         <div class="d-flex align-items-center mt-1" style="font-size: 0.75rem; opacity: 0.85;">
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <span class="text-truncate" style="max-width: 150px;">${escapeHtml(fileName)}</span>
+                            <span class="text-truncate" style="max-width: 120px;">${escapeHtml(fileName)}</span>
+                            <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="ms-1" title="Tải về" style="opacity:0.7; color:inherit;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>
+                    `;
+                } else if (isVideo) {
+                    contentHtml = `
+                        <div class="chat-video-preview-wrapper mb-1">
+                            <video src="${fileUrl}" controls style="max-width: 260px; max-height: 180px; border-radius: 8px; border: 1px solid #e2e8f0; display: block;"></video>
+                        </div>
+                        <div class="d-flex align-items-center mt-1" style="font-size: 0.75rem; opacity: 0.85;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                            <span class="text-truncate" style="max-width: 120px;">${escapeHtml(fileName)}</span>
+                            <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="ms-1" title="Tải về" style="opacity:0.7; color:inherit;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
                         </div>
                     `;
                 } else {
                     contentHtml = `
                         <div class="d-flex align-items-center p-2 rounded" style="background-color: #f1f5f9; border: 1px solid #cbd5e1; max-width: 260px; color: #334155;">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2 text-primary" style="flex-shrink: 0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            <div class="overflow-hidden" style="text-align: left;">
-                                <a href="${fileUrl}" target="_blank" class="fw-bold text-truncate d-block text-primary" style="font-size: 0.85rem; text-decoration: none;" title="${escapeHtml(fileName)}">
-                                    ${escapeHtml(fileName)}
-                                </a>
+                            <div class="overflow-hidden" style="text-align: left; flex: 1;">
+                                <span class="fw-bold text-truncate d-block" style="font-size: 0.85rem;" title="${escapeHtml(fileName)}">${escapeHtml(fileName)}</span>
                                 <span class="text-muted d-block" style="font-size: 0.65rem;">Nhấp để tải file</span>
                             </div>
+                            <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="ms-2 btn btn-sm btn-primary d-flex align-items-center justify-content-center" style="width:30px; height:30px; padding:0; border-radius:6px; flex-shrink:0;" title="Tải về">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
                         </div>
                     `;
                 }
@@ -573,7 +640,7 @@
                     })
                     .catch(err => {
                         console.error("Lỗi invoke SendMessage:", err);
-                        showToast("Không thể gửi tin nhắn. Thử lại sau.", false);
+                        showToast("Không thể gửi tin nhắn. Chi tiết: " + err.message, false);
                     });
             } else {
                 showToast("Không có kết nối thời gian thực. Đang kết nối lại...", false);
@@ -582,7 +649,8 @@
 
         // Đánh dấu đã đọc cuộc hội thoại
         function markConversationAsRead(parentUserId) {
-            fetch(`/api/v1/teacher/chat/read?contactUserId=${parentUserId}`, {
+            const readUrl = isParent ? `/api/v1/parent/chat/read?contactUserId=${parentUserId}` : `/api/v1/teacher/chat/read?contactUserId=${parentUserId}`;
+            fetch(readUrl, {
                 method: 'POST'
             })
             .then(res => res.json())

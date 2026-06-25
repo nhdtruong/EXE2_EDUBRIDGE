@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -16,6 +16,8 @@ public partial class Homework
     public DateTime? DueDate { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    public string? AttachmentUrl { get; set; }
 
     public virtual ICollection<HomeworkSubmission> HomeworkSubmissions { get; set; } = new List<HomeworkSubmission>();
 
