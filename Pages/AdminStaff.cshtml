@@ -1,41 +1,66 @@
 @page
-@model EduBridge.Pages.AdminTeachersModel
+@model EduBridge.Pages.AdminStaffModel
 @{
-    ViewData["Title"] = "Quản lý giáo viên";
+    ViewData["Title"] = "Quản lý nhân sự";
     Layout = "_AdminLayout";
-    ViewData["ActivePage"] = "AdminTeachers";
+    ViewData["ActivePage"] = "AdminStaff";
     var selectedStatusText = Model.StatusFilter switch
     {
-        "Active" => "Đang dạy",
-        "Inactive" => "Tạm dừng",
+        "Active" => "Hoạt động",
+        "Inactive" => "Đã khóa",
         _ => "Trạng thái"
+    };
+    var selectedRoleText = Model.RoleFilter switch
+    {
+        "TEACHER" => "Giáo viên",
+        "OWNER" => "Chủ trung tâm",
+        _ => "Vai trò"
     };
 }
 
 <div class="space-y-6 pb-20">
     <div>
-        <h1 class="text-3xl font-bold text-gray-900">Quản lý giáo viên</h1>
-        <p class="text-gray-500 mt-1">Quản lý thông tin giáo viên và phân công</p>
+        <h1 class="text-3xl font-bold text-gray-900">Quản lý nhân sự</h1>
+        <p class="text-gray-500 mt-1">Quản lý thông tin nhân sự và phân công</p>
     </div>
 
     <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div class="border-b border-blue-100 bg-blue-50/60 p-6">
-            <h3 class="text-base font-bold text-gray-900">Danh sách giáo viên</h3>
+            <h3 class="text-base font-bold text-gray-900">Danh sách nhân sự</h3>
 
             <form method="get" class="mt-5 space-y-4">
                 <input type="hidden" name="PageNumber" value="1" />
                 <input type="hidden" name="PageSize" value="@Model.PageSize" />
-                <div class="grid gap-4 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,1fr)_260px]">
+                <div class="grid gap-4 lg:grid-cols-4">
                     <div>
-                        <label for="teacherSearch" class="sr-only">Tìm kiếm theo mã hoặc tên</label>
-                        <input id="teacherSearch" type="text" name="Search" value="@Model.Search" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm theo mã, tên">
+                        <label for="StaffSearch" class="sr-only">Tìm kiếm theo mã hoặc tên</label>
+                        <input id="StaffSearch" type="text" name="Search" value="@Model.Search" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm theo mã, tên">
                         <span asp-validation-for="Search" class="mt-1 block text-xs font-medium text-red-600"></span>
                     </div>
 
                     <div>
-                        <label for="teacherContactSearch" class="sr-only">Tìm kiếm theo email hoặc số điện thoại</label>
-                        <input id="teacherContactSearch" type="text" name="ContactSearch" value="@Model.ContactSearch" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm theo email, SĐT">
+                        <label for="StaffContactSearch" class="sr-only">Tìm kiếm theo email hoặc số điện thoại</label>
+                        <input id="StaffContactSearch" type="text" name="ContactSearch" value="@Model.ContactSearch" maxlength="150" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm theo email, SĐT">
                         <span asp-validation-for="ContactSearch" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    </div>
+
+                    <div>
+                        <input type="hidden" name="RoleFilter" value="@Model.RoleFilter" data-filter-value="role" />
+                        <div class="relative" data-search-dropdown>
+                            <button type="button" data-dropdown-toggle class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-600 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <span data-dropdown-label>@selectedRoleText</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded border border-gray-300 bg-white shadow-lg">
+                                <div class="relative p-2">
+                                    <input type="text" data-dropdown-search class="h-11 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm vai trò...">
+                                    <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                <button type="button" data-dropdown-option data-value="" data-label="Vai trò" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
+                                <button type="button" data-dropdown-option data-value="TEACHER" data-label="Giáo viên" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Giáo viên</button>
+                                <button type="button" data-dropdown-option data-value="OWNER" data-label="Chủ trung tâm" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Chủ trung tâm</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div>
@@ -51,8 +76,8 @@
                                     <svg class="absolute right-5 top-5 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                                 </div>
                                 <button type="button" data-dropdown-option data-value="" data-label="Trạng thái" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tất cả</button>
-                                <button type="button" data-dropdown-option data-value="Active" data-label="Đang dạy" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đang dạy</button>
-                                <button type="button" data-dropdown-option data-value="Inactive" data-label="Tạm dừng" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Tạm dừng</button>
+                                <button type="button" data-dropdown-option data-value="Active" data-label="Hoạt động" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Hoạt động</button>
+                                <button type="button" data-dropdown-option data-value="Inactive" data-label="Đã khóa" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Đã khóa</button>
                             </div>
                         </div>
                         <span asp-validation-for="StatusFilter" class="mt-1 block text-xs font-medium text-red-600"></span>
@@ -60,12 +85,12 @@
                 </div>
 
                 <div class="flex flex-wrap items-center justify-between gap-3">
-                    <a asp-page="/AdminTeachers/Create" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                    <a asp-page="/AdminStaff/Create" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
                         <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                        Thêm giáo viên
+                        Thêm nhân sự
                     </a>
                     <div class="flex flex-wrap items-center gap-3">
-                        <a asp-page="/AdminTeachers" class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
+                        <a asp-page="/AdminStaff" class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
                             Làm mới bộ lọc
                         </a>
                         <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
@@ -82,80 +107,97 @@
                 <thead>
                     <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
                         <th class="py-4 px-4 text-center font-bold border-r border-slate-200">STT</th>
-                        <th class="py-4 px-4 text-center font-bold border-r border-slate-200">ID</th>
-                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Giáo viên</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Nhân sự</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Liên hệ</th>
-                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Số lớp</th>
-                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Số học sinh</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Chuyên môn</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Lớp phụ trách</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Trạng thái</th>
                         <th class="py-4 px-6 text-center font-bold">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody class="text-sm divide-y divide-gray-100">
-                    @if (Model.Teachers.Count == 0)
+                    @if (Model.Staffs.Count == 0)
                     {
                         <tr>
                             <td colspan="8" class="py-10 px-6 text-center text-gray-500">
-                                Chưa có giáo viên phù hợp.
+                                Chưa có nhân sự phù hợp.
                             </td>
                         </tr>
                     }
                     else
                     {
-                        @for (var index = 0; index < Model.Teachers.Count; index++)
+                        @for (var index = 0; index < Model.Staffs.Count; index++)
                         {
-                            var teacher = Model.Teachers[index];
+                            var Staff = Model.Staffs[index];
                             <tr class="group hover:bg-slate-100 transition-colors">
                                 <td class="py-4 px-4 text-center font-medium text-gray-700 border-r border-gray-200">
                                     @(Model.FirstItemNumber + index)
                                 </td>
-                                <td class="py-4 px-4 text-center font-medium text-gray-900 border-r border-gray-200">
-                                    @teacher.TeacherId
-                                </td>
                                 <td class="py-4 px-6 border-r border-gray-200">
                                     <div class="flex items-center">
-                                        @if (!string.IsNullOrWhiteSpace(teacher.AvatarUrl))
+                                        @if (!string.IsNullOrWhiteSpace(Staff.AvatarUrl))
                                         {
-                                            <img src="@teacher.AvatarUrl" alt="@teacher.FullName" class="mr-4 h-10 w-10 flex-shrink-0 rounded-full bg-white object-contain" />
+                                            <img src="@Staff.AvatarUrl" alt="@Staff.FullName" class="mr-4 h-10 w-10 flex-shrink-0 rounded-full bg-white object-contain" />
                                         }
                                         else
                                         {
-                                            <div class="w-10 h-10 rounded-full @(teacher.IsActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500") flex items-center justify-center font-bold mr-4 flex-shrink-0">@teacher.Initials</div>
+                                            <div class="w-10 h-10 rounded-full @(Staff.IsActive ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-500") flex items-center justify-center font-bold mr-4 flex-shrink-0">@Staff.Initials</div>
                                         }
                                         <div>
-                                            <div class="font-semibold text-gray-900 group-hover:text-gray-950">@teacher.FullName</div>
-                                            <div class="text-xs text-gray-400">Mã: @teacher.TeacherCode</div>
+                                            <div class="font-semibold text-gray-900 group-hover:text-gray-950 flex flex-wrap items-center gap-2">
+                                                @Staff.FullName
+                                                @if(Staff.Roles != null && Staff.Roles.Any())
+                                                {
+                                                    foreach(var role in Staff.Roles)
+                                                    {
+                                                        var roleText = role == "TEACHER" ? "Giáo viên" : (role == "OWNER" ? "Chủ TT" : role);
+                                                        <span class="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">@roleText</span>
+                                                    }
+                                                }
+                                            </div>
+                                            <div class="text-xs text-gray-400 mt-1">Mã: @Staff.StaffCode</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="py-4 px-6 text-gray-600 border-r border-gray-200">
                                     <div class="flex items-center mb-1 whitespace-nowrap">
                                         <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                                        @teacher.DisplayEmail
+                                        @Staff.DisplayEmail
                                     </div>
                                     <div class="flex items-center whitespace-nowrap">
                                         <svg class="w-3.5 h-3.5 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                                        @teacher.DisplayPhoneNumber
+                                        @Staff.DisplayPhoneNumber
                                     </div>
                                 </td>
-                                <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">@teacher.ClassCount lớp</td>
-                                <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">@teacher.StudentCount HS</td>
+                                <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">
+                                    @(string.IsNullOrEmpty(Staff.Specialization) ? "-" : Staff.Specialization)
+                                </td>
+                                <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">
+                                    @if(Staff.Roles != null && Staff.Roles.Contains("TEACHER"))
+                                    {
+                                        <span>@Staff.ClassCount lớp (@Staff.StudentCount HS)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-gray-400 font-normal">-</span>
+                                    }
+                                </td>
                                 <td class="py-4 px-6 border-r border-gray-200">
-                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-teacherId="@teacher.TeacherId" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="flex justify-center">
-                                        <button type="submit" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(teacher.IsActive ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200")" title="Đổi trạng thái giáo viên">
-                                            <span class="relative h-6 w-11 rounded-full transition-colors @(teacher.IsActive ? "bg-green-500" : "bg-gray-300")">
-                                                <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(teacher.IsActive ? "left-5" : "left-0.5")"></span>
+                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-StaffId="@Staff.StaffId" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="flex justify-center">
+                                        <button type="submit" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(Staff.IsActive ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200")" title="Đổi trạng thái nhân sự">
+                                            <span class="relative h-6 w-11 rounded-full transition-colors @(Staff.IsActive ? "bg-green-500" : "bg-gray-300")">
+                                                <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(Staff.IsActive ? "left-5" : "left-0.5")"></span>
                                             </span>
-                                            <span class="min-w-20 text-left text-xs font-semibold">@teacher.StatusText</span>
+                                            <span class="min-w-20 text-left text-xs font-semibold">@Staff.StatusText</span>
                                         </button>
                                     </form>
                                 </td>
                                 <td class="py-4 px-6">
                                     <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                                    <a asp-page="/AdminTeachers/Edit" asp-route-teacherId="@teacher.TeacherId" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem chi tiết/Sửa">
+                                    <a asp-page="/AdminStaff/Edit" asp-route-id="@Staff.StaffId" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem chi tiết/Sửa">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
                                     </a>
-                                    @if (teacher.IsActive)
+                                    @if (Staff.IsActive)
                                     {
                                         <button type="button" disabled class="inline-flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-full border border-gray-300 bg-gray-100 text-gray-400" title="Chỉ xóa được giáo viên tạm dừng">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
@@ -163,11 +205,11 @@
                                     }
                                     else
                                     {
-                                        <button type="button" onclick="openDeleteTeacherConfirm(this)" data-teacher-id="@teacher.TeacherId" data-teacher-name="@teacher.FullName" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                        <button type="button" onclick="openDeleteStaffConfirm(this)" data-staff-id="@Staff.StaffId" data-staff-name="@Staff.FullName" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
                                             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
                                     }
-                                    <button type="button" onclick="openResetPasswordConfirm(this)" data-teacher-id="@teacher.TeacherId" data-teacher-name="@teacher.FullName" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-white text-blue-600 transition-colors hover:bg-blue-50" title="Cấp lại mật khẩu nhanh">
+                                    <button type="button" onclick="openResetPasswordConfirm(this)" data-staff-id="@Staff.StaffId" data-staff-name="@Staff.FullName" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-white text-blue-600 transition-colors hover:bg-blue-50" title="Cấp lại mật khẩu nhanh">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M19 9A7 7 0 007.05 4.05M5 15a7 7 0 0011.95 4.95"></path></svg>
                                     </button>
                                     </div>
@@ -181,10 +223,10 @@
 
         <div class="flex flex-wrap items-center justify-center gap-6 border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">
             <div class="flex items-center gap-1">
-                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="1" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang đầu">
+                <a asp-page="/AdminStaff" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="1" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang đầu">
                     <span class="text-lg">&laquo;</span>
                 </a>
-                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang trước">
+                <a asp-page="/AdminStaff" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@(Model.PageNumber - 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber <= 1 ? "pointer-events-none opacity-40" : "")" title="Trang trước">
                     <span class="text-lg">&lsaquo;</span>
                 </a>
 
@@ -196,25 +238,26 @@
 
                 @for (var pageIndex = startPage; pageIndex <= endPage; pageIndex++)
                 {
-                    <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@pageIndex" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 min-w-9 items-center justify-center rounded px-3 font-medium transition-colors @(pageIndex == Model.PageNumber ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">
+                    <a asp-page="/AdminStaff" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@pageIndex" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 min-w-9 items-center justify-center rounded px-3 font-medium transition-colors @(pageIndex == Model.PageNumber ? "bg-blue-100 text-blue-700" : "text-gray-600 hover:bg-blue-50 hover:text-blue-600")">
                         @pageIndex
                     </a>
                 }
 
-                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang sau">
+                <a asp-page="/AdminStaff" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@(Model.PageNumber + 1)" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang sau">
                     <span class="text-lg">&rsaquo;</span>
                 </a>
-                <a asp-page="/AdminTeachers" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.TotalPages" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang cuối">
+                <a asp-page="/AdminStaff" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@Model.TotalPages" asp-route-pageSize="@Model.PageSize" class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 @(Model.PageNumber >= Model.TotalPages ? "pointer-events-none opacity-40" : "")" title="Trang cuối">
                     <span class="text-lg">&raquo;</span>
                 </a>
             </div>
 
             <div class="flex items-center gap-4">
-                <span>Tổng số: @Model.TotalTeachers bản ghi</span>
+                <span>Tổng số: @Model.TotalStaffs bản ghi</span>
                 <form method="get" class="flex items-center">
                     <input type="hidden" name="Search" value="@Model.Search" />
                     <input type="hidden" name="ContactSearch" value="@Model.ContactSearch" />
                     <input type="hidden" name="StatusFilter" value="@Model.StatusFilter" />
+                    <input type="hidden" name="RoleFilter" value="@Model.RoleFilter" />
                     <input type="hidden" name="PageNumber" value="1" />
                     <select name="PageSize" onchange="this.form.submit()" class="h-10 rounded border border-blue-400 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
                         @foreach (var option in Model.PageSizeOptions)
@@ -241,11 +284,11 @@
             </div>
             <div>
                 <p class="text-sm text-gray-600">Bạn có muốn tiếp tục thay đổi mật khẩu của giáo viên này?</p>
-                <p id="resetPasswordTeacherName" class="mt-1 text-sm font-semibold text-gray-900"></p>
+                <p id="resetPasswordStaffName" class="mt-1 text-sm font-semibold text-gray-900"></p>
             </div>
         </div>
-        <form id="resetPasswordForm" method="post" asp-page-handler="ResetPassword" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize">
-            <input id="resetPasswordTeacherId" type="hidden" name="teacherId" />
+        <form id="resetPasswordForm" method="post" asp-page-handler="ResetPassword" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize">
+            <input id="resetPasswordStaffId" type="hidden" name="StaffId" />
             <div class="flex justify-end gap-5 px-6 pb-6">
                 <button type="button" onclick="closeResetPasswordConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">No</button>
                 <button type="submit" class="rounded bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Yes</button>
@@ -264,18 +307,18 @@
         </div>
         <div class="px-6 py-14 text-center">
             <p class="text-lg font-semibold text-gray-700">Mật khẩu mới là: <span class="text-gray-900">@Model.ResetPasswordValue</span></p>
-            @if (!string.IsNullOrWhiteSpace(Model.ResetPasswordTeacherName))
+            @if (!string.IsNullOrWhiteSpace(Model.ResetPasswordStaffName))
             {
-                <p class="mt-2 text-sm text-gray-500">@Model.ResetPasswordTeacherName</p>
+                <p class="mt-2 text-sm text-gray-500">@Model.ResetPasswordStaffName</p>
             }
         </div>
     </div>
 </div>
 
-<div id="deleteTeacherConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+<div id="deleteStaffConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
     <div class="w-full max-w-xl rounded bg-white shadow-2xl">
         <div class="flex items-center justify-end border-b border-gray-100 px-5 py-4">
-            <button type="button" onclick="closeDeleteTeacherConfirm()" class="text-gray-500 hover:text-gray-700">
+            <button type="button" onclick="closeDeleteStaffConfirm()" class="text-gray-500 hover:text-gray-700">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
@@ -285,14 +328,14 @@
             </div>
             <div>
                 <p class="text-sm text-gray-700">Bạn có chắc chắn muốn xóa giáo viên này?</p>
-                <p id="deleteTeacherName" class="mt-1 text-sm font-semibold text-gray-900"></p>
+                <p id="deleteStaffName" class="mt-1 text-sm font-semibold text-gray-900"></p>
                 <p class="mt-3 text-xs text-gray-500">Chỉ giáo viên ở trạng thái tạm dừng và chưa gắn lớp mới được xóa.</p>
             </div>
         </div>
-        <form id="deleteTeacherForm" method="post" asp-page-handler="Delete" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize">
-            <input id="deleteTeacherId" type="hidden" name="teacherId" />
+        <form id="deleteStaffForm" method="post" asp-page-handler="Delete" asp-route-search="@Model.Search" asp-route-contactSearch="@Model.ContactSearch" asp-route-statusFilter="@Model.StatusFilter" asp-route-roleFilter="@Model.RoleFilter" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize">
+            <input id="deleteStaffId" type="hidden" name="StaffId" />
             <div class="flex justify-end gap-5 px-6 pb-6">
-                <button type="button" onclick="closeDeleteTeacherConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
+                <button type="button" onclick="closeDeleteStaffConfirm()" class="text-sm font-semibold text-blue-600 hover:text-blue-700">Hủy</button>
                 <button type="submit" class="rounded bg-red-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700">Xóa</button>
             </div>
         </form>
@@ -366,11 +409,11 @@
         });
 
         function openResetPasswordConfirm(button) {
-            const teacherId = button.dataset.teacherId;
-            const teacherName = button.dataset.teacherName;
+            const StaffId = button.dataset.staffId;
+            const StaffName = button.dataset.staffName;
 
-            document.getElementById('resetPasswordTeacherId').value = teacherId;
-            document.getElementById('resetPasswordTeacherName').textContent = teacherName;
+            document.getElementById('resetPasswordStaffId').value = StaffId;
+            document.getElementById('resetPasswordStaffName').textContent = StaffName;
 
             const modal = document.getElementById('resetPasswordConfirmModal');
             modal.classList.remove('hidden');
@@ -395,20 +438,20 @@
             modal.classList.remove('flex');
         }
 
-        function openDeleteTeacherConfirm(button) {
-            const teacherId = button.dataset.teacherId;
-            const teacherName = button.dataset.teacherName;
+        function openDeleteStaffConfirm(button) {
+            const StaffId = button.dataset.staffId;
+            const StaffName = button.dataset.staffName;
 
-            document.getElementById('deleteTeacherId').value = teacherId;
-            document.getElementById('deleteTeacherName').textContent = teacherName;
+            document.getElementById('deleteStaffId').value = StaffId;
+            document.getElementById('deleteStaffName').textContent = StaffName;
 
-            const modal = document.getElementById('deleteTeacherConfirmModal');
+            const modal = document.getElementById('deleteStaffConfirmModal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
 
-        function closeDeleteTeacherConfirm() {
-            const modal = document.getElementById('deleteTeacherConfirmModal');
+        function closeDeleteStaffConfirm() {
+            const modal = document.getElementById('deleteStaffConfirmModal');
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }

@@ -102,7 +102,7 @@ namespace EduBridge.Models.DTOs.TeacherHomework
         public int StudentId { get; set; }
 
         [Required(ErrorMessage = "Vui lòng đính kèm file bài làm.")]
-        public string SubmissionFileUrl { get; set; }
+        public string SubmissionFileUrl { get; set; } = string.Empty;
 
         public string? SubmissionContent { get; set; }
     }

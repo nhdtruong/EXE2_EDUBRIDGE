@@ -39,6 +39,9 @@ namespace EduBridge.Pages
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
 
+            Response.Cookies.Delete("SupportCenterId");
+            Response.Cookies.Delete("CurrentBranchId");
+
             if (!ModelState.IsValid)
             {
                 ErrorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập.";
@@ -65,7 +68,8 @@ namespace EduBridge.Pages
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role.RoleCode)
+                new Claim(ClaimTypes.Role, authenticationResult.PrimaryRole ?? "GUEST"),
+                new Claim("EduBridge:AvailableRoles", string.Join(",", authenticationResult.AvailableRoles ?? new List<string>()))
             };
 
             var identity = new ClaimsIdentity(
@@ -88,7 +92,7 @@ namespace EduBridge.Pages
 
             TempData["ToastMessage"] = "Đăng nhập thành công.";
 
-            return RedirectByRole(user.Role.RoleCode);
+            return RedirectByRole(authenticationResult.PrimaryRole ?? "GUEST");
         }
 
 
@@ -96,7 +100,10 @@ namespace EduBridge.Pages
         {
             return roleCode.ToUpperInvariant() switch
             {
+                "SYSTEM_ADMIN" => RedirectToPage("/SystemAdmin/Centers"),
+                "PROJECT_ADMIN" => RedirectToPage("/SystemAdmin/Centers"),
                 "OWNER" => RedirectToPage("/AdminDashboard"),
+                "BRANCH_MANAGER" => RedirectToPage("/AdminDashboard"),
                 "TEACHER" => RedirectToPage("/Teacher/Dashboard"),
                 "PARENT" => RedirectToPage("/Messages"),
                 _ => RedirectToPage("/Index")

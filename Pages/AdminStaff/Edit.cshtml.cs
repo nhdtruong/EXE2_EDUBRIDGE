@@ -1,27 +1,27 @@
 using System.Security.Claims;
-using EduBridge.Contracts.Teachers;
-using EduBridge.Services.Teachers;
+using EduBridge.Contracts.Staffs;
+using EduBridge.Services.Staffs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace EduBridge.Pages.AdminTeachers;
+namespace EduBridge.Pages.AdminStaff;
 
 [Authorize(Policy = "AdminOnly")]
 public class EditModel : PageModel
 {
-    private readonly ITeacherManagementService _service;
+    private readonly IStaffManagementService _service;
 
-    public EditModel(ITeacherManagementService service)
+    public EditModel(IStaffManagementService service)
     {
         _service = service;
     }
 
     [BindProperty]
-    public SaveTeacherRequest Input { get; set; } = new();
+    public SaveStaffRequest Input { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
-    public int TeacherId { get; set; }
+    public int StaffId { get; set; }
 
     [BindProperty]
     public IFormFile? AvatarFile { get; set; }
@@ -31,22 +31,25 @@ public class EditModel : PageModel
 
     public string? ExistingAvatarUrl { get; set; }
 
-    public async Task<IActionResult> OnGetAsync(int teacherId, CancellationToken cancellationToken)
+    public async Task<IActionResult> OnGetAsync(int id, CancellationToken cancellationToken)
     {
         var ownerUserId = GetCurrentUserId();
         if (ownerUserId == null) return RedirectToPage("/Login");
 
-        var result = await _service.GetTeacherAsync(ownerUserId.Value, teacherId, cancellationToken);
+        var result = await _service.GetStaffAsync(ownerUserId.Value, id, cancellationToken);
         if (!result.IsSuccess) return NotFound();
 
         var t = result.Value!;
-        TeacherId = teacherId;
+        StaffId = id;
         ExistingAvatarUrl = t.AvatarUrl;
 
-        Input = new SaveTeacherRequest
+        Input = new SaveStaffRequest
         {
-            TeacherCode = t.TeacherCode,
+            Roles = t.Roles,
+            StaffCode = t.StaffCode,
             FullName = t.FullName,
+            Specialization = t.Specialization,
+            ExperienceYears = t.ExperienceYears,
             PhoneNumber = t.PhoneNumber ?? "",
             Email = t.Email,
             DateOfBirth = t.DateOfBirth,
@@ -74,7 +77,7 @@ public class EditModel : PageModel
             var oId = GetCurrentUserId();
             if (oId != null)
             {
-                var tr = await _service.GetTeacherAsync(oId.Value, TeacherId, cancellationToken);
+                var tr = await _service.GetStaffAsync(oId.Value, StaffId, cancellationToken);
                 if (tr.IsSuccess) ExistingAvatarUrl = tr.Value!.AvatarUrl;
             }
             return Page();
@@ -83,7 +86,7 @@ public class EditModel : PageModel
         var ownerUserId = GetCurrentUserId();
         if (ownerUserId == null) return RedirectToPage("/Login");
 
-        var result = await _service.UpdateAsync(ownerUserId.Value, TeacherId, Input, cancellationToken);
+        var result = await _service.UpdateAsync(ownerUserId.Value, StaffId, Input, cancellationToken);
 
         if (!result.IsSuccess)
         {
@@ -95,7 +98,11 @@ public class EditModel : PageModel
             }
             else ModelState.AddModelError(string.Empty, result.Message);
 
-            var tr = await _service.GetTeacherAsync(ownerUserId.Value, TeacherId, cancellationToken);
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = result.Message;
+
+            var tr = await _service.GetStaffAsync(ownerUserId.Value, StaffId, cancellationToken);
             if (tr.IsSuccess) ExistingAvatarUrl = tr.Value!.AvatarUrl;
 
             return Page();
@@ -103,19 +110,19 @@ public class EditModel : PageModel
 
         if (RemoveAvatar)
         {
-            await _service.RemoveAvatarAsync(ownerUserId.Value, TeacherId, cancellationToken);
+            await _service.RemoveAvatarAsync(ownerUserId.Value, StaffId, cancellationToken);
         }
         else if (AvatarFile != null)
         {
             await using var stream = AvatarFile.OpenReadStream();
-            await _service.UpdateAvatarAsync(ownerUserId.Value, TeacherId, stream, AvatarFile.FileName, AvatarFile.ContentType, cancellationToken);
+            await _service.UpdateAvatarAsync(ownerUserId.Value, StaffId, stream, AvatarFile.FileName, AvatarFile.ContentType, cancellationToken);
         }
 
         TempData["ToastType"] = "success";
         TempData["ToastTitle"] = "Thành công";
         TempData["ToastMessage"] = result.Message;
 
-        return RedirectToPage("/AdminTeachers");
+        return RedirectToPage("/AdminStaff");
     }
 
     private int? GetCurrentUserId()
@@ -124,3 +131,4 @@ public class EditModel : PageModel
         return int.TryParse(value, out var userId) ? userId : null;
     }
 }
+

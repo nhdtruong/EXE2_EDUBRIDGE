@@ -1,0 +1,122 @@
+@page
+@model EduBridge.Pages.SystemAdmin.CreateCenterModel
+@{
+    ViewData["Title"] = "Thêm trung tâm";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "SystemCenters";
+}
+
+<form method="post" enctype="multipart/form-data" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200 rounded-xl">
+    <div class="border-b border-gray-200 pb-3 flex items-center justify-between">
+        <h1 class="text-lg font-bold text-gray-900">Thêm mới trung tâm</h1>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+
+    <section class="border border-gray-200 rounded-lg overflow-hidden">
+        <div class="border-b border-gray-200 bg-gray-50 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Thông tin cơ bản</h2>
+        </div>
+
+        <div class="grid gap-8 p-5 lg:grid-cols-[280px_1fr]">
+            <div class="flex flex-col items-center">
+                <label class="mb-4 text-base font-bold text-gray-900">Logo trung tâm</label>
+                <div class="flex h-36 w-44 items-center justify-center overflow-hidden border border-dashed border-gray-300 bg-white rounded-lg">
+                    <img id="avatarPreview" alt="Logo" class="hidden h-full w-full object-contain" />
+                    <svg id="avatarPlaceholder" class="h-24 w-28 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 96 72">
+                        <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
+                        <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
+                        <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
+                    </svg>
+                </div>
+                <input asp-for="Input.Logo" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
+                <div class="mt-4 flex gap-2">
+                    <button type="button" onclick="clearAvatar()" class="inline-flex h-9 w-9 items-center justify-center rounded bg-blue-600 text-white hover:bg-blue-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
+                    </button>
+                    <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-9 rounded bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">Chọn ảnh</button>
+                </div>
+                <span asp-validation-for="Input.Logo" class="mt-2 text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+                <div class="lg:col-span-1">
+                    <label asp-for="Input.CenterCode" class="block text-sm font-semibold text-gray-700">Mã trung tâm (*)</label>
+                    <input asp-for="Input.CenterCode" class="mt-1 h-11 w-full border border-gray-300 rounded-md px-3 text-sm uppercase focus:border-blue-500 focus:outline-none" placeholder="VD: CENTER-01" />
+                    <span asp-validation-for="Input.CenterCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="lg:col-span-1">
+                    <label asp-for="Input.CenterName" class="block text-sm font-semibold text-gray-700">Tên trung tâm (*)</label>
+                    <input asp-for="Input.CenterName" class="mt-1 h-11 w-full border border-gray-300 rounded-md px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tên trung tâm" />
+                    <span asp-validation-for="Input.CenterName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.PhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại</label>
+                    <input asp-for="Input.PhoneNumber" class="mt-1 h-11 w-full border border-gray-300 rounded-md px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập số điện thoại" />
+                    <span asp-validation-for="Input.PhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.Email" class="block text-sm font-semibold text-gray-700">Email</label>
+                    <input asp-for="Input.Email" type="email" class="mt-1 h-11 w-full border border-gray-300 rounded-md px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập email" />
+                    <span asp-validation-for="Input.Email" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label asp-for="Input.Address" class="block text-sm font-semibold text-gray-700">Địa chỉ</label>
+                    <input asp-for="Input.Address" class="mt-1 h-11 w-full border border-gray-300 rounded-md px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập địa chỉ" />
+                    <span asp-validation-for="Input.Address" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+                
+                <div class="lg:col-span-2 mt-2">
+                    <label class="block text-sm font-semibold text-gray-700">Trạng thái</label>
+                    <label class="mt-3 inline-flex cursor-pointer items-center">
+                        <input type="checkbox" id="statusCheckbox" class="peer sr-only" checked onchange="document.getElementById('Input_Status').value = this.checked ? 'Active' : 'Inactive'; document.getElementById('statusText').innerText = this.checked ? 'Hoạt động' : 'Không hoạt động';" />
+                        <span class="h-6 w-11 rounded-full bg-gray-300 after:absolute after:mt-0.5 after:ml-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:bg-blue-600 peer-checked:after:translate-x-5 relative"></span>
+                        <span id="statusText" class="ml-3 text-sm font-medium text-gray-900">Hoạt động</span>
+                    </label>
+                    <input type="hidden" asp-for="Input.Status" id="Input_Status" value="Active" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="flex justify-end gap-3 mt-6">
+        <a asp-page="/SystemAdmin/Centers" class="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50">Hủy</a>
+        <button type="submit" class="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Lưu trung tâm</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function previewAvatar(input) {
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearAvatar() {
+            const input = document.getElementById('avatarFileInput');
+            const preview = document.getElementById('avatarPreview');
+            const placeholder = document.getElementById('avatarPlaceholder');
+            
+            input.value = '';
+            preview.src = '';
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+        }
+    </script>
+}

@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using EduBridge.Contracts.Classes;
-using EduBridge.Contracts.Teachers;
-using EduBridge.Services.Teachers;
+using EduBridge.Contracts.Staffs;
+using EduBridge.Services.Staffs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,48 +9,48 @@ using Microsoft.AspNetCore.Mvc;
 namespace EduBridge.Controllers.Api;
 
 [ApiController]
-[Route("api/v1/teachers")]
+[Route("api/v1/staffs")]
 [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "OWNER")]
-public sealed class TeachersController : ControllerBase
+public sealed class StaffsController : ControllerBase
 {
-    private readonly ITeacherManagementService _service;
+    private readonly IStaffManagementService _service;
 
-    public TeachersController(ITeacherManagementService service) => _service = service;
+    public StaffsController(IStaffManagementService service) => _service = service;
 
     [HttpGet]
-    public async Task<ActionResult<ApiResponse<TeacherPagedResponse>>> GetTeachers(
-        [FromQuery] TeacherQuery query, CancellationToken cancellationToken) =>
-        ToActionResult(await _service.GetTeachersAsync(GetUserId(), query, cancellationToken));
+    public async Task<ActionResult<ApiResponse<StaffPagedResponse>>> GetStaffs(
+        [FromQuery] StaffQuery query, CancellationToken cancellationToken) =>
+        ToActionResult(await _service.GetStaffsAsync(GetUserId(), query, cancellationToken));
 
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<ApiResponse<TeacherDetailResponse>>> GetTeacher(
+    public async Task<ActionResult<ApiResponse<StaffDetailResponse>>> GetStaff(
         int id, CancellationToken cancellationToken) =>
-        ToActionResult(await _service.GetTeacherAsync(GetUserId(), id, cancellationToken));
+        ToActionResult(await _service.GetStaffAsync(GetUserId(), id, cancellationToken));
 
     [HttpPost]
-    public async Task<ActionResult<ApiResponse<TeacherMutationResponse>>> Create(
-        [FromBody] SaveTeacherRequest request, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<ApiResponse<StaffMutationResponse>>> Create(
+        [FromBody] SaveStaffRequest request, CancellationToken cancellationToken) =>
         ToActionResult(await _service.CreateAsync(GetUserId(), request, cancellationToken));
 
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<ApiResponse<TeacherMutationResponse>>> Update(
-        int id, [FromBody] SaveTeacherRequest request, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<ApiResponse<StaffMutationResponse>>> Update(
+        int id, [FromBody] SaveStaffRequest request, CancellationToken cancellationToken) =>
         ToActionResult(await _service.UpdateAsync(GetUserId(), id, request, cancellationToken));
 
     [HttpPatch("{id:int}/status")]
-    public async Task<ActionResult<ApiResponse<TeacherMutationResponse>>> UpdateStatus(
-        int id, [FromBody] TeacherStatusRequest request, CancellationToken cancellationToken) =>
+    public async Task<ActionResult<ApiResponse<StaffMutationResponse>>> UpdateStatus(
+        int id, [FromBody] StaffStatusRequest request, CancellationToken cancellationToken) =>
         ToActionResult(await _service.SetStatusAsync(GetUserId(), id, request.Status, cancellationToken));
 
     [HttpPost("{id:int}/reset-password")]
-    public async Task<ActionResult<ApiResponse<ResetTeacherPasswordResponse>>> ResetPassword(
+    public async Task<ActionResult<ApiResponse<ResetStaffPasswordResponse>>> ResetPassword(
         int id, CancellationToken cancellationToken) =>
         ToActionResult(await _service.ResetPasswordAsync(GetUserId(), id, cancellationToken));
 
     [HttpDelete("{id:int}")]
     public async Task<ActionResult<ApiResponse<bool>>> Delete(
         int id, CancellationToken cancellationToken) =>
-        ToActionResult(await _service.DeleteTeacherAsync(GetUserId(), id, cancellationToken));
+        ToActionResult(await _service.DeleteStaffAsync(GetUserId(), id, cancellationToken));
 
     [HttpPost("{id:int}/avatar")]
     [Consumes("multipart/form-data")]
@@ -81,4 +81,4 @@ public sealed class TeachersController : ControllerBase
             : BadRequest(new ApiResponse<T>(false, result.Message, default, result.Errors));
 }
 
-public sealed record TeacherStatusRequest(string Status);
+public sealed record StaffStatusRequest(string Status);
