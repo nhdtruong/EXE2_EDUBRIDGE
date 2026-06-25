@@ -1,8 +1,11 @@
 USE EduBridgeDB;
 GO
 -- Thêm cột Logo vào bảng Centers
-ALTER TABLE Centers
-ADD Logo NVARCHAR(500) NULL;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Centers]') AND name = 'Logo')
+BEGIN
+    ALTER TABLE Centers
+    ADD Logo NVARCHAR(500) NULL;
+END
 
 
 USE EduBridgeDB;
