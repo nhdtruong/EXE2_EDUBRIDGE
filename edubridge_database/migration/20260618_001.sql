@@ -37,10 +37,12 @@ ALTER TABLE Centers ADD ProjectId INT NULL;
 ALTER TABLE Centers ADD CONSTRAINT FK_Centers_Projects FOREIGN KEY (ProjectId) REFERENCES Projects(ProjectId);
 
 -- Update existing Centers to use Default Project
-UPDATE Centers SET ProjectId = @DefaultProjectId;
+DECLARE @SqlUpdate NVARCHAR(MAX) = N'UPDATE Centers SET ProjectId = @DefaultProjId';
+EXEC sp_executesql @SqlUpdate, N'@DefaultProjId INT', @DefaultProjId = @DefaultProjectId;
 
 -- Now make ProjectId NOT NULL
-ALTER TABLE Centers ALTER COLUMN ProjectId INT NOT NULL;
+DECLARE @SqlAlter NVARCHAR(MAX) = N'ALTER TABLE Centers ALTER COLUMN ProjectId INT NOT NULL';
+EXEC sp_executesql @SqlAlter;
 
 -- 4. Create Branches Table
 CREATE TABLE Branches (
