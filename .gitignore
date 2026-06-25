@@ -15,4 +15,5 @@ obj/
 artifacts/
 *.user
 *.log
-.vscode/Test-Migrations.ps1
+Test-Migrations.ps1
+.vscode/
