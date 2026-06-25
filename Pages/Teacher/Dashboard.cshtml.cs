@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Security.Claims;
-
 using EduBridge.Contracts.Dashboard;
 using EduBridge.Services.Dashboard;
 

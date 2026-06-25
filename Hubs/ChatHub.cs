@@ -3,11 +3,13 @@ using EduBridge.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Security.Claims;
 
 namespace EduBridge.Hubs
 {
-    [Authorize]
+    [Authorize(AuthenticationSchemes = CookieAuthenticationDefaults.AuthenticationScheme + "," + JwtBearerDefaults.AuthenticationScheme)]
     public class ChatHub : Hub
     {
         private readonly AppDbContext _context;
@@ -44,13 +46,7 @@ namespace EduBridge.Hubs
             if (senderUserId.Value == receiverUserId)
                 return;
 
-            var receiverExists = await _context.Users
-                .AsNoTracking()
-                .AnyAsync(u =>
-                    u.UserId == receiverUserId &&
-                    u.Status == "Active");
-
-            if (!receiverExists)
+            if (!await CanChatAsync(senderUserId.Value, receiverUserId))
                 return;
 
             var message = new Message
@@ -117,6 +113,28 @@ namespace EduBridge.Hubs
         private static string GetUserGroupName(int userId)
         {
             return $"user-{userId}";
+        }
+
+        private async Task<bool> CanChatAsync(int senderUserId, int receiverUserId)
+        {
+            var senderRole = await _context.Users.AsNoTracking()
+                .Where(u => u.UserId == senderUserId && u.Status == "Active" && !u.IsDeleted)
+                .Select(u => u.Role.RoleCode).FirstOrDefaultAsync();
+            var receiverRole = await _context.Users.AsNoTracking()
+                .Where(u => u.UserId == receiverUserId && u.Status == "Active" && !u.IsDeleted)
+                .Select(u => u.Role.RoleCode).FirstOrDefaultAsync();
+
+            if (senderRole == "PARENT" && receiverRole == "TEACHER")
+                return await _context.Enrollments.AnyAsync(e =>
+                    e.Student.ParentUserId == senderUserId && e.Status == "Đang học" &&
+                    e.Class.Teacher != null && e.Class.Teacher.UserId == receiverUserId);
+
+            if (senderRole == "TEACHER" && receiverRole == "PARENT")
+                return await _context.Enrollments.AnyAsync(e =>
+                    e.Student.ParentUserId == receiverUserId && e.Status == "Đang học" &&
+                    e.Class.Teacher != null && e.Class.Teacher.UserId == senderUserId);
+
+            return false;
         }
     }
 }
