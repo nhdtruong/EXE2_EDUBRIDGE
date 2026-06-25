@@ -39,6 +39,9 @@ namespace EduBridge.Pages
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             }
 
+            Response.Cookies.Delete("SupportCenterId");
+            Response.Cookies.Delete("CurrentBranchId");
+
             if (!ModelState.IsValid)
             {
                 ErrorMessage = "Vui lòng nhập đầy đủ thông tin đăng nhập.";
@@ -46,18 +49,10 @@ namespace EduBridge.Pages
             }
 
             var loginIdentifier = Input.Email.Trim();
-            var expectedRoleCode = MapRoleGroupToRoleCode(Input.RoleGroup);
-
-            if (expectedRoleCode == null)
-            {
-                ErrorMessage = "Vai trò đăng nhập không hợp lệ.";
-                return Page();
-            }
-
             var authenticationResult = await _authenticationService.AuthenticateAsync(
                 loginIdentifier,
                 Input.Password,
-                expectedRoleCode,
+                null,
                 cancellationToken);
 
             if (!authenticationResult.IsSuccess || authenticationResult.User == null)
@@ -73,7 +68,8 @@ namespace EduBridge.Pages
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role.RoleCode)
+                new Claim(ClaimTypes.Role, authenticationResult.PrimaryRole ?? "GUEST"),
+                new Claim("EduBridge:AvailableRoles", string.Join(",", authenticationResult.AvailableRoles ?? new List<string>()))
             };
 
             var identity = new ClaimsIdentity(
@@ -96,26 +92,18 @@ namespace EduBridge.Pages
 
             TempData["ToastMessage"] = "Đăng nhập thành công.";
 
-            return RedirectByRole(user.Role.RoleCode);
+            return RedirectByRole(authenticationResult.PrimaryRole ?? "GUEST");
         }
 
-        private static string? MapRoleGroupToRoleCode(string roleGroup)
-        {
-            return roleGroup?.Trim().ToUpperInvariant() switch
-            {
-                "ADMIN" => "OWNER",
-                "OWNER" => "OWNER",
-                "TEACHER" => "TEACHER",
-                "PARENT" => "PARENT",
-                _ => null
-            };
-        }
 
         private IActionResult RedirectByRole(string roleCode)
         {
             return roleCode.ToUpperInvariant() switch
             {
+                "SYSTEM_ADMIN" => RedirectToPage("/SystemAdmin/Centers"),
+                "PROJECT_ADMIN" => RedirectToPage("/SystemAdmin/Centers"),
                 "OWNER" => RedirectToPage("/AdminDashboard"),
+                "BRANCH_MANAGER" => RedirectToPage("/AdminDashboard"),
                 "TEACHER" => RedirectToPage("/Teacher/Dashboard"),
                 "PARENT" => RedirectToPage("/Messages"),
                 _ => RedirectToPage("/Index")
@@ -132,10 +120,6 @@ namespace EduBridge.Pages
             [MinLength(6, ErrorMessage = "Mật khẩu phải có ít nhất 6 ký tự.")]
             [MaxLength(100)]
             public string Password { get; set; } = string.Empty;
-
-            [Required]
-            [MaxLength(20)]
-            public string RoleGroup { get; set; } = string.Empty;
         }
     }
 }

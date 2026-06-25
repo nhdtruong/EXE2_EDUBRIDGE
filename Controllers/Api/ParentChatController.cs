@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using EduBridge.Contracts.Classes;
 using EduBridge.Models.DTOs.ParentApp;
 using EduBridge.Services.ParentApp;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using EduBridge.Services.Storage;
-using System.IO;
 
 namespace EduBridge.Controllers.Api;
 

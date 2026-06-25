@@ -30,15 +30,8 @@
         </div>
 
         <div class="p-6 pt-0">
-            <div class="flex p-1 space-x-1 bg-gray-100 rounded-lg mb-6">
-                <button id="btn-admin" onclick="switchTab('admin')" class="w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all">Chủ trung tâm</button>
-                <button id="btn-teacher" onclick="switchTab('teacher')" class="w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all">Giáo viên</button>
-            </div>
-
-            <form id="form-admin" method="post" class="space-y-4">
+            <form id="form-login" method="post" class="space-y-4">
                 @Html.AntiForgeryToken()
-
-                <input type="hidden" name="Input.RoleGroup" value="Admin" />
 
                 <input name="Input.Email"
                        type="text"
@@ -53,28 +46,7 @@
                        class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
 
                 <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                    Đăng nhập với tư cách Chủ trung tâm
-                </button>
-            </form>
-
-            <form id="form-teacher" method="post" class="space-y-4 hidden">
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" name="Input.RoleGroup" value="Teacher" />
-                <input name="Input.Email"
-                       type="text"
-                       placeholder="Email hoặc số điện thoại"
-                       required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
-
-                <input name="Input.Password"
-                       type="password"
-                       placeholder="Nhập mật khẩu"
-                       required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
-
-                <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                    Đăng nhập với tư cách Giáo viên
+                    Đăng nhập
                 </button>
             </form>
 
@@ -108,22 +80,6 @@
         showLoginToast(logoutSuccessMessage || loginSuccessMessage, true);
         showLoginToast(loginErrorMessage, false);
 
-        function switchTab(tab) {
-            const isAdmin = tab === 'admin';
-            document.getElementById('form-admin').classList.toggle('hidden', !isAdmin);
-            document.getElementById('form-teacher').classList.toggle('hidden', isAdmin);
-            
-            const btnAdmin = document.getElementById('btn-admin');
-            const btnTeacher = document.getElementById('btn-teacher');
-            
-            if(isAdmin) {
-                btnAdmin.className = "w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all";
-                btnTeacher.className = "w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all";
-            } else {
-                btnTeacher.className = "w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all";
-                btnAdmin.className = "w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all";
-            }
-        }
     </script>
 </body>
 </html>

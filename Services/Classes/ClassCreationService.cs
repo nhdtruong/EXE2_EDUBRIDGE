@@ -3,6 +3,7 @@ using EduBridge.Contracts.Classes;
 using EduBridge.Data;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Classes;
 
@@ -11,15 +12,18 @@ public sealed class ClassCreationService : IClassCreationService
     private readonly AppDbContext _context;
     private readonly IClassLessonPlanner _lessonPlanner;
     private readonly ILogger<ClassCreationService> _logger;
+    private readonly ICurrentCenterService _currentCenterService;
 
     public ClassCreationService(
         AppDbContext context,
         IClassLessonPlanner lessonPlanner,
-        ILogger<ClassCreationService> logger)
+        ILogger<ClassCreationService> logger,
+        ICurrentCenterService currentCenterService)
     {
         _context = context;
         _lessonPlanner = lessonPlanner;
         _logger = logger;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<ClassCreateOptionsResponse>> GetCreateOptionsAsync(
@@ -468,18 +472,11 @@ public sealed class ClassCreationService : IClassCreationService
     private async Task<bool> CanManageCenterAsync(
         int ownerUserId,
         int centerId,
-        CancellationToken cancellationToken) =>
-        await _context.Centers.AsNoTracking().AnyAsync(
-            center =>
-                center.CenterId == centerId &&
-                center.Status == "Active" &&
-                (center.OwnerUserId == ownerUserId ||
-                 _context.CenterUsers.Any(cu =>
-                     cu.CenterId == centerId &&
-                     cu.UserId == ownerUserId &&
-                     cu.UserType == "OWNER" &&
-                     cu.Status == "Active")),
-            cancellationToken);
+        CancellationToken cancellationToken)
+    {
+        var currentCenterId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
+        return currentCenterId == centerId;
+    }
 
     private async Task<string> GenerateClassCodeAsync(int centerId, CancellationToken cancellationToken)
     {

@@ -17,6 +17,8 @@ public partial class CenterUser
 
     public string Status { get; set; } = null!;
 
+    public string? StaffCode { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;

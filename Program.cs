@@ -15,7 +15,7 @@ using EduBridge.Services.Parents;
 using EduBridge.Services.Rooms;
 using EduBridge.Services.Shifts;
 using EduBridge.Services.Students;
-using EduBridge.Services.Teachers;
+using EduBridge.Services.Staffs;
 using EduBridge.Services.Settings;
 using EduBridge.Services.Storage;
 using Microsoft.IdentityModel.Tokens;
@@ -46,7 +46,7 @@ namespace EduBridge
             builder.Services.AddScoped<IShiftManagementService, ShiftManagementService>();
             builder.Services.AddScoped<IClassEnrollmentService, ClassEnrollmentService>();
             builder.Services.AddScoped<IParentManagementService, ParentManagementService>();
-            builder.Services.AddScoped<EduBridge.Services.Teachers.ITeacherManagementService, EduBridge.Services.Teachers.TeacherManagementService>();
+            builder.Services.AddScoped<EduBridge.Services.Staffs.IStaffManagementService, EduBridge.Services.Staffs.StaffManagementService>();
             builder.Services.AddScoped<EduBridge.Services.Students.IStudentManagementService, EduBridge.Services.Students.StudentManagementService>();
             builder.Services.AddScoped<EduBridge.Services.Courses.ICourseManagementService, EduBridge.Services.Courses.CourseManagementService>();
             builder.Services.AddScoped<EduBridge.Services.Dashboard.IDashboardService, EduBridge.Services.Dashboard.DashboardService>();
@@ -65,8 +65,13 @@ namespace EduBridge
             builder.Services.AddScoped<IReceiptService, ReceiptService>();
             builder.Services.AddScoped<IFinanceSummaryService, FinanceSummaryService>();
             builder.Services.AddScoped<ICenterSettingsService, CenterSettingsService>();
+            builder.Services.AddScoped<EduBridge.Services.SystemAdmin.ISystemAdminCenterService, EduBridge.Services.SystemAdmin.SystemAdminCenterService>();
             builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
             builder.Services.AddScoped<EduBridge.Services.ParentApp.IParentAppService, EduBridge.Services.ParentApp.ParentAppService>();
+            
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<ICurrentCenterService, CurrentCenterService>();
+            builder.Services.AddScoped<ICurrentBranchService, CurrentCenterService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)
@@ -101,8 +106,12 @@ namespace EduBridge
                 options.MultipartBodyLengthLimit = 20 * 1024 * 1024;
             });
 
+            // Đăng ký DataProtectionDbContext
+            builder.Services.AddDbContext<DataProtectionDbContext>(options =>
+                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
             builder.Services.AddDataProtection()
-                .PersistKeysToDbContext<AppDbContext>()
+                .PersistKeysToDbContext<DataProtectionDbContext>()
                 .SetApplicationName("EduBridge");
 
             builder.Services.AddControllers().AddJsonOptions(options =>
@@ -160,6 +169,7 @@ namespace EduBridge
                 options.Conventions.AuthorizePage("/AdminTeachers", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminFinance", "AdminOnly");
                 options.Conventions.AuthorizePage("/AdminSettings", "AdminOnly");
+                options.Conventions.AuthorizeFolder("/SystemAdmin", "SystemAdminOnly");
                 options.Conventions.AuthorizeFolder("/Teacher", "TeacherOnly");
             });
 
@@ -207,7 +217,13 @@ namespace EduBridge
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminOnly", policy =>
-                    policy.RequireRole("OWNER"));
+                    policy.RequireRole("OWNER", "SYSTEM_ADMIN", "PROJECT_ADMIN"));
+
+                options.AddPolicy("SystemAdminOnly", policy =>
+                    policy.RequireRole("SYSTEM_ADMIN"));
+
+                options.AddPolicy("ProjectAdminOnly", policy =>
+                    policy.RequireRole("PROJECT_ADMIN", "SYSTEM_ADMIN"));
 
                 options.AddPolicy("TeacherOnly", policy =>
                     policy.RequireRole("TEACHER"));
@@ -358,3 +374,4 @@ namespace EduBridge
         }
     }
 }
+

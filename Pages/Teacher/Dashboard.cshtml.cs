@@ -35,7 +35,7 @@ namespace EduBridge.Pages.Teacher
                 return RedirectToPage("/Login");
 
             var result = await _dashboardService.GetDashboardSummaryAsync(userId, cancellationToken);
-
+            
             if (!result.IsSuccess || result.Value == null)
             {
                 return RedirectToPage("/Login");

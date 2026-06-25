@@ -11,6 +11,8 @@ public interface IAccountAuthenticationService
         string password,
         string? expectedRoleCode,
         CancellationToken cancellationToken = default);
+
+    Task<List<string>> GetAvailableRolesAsync(int userId, CancellationToken cancellationToken = default);
 }
 
 public sealed class AccountAuthenticationService : IAccountAuthenticationService
@@ -88,15 +90,23 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
             return AccountAuthenticationResult.Fail("Email của tài khoản chưa được xác nhận.");
         }
 
-        if (!string.IsNullOrWhiteSpace(expectedRoleCode) &&
-            !string.Equals(user.Role.RoleCode, expectedRoleCode, StringComparison.OrdinalIgnoreCase))
-        {
-            return AccountAuthenticationResult.Fail("Tài khoản không thuộc vai trò đăng nhập đã chọn.");
-        }
-
-        if (!await HasActiveMembershipAsync(user.UserId, user.Role.RoleCode, cancellationToken))
+        var availableRoles = await GetAvailableRolesAsync(user.UserId, cancellationToken);
+        
+        if (availableRoles.Count == 0)
         {
             return AccountAuthenticationResult.Fail("Tài khoản không còn quyền hoạt động trong trung tâm.");
+        }
+
+        string primaryRole = availableRoles.Contains("SYSTEM_ADMIN") ? "SYSTEM_ADMIN" :
+                             availableRoles.Contains("PROJECT_ADMIN") ? "PROJECT_ADMIN" :
+                             availableRoles.Contains("OWNER") ? "OWNER" :
+                             availableRoles.Contains("BRANCH_MANAGER") ? "BRANCH_MANAGER" :
+                             availableRoles.Contains("TEACHER") ? "TEACHER" :
+                             availableRoles.Contains("PARENT") ? "PARENT" : availableRoles.First();
+
+        if (!string.IsNullOrWhiteSpace(expectedRoleCode) && !availableRoles.Contains(expectedRoleCode.ToUpperInvariant()))
+        {
+            return AccountAuthenticationResult.Fail("Tài khoản không thuộc vai trò đăng nhập đã chọn.");
         }
 
         try
@@ -120,7 +130,49 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
         user.LastLoginAt = EduBridge.Helpers.TimeHelper.GetVietnamNow();
         await _context.SaveChangesAsync(cancellationToken);
 
-        return AccountAuthenticationResult.Success(user);
+        return AccountAuthenticationResult.Success(user, availableRoles, primaryRole);
+    }
+
+    public async Task<List<string>> GetAvailableRolesAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var roles = new List<string>();
+
+        var userRole = await _context.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .Where(u => u.UserId == userId)
+            .Select(u => u.Role.RoleCode)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (userRole == "SYSTEM_ADMIN" || userRole == "PROJECT_ADMIN" || userRole == "BRANCH_MANAGER")
+        {
+            roles.Add(userRole);
+        }
+
+        var isOwner = await _context.CenterUsers
+            .AsNoTracking()
+            .AnyAsync(cu => cu.UserId == userId && cu.UserType == "OWNER" && cu.Status == "Active" && cu.Center.Status == "Active", cancellationToken) ||
+            await _context.Centers
+            .AsNoTracking()
+            .AnyAsync(c => c.OwnerUserId == userId && c.Status == "Active", cancellationToken);
+
+        if (isOwner) roles.Add("OWNER");
+
+        var isTeacher = await _context.Teachers
+            .AsNoTracking()
+            .AnyAsync(t => t.UserId == userId && !t.IsDeleted && t.Status == "Active" &&
+                _context.CenterUsers.Any(cu => cu.CenterId == t.CenterId && cu.UserId == userId && cu.UserType == "TEACHER" && cu.Status == "Active" && cu.Center.Status == "Active"),
+                cancellationToken);
+
+        if (isTeacher) roles.Add("TEACHER");
+
+        var isParent = await _context.CenterUsers
+            .AsNoTracking()
+            .AnyAsync(cu => cu.UserId == userId && cu.UserType == "PARENT" && cu.Status == "Active" && cu.Center.Status == "Active", cancellationToken);
+
+        if (isParent) roles.Add("PARENT");
+
+        return roles;
     }
 
     private async Task<bool> HasActiveMembershipAsync(
@@ -129,6 +181,14 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
         CancellationToken cancellationToken)
     {
         var normalizedRoleCode = roleCode.ToUpperInvariant();
+
+        if (normalizedRoleCode == "SYSTEM_ADMIN" || normalizedRoleCode == "PROJECT_ADMIN" || normalizedRoleCode == "BRANCH_MANAGER")
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .Include(u => u.Role)
+                .AnyAsync(u => u.UserId == userId && !u.IsDeleted && u.Status == "Active" && u.Role.RoleCode == normalizedRoleCode, cancellationToken);
+        }
 
         if (normalizedRoleCode == "OWNER")
         {
@@ -157,7 +217,8 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
                         cu.CenterId == t.CenterId &&
                         cu.UserId == userId &&
                         cu.UserType == "TEACHER" &&
-                        cu.Status == "Active"),
+                        cu.Status == "Active" &&
+                        cu.Center.Status == "Active"),
                     cancellationToken);
         }
 
@@ -196,9 +257,11 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
 public sealed record AccountAuthenticationResult(
     bool IsSuccess,
     User? User,
+    List<string>? AvailableRoles,
+    string? PrimaryRole,
     string? ErrorMessage)
 {
-    public static AccountAuthenticationResult Success(User user) => new(true, user, null);
+    public static AccountAuthenticationResult Success(User user, List<string> availableRoles, string primaryRole) => new(true, user, availableRoles, primaryRole, null);
 
-    public static AccountAuthenticationResult Fail(string errorMessage) => new(false, null, errorMessage);
+    public static AccountAuthenticationResult Fail(string errorMessage) => new(false, null, null, null, errorMessage);
 }

@@ -5,6 +5,7 @@ using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Services.Finance;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Classes;
 
@@ -13,12 +14,14 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
     private readonly AppDbContext _context;
     private readonly ILogger<ClassEnrollmentService> _logger;
     private readonly IInvoiceService _invoiceService;
+    private readonly ICurrentCenterService _currentCenterService;
 
-    public ClassEnrollmentService(AppDbContext context, ILogger<ClassEnrollmentService> logger, IInvoiceService invoiceService)
+    public ClassEnrollmentService(AppDbContext context, ILogger<ClassEnrollmentService> logger, IInvoiceService invoiceService, ICurrentCenterService currentCenterService)
     {
         _context = context;
         _logger = logger;
         _invoiceService = invoiceService;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<IReadOnlyList<EnrolledStudentResponse>>> GetEnrolledStudentsAsync(
@@ -42,7 +45,8 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
     public async Task<ClassOperationResult<IReadOnlyList<AvailableStudentResponse>>> GetAvailableStudentsAsync(
         int ownerUserId, int classId, string? keyword = null, CancellationToken cancellationToken = default)
     {
-        var classInfo = await ManagedClasses(ownerUserId)
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        var classInfo = await managedClasses
             .Where(c => c.ClassId == classId)
             .Select(c => new { c.CenterId, c.Status })
             .FirstOrDefaultAsync(cancellationToken);
@@ -79,7 +83,8 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
         try
         {
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
-            var cls = await ManagedClasses(ownerUserId).FirstOrDefaultAsync(c => c.ClassId == classId, cancellationToken);
+            var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+            var cls = await managedClasses.FirstOrDefaultAsync(c => c.ClassId == classId, cancellationToken);
             if (cls == null) return Failure<EnrollStudentsResponse>("Không tìm thấy lớp học hoặc bạn không có quyền thao tác.");
             if (cls.Status != "Active") return Failure<EnrollStudentsResponse>("Chỉ có thể thêm học sinh vào lớp đang hoạt động.", "ClassId");
 
@@ -214,14 +219,17 @@ public sealed class ClassEnrollmentService : IClassEnrollmentService
         return ClassOperationResult<bool>.Success(true, successMessage);
     }
 
-    private IQueryable<Class> ManagedClasses(int ownerUserId) =>
-        _context.Classes.Where(c =>
-            !c.IsDeleted &&
-            (c.Center.OwnerUserId == ownerUserId ||
-             _context.CenterUsers.Any(cu => cu.CenterId == c.CenterId && cu.UserId == ownerUserId && cu.UserType == "OWNER" && cu.Status == "Active")));
+    private async Task<IQueryable<Class>> ManagedClassesAsync(int ownerUserId, CancellationToken cancellationToken)
+    {
+        var centerId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
+        return _context.Classes.Where(c => !c.IsDeleted && c.CenterId == centerId);
+    }
 
-    private Task<bool> CanManageClassAsync(int ownerUserId, int classId, CancellationToken cancellationToken) =>
-        ManagedClasses(ownerUserId).AnyAsync(c => c.ClassId == classId, cancellationToken);
+    private async Task<bool> CanManageClassAsync(int ownerUserId, int classId, CancellationToken cancellationToken)
+    {
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        return await managedClasses.AnyAsync(c => c.ClassId == classId, cancellationToken);
+    }
 
     private static void AddHistory(Enrollment enrollment, string? oldStatus, string newStatus, int userId, DateTime changedAt, string? note) =>
         enrollment.EnrollmentHistories.Add(new EnrollmentHistory
