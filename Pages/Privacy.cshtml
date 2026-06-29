@@ -1,8 +1,259 @@
-﻿@page
+@page "/privacy-policy"
 @model PrivacyModel
 @{
-    ViewData["Title"] = "Privacy Policy";
+    Layout = null;
+    ViewData["Title"] = "Chính sách quyền riêng tư";
 }
-<h1>@ViewData["Title"]</h1>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EduBridge</title>
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #475569;
+            --border: #dbe3f0;
+            --primary: #0f3d8a;
+            --accent: #0ea5a4;
+        }
 
-<p>Use this page to detail your site's privacy policy.</p>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: linear-gradient(180deg, #eef4ff 0%, var(--bg) 100%);
+            color: var(--text);
+            line-height: 1.65;
+        }
+
+        .container {
+            width: min(960px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 32px 0 48px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary), #1d70d6 58%, var(--accent));
+            color: #fff;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 50px rgba(15, 61, 138, 0.18);
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        .brand-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.16);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+        }
+
+        .hero h1 {
+            margin: 0 0 12px;
+            font-size: clamp(30px, 5vw, 42px);
+            line-height: 1.15;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 700px;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 16px;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .meta span {
+            background: rgba(255, 255, 255, 0.16);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 14px;
+        }
+
+        .card {
+            margin-top: 24px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+        }
+
+        h2 {
+            margin: 0 0 14px;
+            color: var(--primary);
+            font-size: 22px;
+        }
+
+        p {
+            margin: 0 0 14px;
+            color: var(--muted);
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 20px;
+            color: var(--muted);
+        }
+
+        li + li {
+            margin-top: 10px;
+        }
+
+        .footer {
+            margin-top: 24px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        a {
+            color: #1d4ed8;
+        }
+
+        @@media (max-width: 640px) {
+            .container {
+                width: min(100% - 20px, 960px);
+                padding-top: 20px;
+                padding-bottom: 28px;
+            }
+
+            .hero,
+            .card {
+                padding: 20px;
+                border-radius: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="hero">
+            <div class="brand">
+                <span class="brand-badge">E</span>
+                <span>EduBridge Parent App</span>
+            </div>
+            <h1>Chính sách quyền riêng tư</h1>
+            <p>
+                Trang này mô tả cách EduBridge thu thập, sử dụng, lưu trữ và bảo vệ dữ liệu khi phụ huynh sử dụng ứng dụng và các dịch vụ liên quan.
+            </p>
+            <div class="meta">
+                <span>Cập nhật lần cuối: 17/06/2026</span>
+                <span>Áp dụng cho: EduBridge Parent App</span>
+                <span>Website: edubridge.com.vn</span>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>1. Phạm vi áp dụng</h2>
+            <p>
+                Chính sách này áp dụng cho phụ huynh sử dụng EduBridge để theo dõi học tập, điểm danh, bài tập, thông báo, học phí và trao đổi với giáo viên hoặc trung tâm.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>2. Dữ liệu chúng tôi có thể thu thập</h2>
+            <ul>
+                <li>Thông tin tài khoản như họ tên, số điện thoại, email và vai trò phụ huynh.</li>
+                <li>Thông tin liên kết học sinh như mã học sinh, lớp học, lịch học, điểm danh, bài tập, điểm số và nhận xét học tập.</li>
+                <li>Dữ liệu tương tác như nội dung tin nhắn, thông báo đã nhận, yêu cầu xin nghỉ và phản hồi hỗ trợ.</li>
+                <li>Dữ liệu kỹ thuật như thiết bị, nhật ký lỗi cơ bản, địa chỉ IP gần đúng và mã thông báo đẩy để gửi thông báo.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>3. Mục đích sử dụng dữ liệu</h2>
+            <ul>
+                <li>Cung cấp chức năng đăng nhập, xác thực và khôi phục phiên làm việc.</li>
+                <li>Hiển thị thông tin học tập, lớp học, điểm danh, bài tập, học phí và thông báo đúng với học sinh thuộc quyền phụ huynh.</li>
+                <li>Cho phép phụ huynh liên hệ với giáo viên, gửi yêu cầu xin nghỉ và nhận cập nhật từ trung tâm.</li>
+                <li>Cải thiện tính ổn định, hiệu năng, bảo mật và khả năng hỗ trợ vận hành hệ thống.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>4. Chia sẻ dữ liệu</h2>
+            <p>
+                EduBridge không bán dữ liệu cá nhân của người dùng. Dữ liệu chỉ được chia sẻ trong phạm vi cần thiết để vận hành hệ thống giáo dục, bao gồm trung tâm, giáo viên phụ trách, nhà cung cấp hạ tầng kỹ thuật hoặc cơ quan có thẩm quyền khi pháp luật yêu cầu.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>5. Lưu trữ và bảo mật</h2>
+            <ul>
+                <li>Dữ liệu được lưu trữ trên hạ tầng máy chủ phục vụ vận hành hệ thống EduBridge.</li>
+                <li>Chúng tôi áp dụng các biện pháp hợp lý về phân quyền truy cập, xác thực, nhật ký hệ thống và bảo vệ dữ liệu truyền tải.</li>
+                <li>Mặc dù đã có biện pháp bảo mật phù hợp, không có hệ thống nào đảm bảo an toàn tuyệt đối trước mọi rủi ro kỹ thuật hoặc hành vi truy cập trái phép.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>6. Quyền của người dùng</h2>
+            <ul>
+                <li>Yêu cầu xem lại thông tin tài khoản và dữ liệu liên quan đến mình trong phạm vi hệ thống cho phép.</li>
+                <li>Yêu cầu cập nhật thông tin không chính xác thông qua trung tâm hoặc bộ phận hỗ trợ.</li>
+                <li>Yêu cầu ngừng nhận một số thông báo không bắt buộc, nếu chức năng đó được hỗ trợ.</li>
+            </ul>
+        </section>
+
+        <section class="card">
+            <h2>7. Dữ liệu của trẻ em</h2>
+            <p>
+                EduBridge phục vụ nhu cầu quản lý giáo dục giữa phụ huynh, học sinh và trung tâm. Thông tin học sinh được hiển thị cho phụ huynh có liên kết hợp lệ trong hệ thống và chỉ nhằm mục đích học tập, chăm sóc và vận hành lớp học.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>8. Cookie và công nghệ tương tự</h2>
+            <p>
+                Website và các dịch vụ liên quan có thể sử dụng cookie hoặc cơ chế lưu phiên tương đương để duy trì đăng nhập, cải thiện trải nghiệm và bảo đảm vận hành bình thường của hệ thống.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>9. Thay đổi chính sách</h2>
+            <p>
+                Chúng tôi có thể cập nhật chính sách này khi tính năng, hạ tầng hoặc yêu cầu pháp lý thay đổi. Phiên bản mới nhất sẽ được công bố tại trang này.
+            </p>
+        </section>
+
+        <section class="card">
+            <h2>10. Liên hệ</h2>
+            <p>
+                Nếu bạn cần hỗ trợ hoặc có câu hỏi liên quan đến quyền riêng tư, vui lòng liên hệ qua website
+                <a href="https://edubridge.com.vn">https://edubridge.com.vn</a>
+                hoặc email hỗ trợ của trung tâm đang vận hành tài khoản EduBridge của bạn.
+            </p>
+        </section>
+
+        <div class="footer">
+            EduBridge © 2026 - Chính sách quyền riêng tư cho ứng dụng phụ huynh
+        </div>
+    </div>
+</body>
+</html>

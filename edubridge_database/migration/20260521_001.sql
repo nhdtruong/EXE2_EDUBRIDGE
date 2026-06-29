@@ -13,39 +13,41 @@ WHERE ClassCode = 'CLS001';
 
 IF @ClassId IS NULL
 BEGIN
-    THROW 50001, 'Không tìm thấy lớp CLS001.', 1;
+    PRINT N'Không tìm thấy lớp CLS001. Bỏ qua phần seed Lessons/Attendance mẫu trong migration 20260521_001.';
 END;
+ELSE
+BEGIN
+    DECLARE @LessonDates TABLE
+    (
+        LessonDate DATE,
+        LessonTitle NVARCHAR(200)
+    );
 
-DECLARE @LessonDates TABLE
-(
-    LessonDate DATE,
-    LessonTitle NVARCHAR(200)
-);
+    INSERT INTO @LessonDates (LessonDate, LessonTitle)
+    VALUES
+    ('2026-05-15', N'Buổi học ngày 15/05'),
+    ('2026-05-16', N'Buổi học ngày 16/05'),
+    ('2026-05-17', N'Buổi học ngày 17/05'),
+    ('2026-05-18', N'Buổi học ngày 18/05'),
+    ('2026-05-19', N'Buổi học ngày 19/05'),
+    ('2026-05-20', N'Buổi học ngày 20/05'),
+    ('2026-05-21', N'Buổi học ngày 21/05');
 
-INSERT INTO @LessonDates (LessonDate, LessonTitle)
-VALUES
-('2026-05-15', N'Buổi học ngày 15/05'),
-('2026-05-16', N'Buổi học ngày 16/05'),
-('2026-05-17', N'Buổi học ngày 17/05'),
-('2026-05-18', N'Buổi học ngày 18/05'),
-('2026-05-19', N'Buổi học ngày 19/05'),
-('2026-05-20', N'Buổi học ngày 20/05'),
-('2026-05-21', N'Buổi học ngày 21/05');
-
-INSERT INTO Lessons (ClassId, LessonTitle, LessonDate, LessonContent)
-SELECT
-    @ClassId,
-    d.LessonTitle,
-    d.LessonDate,
-    N'Dữ liệu test biểu đồ điểm danh'
-FROM @LessonDates d
-WHERE NOT EXISTS
-(
-    SELECT 1
-    FROM Lessons l
-    WHERE l.ClassId = @ClassId
-      AND l.LessonDate = d.LessonDate
-);
+    INSERT INTO Lessons (ClassId, LessonTitle, LessonDate, LessonContent)
+    SELECT
+        @ClassId,
+        d.LessonTitle,
+        d.LessonDate,
+        N'Dữ liệu test biểu đồ điểm danh'
+    FROM @LessonDates d
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM Lessons l
+        WHERE l.ClassId = @ClassId
+          AND l.LessonDate = d.LessonDate
+    );
+END;
 GO
 
 USE EduBridgeDB;
@@ -57,47 +59,49 @@ SELECT @ClassId = ClassId
 FROM Classes
 WHERE ClassCode = 'CLS001';
 
-;WITH TargetLessons AS
-(
-    SELECT LessonId, LessonDate
-    FROM Lessons
-    WHERE ClassId = @ClassId
-      AND LessonDate BETWEEN '2026-05-15' AND '2026-05-21'
-),
-TargetStudents AS
-(
-    SELECT StudentId, StudentCode
-    FROM Students
-    WHERE StudentCode IN ('STD001', 'STD002')
-),
-AttendanceSeed AS
-(
-    SELECT l.LessonId, s.StudentId,
-           CASE
-               WHEN l.LessonDate IN ('2026-05-15', '2026-05-18', '2026-05-19') THEN N'Có mặt'
-               WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD001' THEN N'Có mặt'
-               WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD002' THEN N'Vắng'
-               WHEN l.LessonDate IN ('2026-05-17', '2026-05-21') THEN N'Có mặt'
-               ELSE N'Có mặt'
-           END AS Status
-    FROM TargetLessons l
-    CROSS JOIN TargetStudents s
-)
-INSERT INTO Attendance (LessonId, StudentId, Status)
-SELECT
-    a.LessonId,
-    a.StudentId,
-    a.Status
-FROM AttendanceSeed a
-WHERE NOT EXISTS
-(
-    SELECT 1
-    FROM Attendance existing
-    WHERE existing.LessonId = a.LessonId
-      AND existing.StudentId = a.StudentId
-);
+IF @ClassId IS NOT NULL
+BEGIN
+    ;WITH TargetLessons AS
+    (
+        SELECT LessonId, LessonDate
+        FROM Lessons
+        WHERE ClassId = @ClassId
+          AND LessonDate BETWEEN '2026-05-15' AND '2026-05-21'
+    ),
+    TargetStudents AS
+    (
+        SELECT StudentId, StudentCode
+        FROM Students
+        WHERE StudentCode IN ('STD001', 'STD002')
+    ),
+    AttendanceSeed AS
+    (
+        SELECT l.LessonId, s.StudentId,
+               CASE
+                   WHEN l.LessonDate IN ('2026-05-15', '2026-05-18', '2026-05-19') THEN N'Có mặt'
+                   WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD001' THEN N'Có mặt'
+                   WHEN l.LessonDate IN ('2026-05-16', '2026-05-20') AND s.StudentCode = 'STD002' THEN N'Vắng'
+                   WHEN l.LessonDate IN ('2026-05-17', '2026-05-21') THEN N'Có mặt'
+                   ELSE N'Có mặt'
+               END AS Status
+        FROM TargetLessons l
+        CROSS JOIN TargetStudents s
+    )
+    INSERT INTO Attendance (LessonId, StudentId, Status)
+    SELECT
+        a.LessonId,
+        a.StudentId,
+        a.Status
+    FROM AttendanceSeed a
+    WHERE NOT EXISTS
+    (
+        SELECT 1
+        FROM Attendance existing
+        WHERE existing.LessonId = a.LessonId
+          AND existing.StudentId = a.StudentId
+    );
+END;
 GO
-
 
 /* =========================================================
    THÊM BẢNG INVOICES & PAYMENTS
@@ -105,59 +109,110 @@ GO
 USE EduBridgeDB;
 GO
 
-CREATE TABLE Invoices (
-    InvoiceId INT IDENTITY(1,1) PRIMARY KEY,
-    StudentId INT NOT NULL,
-    ClassId INT NOT NULL,
-    Amount DECIMAL(18,2) NOT NULL,
-    DiscountAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
-    FinalAmount AS (Amount - DiscountAmount) PERSISTED,
-    DueDate DATE NULL,
-    Status NVARCHAR(20) NOT NULL DEFAULT N'Unpaid',
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+IF OBJECT_ID(N'dbo.Invoices', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Invoices (
+        InvoiceId INT IDENTITY(1,1) PRIMARY KEY,
+        StudentId INT NOT NULL,
+        ClassId INT NOT NULL,
+        Amount DECIMAL(18,2) NOT NULL,
+        DiscountAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
+        FinalAmount AS (Amount - DiscountAmount) PERSISTED,
+        DueDate DATE NULL,
+        Status NVARCHAR(20) NOT NULL DEFAULT N'Unpaid',
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
 
-    CONSTRAINT FK_Invoices_Students
-        FOREIGN KEY (StudentId) REFERENCES Students(StudentId),
+        CONSTRAINT FK_Invoices_Students
+            FOREIGN KEY (StudentId) REFERENCES Students(StudentId),
 
-    CONSTRAINT FK_Invoices_Classes
-        FOREIGN KEY (ClassId) REFERENCES Classes(ClassId),
+        CONSTRAINT FK_Invoices_Classes
+            FOREIGN KEY (ClassId) REFERENCES Classes(ClassId),
 
-    CONSTRAINT CK_Invoices_Status
-        CHECK (Status IN (N'Unpaid', N'Partial', N'Paid', N'Cancelled'))
-);
+        CONSTRAINT CK_Invoices_Status
+            CHECK (Status IN (N'Unpaid', N'Partial', N'Paid', N'Cancelled'))
+    );
+END;
 
-CREATE TABLE Payments (
-    PaymentId INT IDENTITY(1,1) PRIMARY KEY,
-    InvoiceId INT NOT NULL,
-    Amount DECIMAL(18,2) NOT NULL,
-    PaidAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    PaymentMethod NVARCHAR(30) NULL,
-    Note NVARCHAR(255) NULL,
+IF OBJECT_ID(N'dbo.Payments', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Payments (
+        PaymentId INT IDENTITY(1,1) PRIMARY KEY,
+        InvoiceId INT NOT NULL,
+        Amount DECIMAL(18,2) NOT NULL,
+        PaidAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+        PaymentMethod NVARCHAR(30) NULL,
+        Note NVARCHAR(255) NULL,
 
-    CONSTRAINT FK_Payments_Invoices
-        FOREIGN KEY (InvoiceId) REFERENCES Invoices(InvoiceId),
+        CONSTRAINT FK_Payments_Invoices
+            FOREIGN KEY (InvoiceId) REFERENCES dbo.Invoices(InvoiceId),
 
-    CONSTRAINT CK_Payments_Amount
-        CHECK (Amount > 0)
-);
+        CONSTRAINT CK_Payments_Amount
+            CHECK (Amount > 0)
+    );
+END;
 
-CREATE INDEX IX_Invoices_StudentId ON Invoices(StudentId);
-CREATE INDEX IX_Invoices_ClassId ON Invoices(ClassId);
-CREATE INDEX IX_Invoices_Status ON Invoices(Status);
-CREATE INDEX IX_Payments_InvoiceId ON Payments(InvoiceId);
-CREATE INDEX IX_Payments_PaidAt ON Payments(PaidAt);
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Invoices')
+      AND name = N'IX_Invoices_StudentId'
+)
+BEGIN
+    CREATE INDEX IX_Invoices_StudentId ON dbo.Invoices(StudentId);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Invoices')
+      AND name = N'IX_Invoices_ClassId'
+)
+BEGIN
+    CREATE INDEX IX_Invoices_ClassId ON dbo.Invoices(ClassId);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Invoices')
+      AND name = N'IX_Invoices_Status'
+)
+BEGIN
+    CREATE INDEX IX_Invoices_Status ON dbo.Invoices(Status);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Payments')
+      AND name = N'IX_Payments_InvoiceId'
+)
+BEGIN
+    CREATE INDEX IX_Payments_InvoiceId ON dbo.Payments(InvoiceId);
+END;
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes
+    WHERE object_id = OBJECT_ID(N'dbo.Payments')
+      AND name = N'IX_Payments_PaidAt'
+)
+BEGIN
+    CREATE INDEX IX_Payments_PaidAt ON dbo.Payments(PaidAt);
+END;
 GO
 
 
-CREATE VIEW vw_RevenueByPayment AS
+IF OBJECT_ID(N'dbo.vw_RevenueByPayment', N'V') IS NOT NULL
+BEGIN
+    DROP VIEW dbo.vw_RevenueByPayment;
+END;
+GO
+
+CREATE VIEW dbo.vw_RevenueByPayment AS
 SELECT
     c.CenterId,
     CAST(p.PaidAt AS DATE) AS PaidDate,
     YEAR(p.PaidAt) AS PaidYear,
     MONTH(p.PaidAt) AS PaidMonth,
     SUM(p.Amount) AS RevenueAmount
-FROM Payments p
-JOIN Invoices i ON i.InvoiceId = p.InvoiceId
+FROM dbo.Payments p
+JOIN dbo.Invoices i ON i.InvoiceId = p.InvoiceId
 JOIN Classes cl ON cl.ClassId = i.ClassId
 JOIN Centers c ON c.CenterId = cl.CenterId
 WHERE i.Status <> N'Cancelled'
@@ -600,43 +655,7 @@ GO
    7. Seed invoice/payment mẫu nếu đang trống
    ========================================================= */
 
-IF NOT EXISTS (SELECT 1 FROM dbo.Invoices)
-BEGIN
-    INSERT INTO dbo.Invoices
-        (StudentId, ClassId, Amount, DiscountAmount, DueDate, Status)
-    SELECT TOP 1
-        s.StudentId,
-        c.ClassId,
-        ISNULL(co.TuitionFee, 7000000),
-        0,
-        CAST(GETDATE() AS DATE),
-        N'Paid'
-    FROM dbo.Students s
-    JOIN dbo.Enrollments e
-        ON e.StudentId = s.StudentId
-    JOIN dbo.Classes c
-        ON c.ClassId = e.ClassId
-    JOIN dbo.Courses co
-        ON co.CourseId = c.CourseId
-    WHERE e.Status = N'Đang học'
-    ORDER BY s.StudentId;
-END;
-GO
-
-IF NOT EXISTS (SELECT 1 FROM dbo.Payments)
-BEGIN
-    INSERT INTO dbo.Payments
-        (InvoiceId, Amount, PaidAt, PaymentMethod, Note)
-    SELECT TOP 1
-        InvoiceId,
-        FinalAmount,
-        SYSDATETIME(),
-        N'Cash',
-        N'Dữ liệu mẫu thanh toán'
-    FROM dbo.Invoices
-    WHERE Status = N'Paid'
-    ORDER BY InvoiceId;
-END;
+PRINT N'Bỏ qua seed invoice/payment mẫu trong migration 20260521_001. Dữ liệu mẫu được quản lý ở script seed riêng.';
 GO
 
 

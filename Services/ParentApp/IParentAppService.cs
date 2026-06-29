@@ -11,8 +11,11 @@ public interface IParentAppService
     Task<ClassOperationResult<ParentDashboardDto>> GetDashboardAsync(int parentUserId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentChildOverviewDto>>> GetChildrenAsync(int parentUserId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<ParentChildDetailDto>> GetChildDetailAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<List<ParentClassOverviewDto>>> GetClassesAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<ParentClassDetailDto>> GetClassDetailAsync(int parentUserId, int studentId, int classId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentScheduleDto>>> GetScheduleAsync(int parentUserId, int? studentId, DateOnly? fromDate, DateOnly? toDate, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentAttendanceDto>>> GetAttendanceAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<List<ParentLessonDiaryDto>>> GetLessonDiaryAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentGradeDto>>> GetGradesAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentHomeworkDto>>> GetHomeworksAsync(int parentUserId, int studentId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentInvoiceDto>>> GetInvoicesAsync(int parentUserId, int? studentId, CancellationToken cancellationToken = default);
@@ -20,4 +23,5 @@ public interface IParentAppService
     Task<ClassOperationResult<bool>> MarkNotificationAsReadAsync(int parentUserId, int notificationId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentChatConversationDto>>> GetChatConversationsAsync(int parentUserId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentChatMessageDto>>> GetChatMessagesAsync(int parentUserId, int teacherUserId, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<bool>> MarkChatAsReadAsync(int parentUserId, int teacherUserId, CancellationToken cancellationToken = default);
 }

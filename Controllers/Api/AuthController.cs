@@ -84,6 +84,27 @@ public sealed class AuthController : ControllerBase
             : Ok(user);
     }
 
+    [HttpPost("change-password")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    public async Task<ActionResult<ApiErrorResponse>> ChangePasswordAsync(
+        ApiChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId == null)
+        {
+            return Unauthorized(new ApiErrorResponse("Token không hợp lệ."));
+        }
+
+        var result = await _authenticationService.ChangePasswordAsync(userId.Value, request.CurrentPassword, request.NewPassword, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return BadRequest(new ApiErrorResponse(result.ErrorMessage ?? "Đổi mật khẩu thất bại."));
+        }
+
+        return Ok(new ApiErrorResponse("Đổi mật khẩu thành công."));
+    }
+
     [HttpGet("centers")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public async Task<ActionResult<IReadOnlyList<ApiCenterResponse>>> GetCentersAsync(
@@ -153,6 +174,19 @@ public sealed class ApiLoginRequest
     [MinLength(6)]
     [MaxLength(100)]
     public string Password { get; set; } = string.Empty;
+}
+
+public sealed class ApiChangePasswordRequest
+{
+    [Required]
+    [MinLength(6)]
+    [MaxLength(100)]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(6)]
+    [MaxLength(100)]
+    public string NewPassword { get; set; } = string.Empty;
 }
 
 public sealed record ApiLoginResponse(

@@ -97,5 +97,7 @@ public partial class User
 
     public virtual ICollection<StudyShift> StudyShifts { get; set; } = new List<StudyShift>();
 
+    public virtual ICollection<SystemAuditLog> SystemAuditLogs { get; set; } = new List<SystemAuditLog>();
+
     public virtual Teacher? Teacher { get; set; }
 }

@@ -49,6 +49,10 @@ public partial class Class
 
     public decimal? TuitionFee { get; set; }
 
+    public int? BranchId { get; set; }
+
+    public virtual Branch? Branch { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<ClassSchedule> ClassSchedules { get; set; } = new List<ClassSchedule>();

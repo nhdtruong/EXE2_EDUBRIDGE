@@ -1,24 +1,24 @@
 using System.Security.Claims;
-using EduBridge.Contracts.Teachers;
-using EduBridge.Services.Teachers;
+using EduBridge.Contracts.Staffs;
+using EduBridge.Services.Staffs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace EduBridge.Pages.AdminTeachers;
+namespace EduBridge.Pages.AdminStaff;
 
 [Authorize(Policy = "AdminOnly")]
 public class CreateModel : PageModel
 {
-    private readonly ITeacherManagementService _service;
+    private readonly IStaffManagementService _service;
 
-    public CreateModel(ITeacherManagementService service)
+    public CreateModel(IStaffManagementService service)
     {
         _service = service;
     }
 
     [BindProperty]
-    public SaveTeacherRequest Input { get; set; } = new();
+    public SaveStaffRequest Input { get; set; } = new();
 
     [BindProperty]
     public IFormFile? AvatarFile { get; set; }
@@ -45,21 +45,26 @@ public class CreateModel : PageModel
                     ModelState.AddModelError(string.IsNullOrEmpty(key) ? string.Empty : $"Input.{key}", error);
             }
             else ModelState.AddModelError(string.Empty, result.Message);
+            
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = result.Message;
+            
             return Page();
         }
 
         if (AvatarFile != null)
         {
-            var teacherUserId = result.Value!.UserId;
+            var staffUserId = result.Value!.UserId;
             await using var stream = AvatarFile.OpenReadStream();
-            await _service.UpdateAvatarAsync(ownerUserId.Value, teacherUserId, stream, AvatarFile.FileName, AvatarFile.ContentType, cancellationToken);
+            await _service.UpdateAvatarAsync(ownerUserId.Value, staffUserId, stream, AvatarFile.FileName, AvatarFile.ContentType, cancellationToken);
         }
 
         TempData["ToastType"] = "success";
         TempData["ToastTitle"] = "Thành công";
         TempData["ToastMessage"] = result.Message;
 
-        return RedirectToPage("/AdminTeachers");
+        return RedirectToPage("/AdminStaff");
     }
 
     private int? GetCurrentUserId()
@@ -68,3 +73,4 @@ public class CreateModel : PageModel
         return int.TryParse(value, out var userId) ? userId : null;
     }
 }
+

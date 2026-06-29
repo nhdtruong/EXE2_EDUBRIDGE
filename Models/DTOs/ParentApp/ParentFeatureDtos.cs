@@ -27,6 +27,18 @@ public class ParentAttendanceDto
     public string? Note { get; set; }
 }
 
+public class ParentLessonDiaryDto
+{
+    public int LessonId { get; set; }
+    public string ClassName { get; set; } = string.Empty;
+    public string TeacherName { get; set; } = string.Empty;
+    public string LessonTitle { get; set; } = string.Empty;
+    public string? LessonContent { get; set; }
+    public DateOnly LessonDate { get; set; }
+    public TimeOnly? StartTime { get; set; }
+    public TimeOnly? EndTime { get; set; }
+}
+
 public class ParentGradeDto
 {
     public int GradeId { get; set; }

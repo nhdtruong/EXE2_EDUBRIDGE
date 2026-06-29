@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace EduBridge.Pages
 {
-    [Authorize(Roles = "OWNER")]
+    [Authorize(Policy = "AdminOnly")]
     public class AdminReceiptsPrintModel : PageModel
     {
         private readonly IReceiptService _receiptService;

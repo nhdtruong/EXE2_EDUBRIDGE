@@ -1,17 +1,19 @@
-@page
-@model EduBridge.Pages.AdminTeachers.CreateModel
+@page "{id:int}"
+@model EduBridge.Pages.AdminStaff.EditModel
 @{
-    ViewData["Title"] = "Thêm giáo viên";
+    ViewData["Title"] = "Cập nhật nhân sự";
     Layout = "_AdminLayout";
-    ViewData["ActivePage"] = "AdminTeachers";
+    ViewData["ActivePage"] = "AdminStaff";
 }
 
 <form method="post" enctype="multipart/form-data" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200">
     <div class="border-b border-gray-200 pb-3">
-        <h1 class="text-lg font-bold text-gray-900">Thêm mới giáo viên</h1>
+        <h1 class="text-lg font-bold text-gray-900">Cập nhật hồ sơ nhân sự</h1>
+        <p class="text-sm text-gray-500">Cập nhật thông tin cho @Model.Input.FullName</p>
     </div>
 
     <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+    <input asp-for="StaffId" type="hidden" />
 
     <section class="border border-gray-200">
         <div class="border-b border-gray-200 px-4 py-3">
@@ -22,8 +24,8 @@
             <div class="flex flex-col items-center">
                 <label class="mb-4 text-base font-bold text-gray-900">Ảnh đại diện</label>
                 <div class="flex h-36 w-44 items-center justify-center overflow-hidden border border-dashed border-gray-300 bg-white">
-                    <img id="avatarPreview" alt="Ảnh đại diện" class="hidden h-full w-full object-contain" />
-                    <svg id="avatarPlaceholder" class="h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
+                    <img id="avatarPreview" src="@Model.ExistingAvatarUrl" alt="Ảnh đại diện" class="@(string.IsNullOrWhiteSpace(Model.ExistingAvatarUrl) ? "hidden" : "") h-full w-full object-contain" />
+                    <svg id="avatarPlaceholder" class="@(string.IsNullOrWhiteSpace(Model.ExistingAvatarUrl) ? "" : "hidden") h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
                         <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
                         <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
                         <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
@@ -31,8 +33,9 @@
                     </svg>
                 </div>
                 <input asp-for="AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
+                <input asp-for="RemoveAvatar" type="hidden" />
                 <div class="mt-4 flex gap-2">
-                    <button type="button" onclick="clearAvatar()" class="inline-flex h-9 w-9 items-center justify-center rounded bg-sky-600 text-white hover:bg-sky-700">
+                    <button type="button" onclick="clearAvatar(true)" class="inline-flex h-9 w-9 items-center justify-center rounded bg-sky-600 text-white hover:bg-sky-700">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
                     </button>
                     <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-9 rounded bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700">Chọn</button>
@@ -41,18 +44,56 @@
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700">Vai trò (*)</label>
+                    <div class="relative mt-1 w-full" data-multi-select-dropdown>
+                        <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:outline-none">
+                            <span data-dropdown-text class="truncate text-gray-700">Giáo viên</span>
+                            <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div data-dropdown-panel class="absolute z-10 hidden mt-1 max-h-60 w-full overflow-auto border border-gray-300 bg-white shadow-lg">
+                            <div class="sticky top-0 border-b border-gray-200 bg-gray-50 p-2">
+                                <input type="text" data-search-input class="h-9 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Tìm kiếm vai trò..." />
+                            </div>
+                            <div class="p-1" data-options-container>
+                                <label class="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-100" data-searchable>
+                                    <input type="checkbox" name="Input.Roles" value="TEACHER" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" @(Model.Input.Roles != null && Model.Input.Roles.Contains("TEACHER") ? "checked" : "") />
+                                    <span class="ml-2 text-sm text-gray-700" data-search-text>Giáo viên</span>
+                                </label>
+                                <label class="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-100" data-searchable>
+                                    <input type="checkbox" name="Input.Roles" value="OWNER" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" @(Model.Input.Roles != null && Model.Input.Roles.Contains("OWNER") ? "checked" : "") />
+                                    <span class="ml-2 text-sm text-gray-700" data-search-text>Chủ trung tâm / Quản lý</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Input.Roles" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
                 <div>
-                    <label asp-for="Input.TeacherCode" class="block text-sm font-semibold text-gray-700">Mã giáo viên (*)</label>
-                    <input asp-for="Input.TeacherCode" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập mã giáo viên (*)" />
-                    <span asp-validation-for="Input.TeacherCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                    <label asp-for="Input.StaffCode" class="block text-sm font-semibold text-gray-700">Mã nhân sự (*)</label>
+                    <input asp-for="Input.StaffCode" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập mã nhân sự (*)" />
+                    <span asp-validation-for="Input.StaffCode" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
 
                 <div></div>
 
                 <div>
-                    <label asp-for="Input.FullName" class="block text-sm font-semibold text-gray-700">Tên giáo viên (*)</label>
-                    <input asp-for="Input.FullName" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tên giáo viên (*)" />
+                    <label asp-for="Input.FullName" class="block text-sm font-semibold text-gray-700">Tên nhân sự (*)</label>
+                    <input asp-for="Input.FullName" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tên nhân sự (*)" />
                     <span asp-validation-for="Input.FullName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.Specialization" class="block text-sm font-semibold text-gray-700">Chuyên môn</label>
+                    <input asp-for="Input.Specialization" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="VD: IELTS, Giao tiếp..." />
+                    <span asp-validation-for="Input.Specialization" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.ExperienceYears" class="block text-sm font-semibold text-gray-700">Số năm kinh nghiệm</label>
+                    <input asp-for="Input.ExperienceYears" type="number" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="0" />
+                    <span asp-validation-for="Input.ExperienceYears" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
 
                 <div>
@@ -169,8 +210,8 @@
     </section>
 
     <div class="flex justify-end gap-3">
-        <a asp-page="/AdminTeachers" class="rounded border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Hủy</a>
-        <button type="submit" class="rounded bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Lưu giáo viên</button>
+        <a asp-page="/AdminStaff" class="rounded border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Hủy</a>
+        <button type="submit" class="rounded bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Cập nhật nhân sự</button>
     </div>
 </form>
 

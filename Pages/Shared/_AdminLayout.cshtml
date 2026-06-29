@@ -1,4 +1,8 @@
 @using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject EduBridge.Services.Auth.ICurrentCenterService CurrentCenterService
+@inject EduBridge.Services.Auth.IAccountAuthenticationService AuthService
+@inject EduBridge.Data.AppDbContext DbContext
 @{
     var fullName = User.FindFirstValue(ClaimTypes.Name) ?? "Người dùng";
     var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
@@ -14,6 +18,38 @@
     {
         initials = "U";
     }
+
+    var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var availableRoles = new List<string>();
+    if (int.TryParse(userIdStr, out int layoutUserId))
+    {
+        availableRoles = await AuthService.GetAvailableRolesAsync(layoutUserId);
+    }
+    var hasTeacherRole = availableRoles.Contains("TEACHER");
+
+    var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var isSystemAdmin = currentRole == "SYSTEM_ADMIN" || currentRole == "PROJECT_ADMIN";
+    var isOwner = currentRole == "OWNER";
+    
+    var supportCenterIdStr = Context.Request.Cookies["SupportCenterId"];
+    var isSupportMode = isSystemAdmin && !string.IsNullOrEmpty(supportCenterIdStr);
+    
+    var showCenterMenu = isOwner || isSupportMode;
+
+    // Lấy danh sách Branches
+    var currentCenterId = await CurrentCenterService.GetCenterIdAsync();
+    var branches = new List<EduBridge.Models.Branch>();
+    if (currentCenterId.HasValue)
+    {
+        branches = await DbContext.Branches
+            .AsNoTracking()
+            .Where(b => b.CenterId == currentCenterId.Value && b.Status == "ACTIVE")
+            .OrderBy(b => b.BranchName)
+            .ToListAsync();
+    }
+    
+    var currentBranchIdStr = Context.Request.Cookies["CurrentBranchId"];
+    int.TryParse(currentBranchIdStr, out int currentBranchId);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -162,7 +198,7 @@
         }
 
         body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo {
-            margin-right: 0;
+            display: none;
         }
 
         body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-nav {
@@ -215,7 +251,9 @@
                     </div>
                     <div class="admin-sidebar-brand-text min-w-0">
                         <div class="font-bold text-xl text-gray-900 leading-tight">EduBridge</div>
-                        <div class="text-xs text-gray-500 font-medium">Chủ trung tâm</div>
+                        <div class="text-xs text-gray-500 font-medium">
+                            @(isSystemAdmin ? (isSupportMode ? "Chế độ Hỗ trợ" : "System Admin") : "Chủ trung tâm")
+                        </div>
                     </div>
                 </div>
                 <button id="admin-sidebar-toggle" type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
@@ -227,63 +265,137 @@
 
             <!-- Navigation -->
             <nav class="admin-sidebar-nav p-4 space-y-1.5 mt-2">
-                <a href="/AdminDashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminDashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span class="admin-sidebar-label">Dashboard</span>
-                </a>
-                <a href="/AdminClasses" title="Lớp học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminClasses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <span class="admin-sidebar-label">Lớp học</span>
-                </a>
-                <a href="/AdminCourses" title="Môn học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminCourses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path><path d="M8 6h8"></path><path d="M8 10h6"></path></svg>
-                    <span class="admin-sidebar-label">Môn học</span>
-                </a>
-                <a href="/AdminStudents" title="Học sinh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminStudents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-                    <span class="admin-sidebar-label">Học sinh</span>
-                </a>
-                <a href="/AdminParents" title="Phụ huynh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminParents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"></circle><path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path><path d="M19 8.5a3 3 0 0 1 0 5"></path><path d="M21.5 21a5 5 0 0 0-3.5-4.77"></path></svg>
-                    <span class="admin-sidebar-label">Phụ huynh</span>
-                </a>
-                <a href="/AdminTeachers" title="Giáo viên" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminTeachers" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                    <span class="admin-sidebar-label">Giáo viên</span>
-                </a>
-                <a href="/AdminFinance" title="Tài chính" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                    <span class="admin-sidebar-label">Tài chính</span>
-                </a>
-                <a href="/AdminSettings" title="Cài đặt" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span class="admin-sidebar-label">Cài đặt</span>
-                </a>
+                @if (isSystemAdmin && !isSupportMode)
+                {
+                    <a href="/SystemAdmin/Centers" title="Quản lý Trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "SystemCenters" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                        <span class="admin-sidebar-label">Trung tâm</span>
+                    </a>
+                    <a href="/SystemAdmin/AuditLogs" title="Nhật ký hệ thống" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "SystemAuditLogs" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span class="admin-sidebar-label">Nhật ký hệ thống</span>
+                    </a>
+                }
+                
+                @if (showCenterMenu)
+                {
+                    <a href="/AdminDashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminDashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        <span class="admin-sidebar-label">Dashboard</span>
+                    </a>
+                    <a href="/AdminClasses" title="Lớp học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminClasses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                        <span class="admin-sidebar-label">Lớp học</span>
+                    </a>
+                    <a href="/AdminCourses" title="Môn học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminCourses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path><path d="M8 6h8"></path><path d="M8 10h6"></path></svg>
+                        <span class="admin-sidebar-label">Môn học</span>
+                    </a>
+                    <a href="/AdminStudents" title="Học sinh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminStudents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span class="admin-sidebar-label">Học sinh</span>
+                    </a>
+                    <a href="/AdminParents" title="Phụ huynh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminParents" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"></circle><path d="M5.5 21a6.5 6.5 0 0 1 13 0"></path><path d="M19 8.5a3 3 0 0 1 0 5"></path><path d="M21.5 21a5 5 0 0 0-3.5-4.77"></path></svg>
+                        <span class="admin-sidebar-label">Phụ huynh</span>
+                    </a>
+                    <a href="/AdminStaff" title="Nhân sự" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminStaff" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                        <span class="admin-sidebar-label">Nhân sự</span>
+                    </a>
+                    <a href="/AdminFinance" title="Tài chính" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        <span class="admin-sidebar-label">Tài chính</span>
+                    </a>
+                    <a href="/AdminSettings" title="Cài đặt" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <span class="admin-sidebar-label">Cài đặt</span>
+                    </a>
+                }
             </nav>
         </div>
 
-        <!-- User Profile & Logout -->
-        <div class="admin-sidebar-footer p-5 border-t border-gray-100">
-            <div class="admin-sidebar-profile flex items-center mb-5">
+        <!-- User Profile & Logout Dropdown -->
+        <div class="admin-sidebar-footer p-5 border-t border-gray-100 relative">
+            <button type="button" id="adminProfileBtn" class="admin-sidebar-profile flex items-center w-full focus:outline-none cursor-pointer">
                 <div class="admin-sidebar-avatar w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
                     @initials
                 </div>
-                <div class="admin-sidebar-user-info min-w-0">
-                    <div class="font-bold text-sm text-gray-900">@fullName</div>
-                    <div class="text-xs text-gray-500">@email</div>
+                <div class="admin-sidebar-user-info min-w-0 text-left flex-1">
+                    <div class="font-bold text-sm text-gray-900 truncate">@fullName</div>
+                    <div class="text-xs text-gray-500 truncate">@email</div>
+                </div>
+                <svg class="admin-sidebar-dropdown-icon w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="adminProfileMenu" class="hidden absolute bottom-[72px] left-4 w-[calc(100%-2rem)] min-w-[220px] z-50">
+                <div class="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.15)] border border-gray-100 p-2 space-y-1">
+                    @if (hasTeacherRole)
+                    {
+                        <form method="post" asp-page="/SwitchRole" class="w-full m-0">
+                            <input type="hidden" name="roleCode" value="TEACHER" />
+                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
+                                <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                                <span>Giao diện Giáo viên</span>
+                            </button>
+                        </form>
+                    }
+                    <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <span>Đổi mật khẩu</span>
+                    </a>
+                    <form method="post" asp-page="/Logout" class="w-full m-0">
+                        <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
+                            <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            <span>Đăng xuất</span>
+                        </button>
+                    </form>
                 </div>
             </div>
-            <form method="post" asp-page="/Logout" class="w-full">
-                <button type="submit" class="flex items-center justify-center w-full py-2.5 px-4 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors bg-white">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                    <span class="admin-sidebar-logout-label">Đăng xuất</span>
-                </button>
-            </form>
         </div>
     </aside>
 
     <!-- Main Content -->
-    <main class="admin-main flex-1 overflow-y-auto">
+    <main class="admin-main flex-1 overflow-y-auto relative">
+        <!-- Top bar containing Branch Selector -->
+        @if (showCenterMenu && branches.Any())
+        {
+            <div class="flex justify-end mb-4">
+                <form method="post" asp-page="/SetBranch" class="flex items-center space-x-2">
+                    <label for="branchSelector" class="text-sm font-medium text-gray-700">Cơ sở:</label>
+                    <select id="branchSelector" name="branchId" onchange="this.form.submit()" class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="0">Tất cả cơ sở</option>
+                        @foreach (var branch in branches)
+                        {
+                            if (currentBranchId == branch.BranchId)
+                            {
+                                <option value="@branch.BranchId" selected>@branch.BranchName</option>
+                            }
+                            else
+                            {
+                                <option value="@branch.BranchId">@branch.BranchName</option>
+                            }
+                        }
+                    </select>
+                </form>
+            </div>
+        }
+
+        @if (isSupportMode)
+        {
+            <div class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl mb-4 flex justify-between items-center shadow-sm">
+                <div class="font-medium flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Bạn đang trong chế độ Hỗ Trợ (Support Mode). Mọi thao tác sẽ được ghi lại.
+                </div>
+                <form method="post" asp-page="/SystemAdmin/ExitSupportMode">
+                    <button type="submit" class="bg-white text-red-600 px-3 py-1.5 rounded-lg border border-red-200 text-sm font-bold hover:bg-red-50 transition-colors">
+                        Thoát chế độ hỗ trợ
+                    </button>
+                </form>
+            </div>
+        }
         @RenderBody()
     </main>
 
@@ -303,6 +415,29 @@
         adminSidebarToggle?.addEventListener('click', () => {
             setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
         });
+
+        const adminProfileBtn = document.getElementById('adminProfileBtn');
+        const adminProfileMenu = document.getElementById('adminProfileMenu');
+        
+        if (adminProfileBtn && adminProfileMenu) {
+            adminProfileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (document.body.classList.contains('admin-sidebar-collapsed')) {
+                    setAdminSidebarCollapsed(false);
+                    setTimeout(() => {
+                        adminProfileMenu.classList.toggle('hidden');
+                    }, 200);
+                } else {
+                    adminProfileMenu.classList.toggle('hidden');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!adminProfileMenu.contains(e.target) && !adminProfileBtn.contains(e.target)) {
+                    adminProfileMenu.classList.add('hidden');
+                }
+            });
+        }
 
         const layoutToastStorageKey = 'edubridge.admin.toasts';
 

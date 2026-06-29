@@ -11,7 +11,7 @@ namespace EduBridge.Controllers.Api;
 
 [ApiController]
 [Route("api/v1/owner/invoices")]
-[Authorize(Roles = "OWNER")]
+[Authorize(Policy = "AdminOnly")]
 public sealed class OwnerInvoicesController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
@@ -30,6 +30,9 @@ public sealed class OwnerInvoicesController : ControllerBase
 
     private async Task<bool> VerifyCenterOwnershipAsync(int centerId, int userId)
     {
+        var roleClaim = User.FindFirstValue(ClaimTypes.Role);
+        if (roleClaim == "SYSTEM_ADMIN" || roleClaim == "PROJECT_ADMIN") return true;
+
         return await _context.Centers.AnyAsync(c => c.CenterId == centerId && c.OwnerUserId == userId && c.Status == "Active") || 
                await _context.CenterUsers.AnyAsync(cu => cu.CenterId == centerId && cu.UserId == userId && cu.UserType == "OWNER" && cu.Status == "Active");
     }

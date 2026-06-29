@@ -30,15 +30,8 @@
         </div>
 
         <div class="p-6 pt-0">
-            <div class="flex p-1 space-x-1 bg-gray-100 rounded-lg mb-6">
-                <button id="btn-admin" onclick="switchTab('admin')" class="w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all">Chủ trung tâm</button>
-                <button id="btn-teacher" onclick="switchTab('teacher')" class="w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all">Giáo viên</button>
-            </div>
-
-            <form id="form-admin" method="post" class="space-y-4">
+            <form id="form-login" method="post" class="space-y-4">
                 @Html.AntiForgeryToken()
-
-                <input type="hidden" name="Input.RoleGroup" value="Admin" />
 
                 <input name="Input.Email"
                        type="text"
@@ -46,35 +39,20 @@
                        required
                        class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
 
-                <input name="Input.Password"
-                       type="password"
-                       placeholder="Nhập mật khẩu"
-                       required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
+                <div class="relative">
+                    <input id="password-input" name="Input.Password"
+                           type="password"
+                           placeholder="Nhập mật khẩu"
+                           required
+                           class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
+                    <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                        <svg id="eye-off-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>
+                    </button>
+                </div>
 
                 <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                    Đăng nhập với tư cách Chủ trung tâm
-                </button>
-            </form>
-
-            <form id="form-teacher" method="post" class="space-y-4 hidden">
-                @Html.AntiForgeryToken()
-
-                <input type="hidden" name="Input.RoleGroup" value="Teacher" />
-                <input name="Input.Email"
-                       type="text"
-                       placeholder="Email hoặc số điện thoại"
-                       required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
-
-                <input name="Input.Password"
-                       type="password"
-                       placeholder="Nhập mật khẩu"
-                       required
-                       class="flex h-10 w-full rounded-md border border-gray-300 bg-transparent px-3 py-2 pl-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent" />
-
-                <button type="submit" class="w-full h-10 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors">
-                    Đăng nhập với tư cách Giáo viên
+                    Đăng nhập
                 </button>
             </form>
 
@@ -108,22 +86,21 @@
         showLoginToast(logoutSuccessMessage || loginSuccessMessage, true);
         showLoginToast(loginErrorMessage, false);
 
-        function switchTab(tab) {
-            const isAdmin = tab === 'admin';
-            document.getElementById('form-admin').classList.toggle('hidden', !isAdmin);
-            document.getElementById('form-teacher').classList.toggle('hidden', isAdmin);
-            
-            const btnAdmin = document.getElementById('btn-admin');
-            const btnTeacher = document.getElementById('btn-teacher');
-            
-            if(isAdmin) {
-                btnAdmin.className = "w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all";
-                btnTeacher.className = "w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all";
+        document.getElementById('toggle-password').addEventListener('click', function () {
+            const passwordInput = document.getElementById('password-input');
+            const eyeIcon = document.getElementById('eye-icon');
+            const eyeOffIcon = document.getElementById('eye-off-icon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.classList.add('hidden');
+                eyeOffIcon.classList.remove('hidden');
             } else {
-                btnTeacher.className = "w-1/2 py-1.5 text-sm font-medium rounded-md bg-white shadow text-gray-900 transition-all";
-                btnAdmin.className = "w-1/2 py-1.5 text-sm font-medium rounded-md text-gray-500 hover:text-gray-900 transition-all";
+                passwordInput.type = 'password';
+                eyeIcon.classList.remove('hidden');
+                eyeOffIcon.classList.add('hidden');
             }
-        }
+        });
     </script>
 </body>
 </html>
