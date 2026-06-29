@@ -10,6 +10,13 @@ namespace EduBridge.Pages;
 [Authorize]
 public class SwitchRoleModel : PageModel
 {
+    private readonly EduBridge.Services.Auth.IAccountAuthenticationService _authService;
+
+    public SwitchRoleModel(EduBridge.Services.Auth.IAccountAuthenticationService authService)
+    {
+        _authService = authService;
+    }
+
     public IActionResult OnGet()
     {
         return RedirectToPage("/Index");
@@ -22,13 +29,14 @@ public class SwitchRoleModel : PageModel
             return RedirectToPage("/Index");
         }
 
-        var availableRolesClaim = User.FindFirst("EduBridge:AvailableRoles")?.Value;
-        if (string.IsNullOrWhiteSpace(availableRolesClaim))
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdStr, out int userId))
         {
             return RedirectToPage("/Index");
         }
 
-        var availableRoles = availableRolesClaim.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var availableRoles = await _authService.GetAvailableRolesAsync(userId);
+        
         if (!availableRoles.Contains(roleCode.ToUpperInvariant()))
         {
             // The user doesn't have this role available
@@ -37,19 +45,22 @@ public class SwitchRoleModel : PageModel
             return RedirectToPage("/Index");
         }
 
-        // Generate new claims based on existing claims, but replace the Role claim
+        // Generate new claims based on existing claims, but replace the Role claim and AvailableRoles claim
         var newClaims = new List<Claim>();
         foreach (var claim in User.Claims)
         {
-            if (claim.Type == ClaimTypes.Role)
+            if (claim.Type == ClaimTypes.Role || claim.Type == "EduBridge:AvailableRoles")
             {
-                continue; // Skip the old role claim
+                continue; // Skip the old role claim and available roles claim
             }
             newClaims.Add(new Claim(claim.Type, claim.Value));
         }
 
         // Add the new role claim
         newClaims.Add(new Claim(ClaimTypes.Role, roleCode.ToUpperInvariant()));
+        
+        // Also update the AvailableRoles claim in the cookie so it stays fresh!
+        newClaims.Add(new Claim("EduBridge:AvailableRoles", string.Join(",", availableRoles)));
 
         var identity = new ClaimsIdentity(newClaims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);

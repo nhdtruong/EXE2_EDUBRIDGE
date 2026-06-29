@@ -13,6 +13,12 @@ public interface IAccountAuthenticationService
         CancellationToken cancellationToken = default);
 
     Task<List<string>> GetAvailableRolesAsync(int userId, CancellationToken cancellationToken = default);
+
+    Task<AccountAuthenticationResult> ChangePasswordAsync(
+        int userId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class AccountAuthenticationService : IAccountAuthenticationService
@@ -251,6 +257,40 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
         return normalizedPhone.StartsWith('0') && normalizedPhone.Length >= 10
             ? "84" + normalizedPhone[1..]
             : normalizedPhone;
+    }
+
+    public async Task<AccountAuthenticationResult> ChangePasswordAsync(
+        int userId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users
+            .AsTracking()
+            .FirstOrDefaultAsync(u => u.UserId == userId && !u.IsDeleted && u.Status == "Active", cancellationToken);
+
+        if (user == null)
+        {
+            return AccountAuthenticationResult.Fail("Tài khoản không tồn tại hoặc đã bị khóa.");
+        }
+
+        try
+        {
+            if (!BCrypt.Net.BCrypt.Verify(currentPassword, user.PasswordHash))
+            {
+                return AccountAuthenticationResult.Fail("Mật khẩu hiện tại không chính xác.");
+            }
+        }
+        catch (BCrypt.Net.SaltParseException exception)
+        {
+            _logger.LogWarning(exception, "Invalid password hash format for user {UserId}.", user.UserId);
+            return AccountAuthenticationResult.Fail("Lỗi hệ thống khi xác thực mật khẩu. Vui lòng thử lại sau.");
+        }
+
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, 11);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return AccountAuthenticationResult.Success(user, new List<string>(), string.Empty);
     }
 }
 
