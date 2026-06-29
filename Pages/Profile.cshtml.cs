@@ -105,7 +105,10 @@ public class ProfileModel : PageModel
             await _profileService.UpdateAvatarAsync(userId.Value, stream, AvatarFile.FileName, AvatarFile.ContentType, cancellationToken);
         }
 
-        StatusMessage = "Cập nhật hồ sơ cá nhân thành công.";
-        return RedirectToPage();
+        TempData["ToastTitle"] = "Thành công";
+        TempData["ToastMessage"] = "Cập nhật hồ sơ cá nhân thành công.";
+        TempData["ToastType"] = "success";
+        
+        return RedirectToPage("/Index");
     }
 }
