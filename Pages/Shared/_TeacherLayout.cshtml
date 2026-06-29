@@ -1,4 +1,5 @@
 @using System.Security.Claims
+@inject EduBridge.Services.Auth.IAccountAuthenticationService AuthService
 @{
     var fullName = User.FindFirstValue(ClaimTypes.Name) ?? "Người dùng";
     var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
@@ -23,7 +24,12 @@
         initials = "U";
     }
 
-    var availableRoles = User.FindFirst("EduBridge:AvailableRoles")?.Value?.Split(',') ?? Array.Empty<string>();
+    var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    var availableRoles = new List<string>();
+    if (int.TryParse(userIdStr, out int layoutUserId))
+    {
+        availableRoles = await AuthService.GetAvailableRolesAsync(layoutUserId);
+    }
     var hasOwnerRole = availableRoles.Contains("OWNER");
 }
 <!DOCTYPE html>
@@ -100,13 +106,14 @@
         }
 
         body.teacher-sidebar-collapsed .logo-box {
-            margin-right: 0;
+            display: none;
         }
 
         body.teacher-sidebar-collapsed .brand-text,
         body.teacher-sidebar-collapsed .sidebar-nav .nav-item span,
         body.teacher-sidebar-collapsed .sidebar-footer .user-info,
-        body.teacher-sidebar-collapsed .teacher-sidebar-logout-label {
+        body.teacher-sidebar-collapsed .teacher-sidebar-logout-label,
+        body.teacher-sidebar-collapsed .teacher-sidebar-dropdown-icon {
             width: 0;
             opacity: 0;
             visibility: hidden;
@@ -191,30 +198,40 @@
                 </a>
             </nav>
 
-            <div class="sidebar-footer">
-                <div class="user-profile">
-                    <div class="avatar">@initials</div>
-                    <div class="user-info">
-                        <span class="user-name">@fullName</span>
-                        <span class="user-role">@roleDisplay</span>
+            <div class="sidebar-footer position-relative">
+                <button type="button" id="teacherProfileBtn" class="user-profile w-100 bg-transparent border-0 d-flex align-items-center text-start p-0 m-0" style="cursor: pointer;">
+                    <div class="avatar flex-shrink-0">@initials</div>
+                    <div class="user-info flex-grow-1 overflow-hidden" style="min-width: 0;">
+                        <span class="user-name text-truncate d-block">@fullName</span>
+                        <span class="user-role text-truncate d-block">@roleDisplay</span>
+                    </div>
+                    <svg class="teacher-sidebar-dropdown-icon text-muted ms-2 flex-shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+                </button>
+                
+                <div id="teacherProfileMenu" class="d-none position-absolute start-0 w-100 mb-2 px-3 z-3" style="bottom: 72px;">
+                    <div class="bg-white rounded shadow border p-2">
+                        @if (hasOwnerRole)
+                        {
+                            <form method="post" asp-page="/SwitchRole" class="w-100 mb-1">
+                                <input type="hidden" name="roleCode" value="OWNER" />
+                                <button type="submit" class="logout-btn w-100 justify-content-start border-0 px-3 py-2" style="color: #2563eb; background: #eff6ff; border-radius: 8px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-3 flex-shrink-0"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                                    <span>Giao diện Quản lý</span>
+                                </button>
+                            </form>
+                        }
+                        <a href="/ChangePassword" class="logout-btn w-100 justify-content-start border-0 px-3 py-2 mb-1" style="text-decoration: none; color: #4b5563; background: #fff; border-radius: 8px;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-3 flex-shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>Đổi mật khẩu</span>
+                        </a>
+                        <form method="post" asp-page="/Logout" class="w-100 m-0">
+                            <button type="submit" class="logout-btn w-100 justify-content-start border-0 px-3 py-2" style="color: #dc3545; background: #fff; border-radius: 8px;">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-3 flex-shrink-0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </form>
                     </div>
                 </div>
-                @if (hasOwnerRole)
-                {
-                    <form method="post" asp-page="/SwitchRole" class="w-100 mb-2">
-                        <input type="hidden" name="roleCode" value="OWNER" />
-                        <button type="submit" class="logout-btn" style="color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                            <span class="teacher-sidebar-logout-label">Giao diện Quản lý</span>
-                        </button>
-                    </form>
-                }
-                <form method="post" asp-page="/Logout">
-                    <button type="submit" class="logout-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                        <span class="teacher-sidebar-logout-label">Đăng xuất</span>
-                    </button>
-                </form>
             </div>
         </aside>
 
@@ -241,6 +258,29 @@
         teacherSidebarToggle?.addEventListener('click', () => {
             setTeacherSidebarCollapsed(!document.body.classList.contains('teacher-sidebar-collapsed'));
         });
+
+        const teacherProfileBtn = document.getElementById('teacherProfileBtn');
+        const teacherProfileMenu = document.getElementById('teacherProfileMenu');
+        
+        if (teacherProfileBtn && teacherProfileMenu) {
+            teacherProfileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (document.body.classList.contains('teacher-sidebar-collapsed')) {
+                    setTeacherSidebarCollapsed(false);
+                    setTimeout(() => {
+                        teacherProfileMenu.classList.toggle('d-none');
+                    }, 200);
+                } else {
+                    teacherProfileMenu.classList.toggle('d-none');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if (!teacherProfileMenu.contains(e.target) && !teacherProfileBtn.contains(e.target)) {
+                    teacherProfileMenu.classList.add('d-none');
+                }
+            });
+        }
 
         // Dynamic stacked toast logic
         const layoutToastStorageKey = 'edubridge.teacher.toasts';

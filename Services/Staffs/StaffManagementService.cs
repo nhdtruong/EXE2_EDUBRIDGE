@@ -386,7 +386,7 @@ public sealed class StaffManagementService : IStaffManagementService
 
         if (request.Roles.Contains("TEACHER"))
         {
-            if (existingUser.Teacher == null || existingUser.Teacher.IsDeleted)
+            if (existingUser.Teacher == null)
             {
                 var newTeacher = new Teacher
                 {
@@ -402,6 +402,7 @@ public sealed class StaffManagementService : IStaffManagementService
                 existingUser.Teacher.Specialization = request.Specialization;
                 existingUser.Teacher.ExperienceYears = request.ExperienceYears ?? 0;
                 existingUser.Teacher.Status = request.IsActive ? "Active" : "Inactive";
+                existingUser.Teacher.IsDeleted = false;
             }
         }
 
