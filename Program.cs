@@ -47,6 +47,7 @@ namespace EduBridge
             builder.Services.AddScoped<IClassEnrollmentService, ClassEnrollmentService>();
             builder.Services.AddScoped<IParentManagementService, ParentManagementService>();
             builder.Services.AddScoped<EduBridge.Services.Staffs.IStaffManagementService, EduBridge.Services.Staffs.StaffManagementService>();
+            builder.Services.AddScoped<EduBridge.Services.SystemStaffs.ISystemStaffService, EduBridge.Services.SystemStaffs.SystemStaffService>();
             builder.Services.AddScoped<EduBridge.Services.Students.IStudentManagementService, EduBridge.Services.Students.StudentManagementService>();
             builder.Services.AddScoped<EduBridge.Services.Courses.ICourseManagementService, EduBridge.Services.Courses.CourseManagementService>();
             builder.Services.AddScoped<EduBridge.Services.Dashboard.IDashboardService, EduBridge.Services.Dashboard.DashboardService>();
@@ -72,6 +73,7 @@ namespace EduBridge
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentCenterService, CurrentCenterService>();
             builder.Services.AddScoped<ICurrentBranchService, CurrentCenterService>();
+            builder.Services.AddScoped<EduBridge.Services.Users.IUserProfileService, EduBridge.Services.Users.UserProfileService>();
 
             builder.Services.AddDbContext<AppDbContext>(options =>
                 options.UseSqlServer(connectionString)
@@ -217,13 +219,11 @@ namespace EduBridge
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminOnly", policy =>
-                    policy.RequireRole("OWNER", "SYSTEM_ADMIN", "PROJECT_ADMIN"));
+                    policy.RequireRole("OWNER", "SYSTEM_ADMIN"));
 
                 options.AddPolicy("SystemAdminOnly", policy =>
                     policy.RequireRole("SYSTEM_ADMIN"));
 
-                options.AddPolicy("ProjectAdminOnly", policy =>
-                    policy.RequireRole("PROJECT_ADMIN", "SYSTEM_ADMIN"));
 
                 options.AddPolicy("TeacherOnly", policy =>
                     policy.RequireRole("TEACHER"));
@@ -370,6 +370,7 @@ namespace EduBridge
             app.MapRazorPages();
             app.MapHub<ChatHub>("/chatHub");
 
+            
             app.Run();
         }
     }

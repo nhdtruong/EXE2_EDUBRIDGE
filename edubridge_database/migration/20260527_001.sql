@@ -603,6 +603,21 @@ ELSE IF EXISTS (
     DROP INDEX UQ_Teachers_TeacherCode ON dbo.Teachers;
 GO
 
+;WITH DuplicateTeachers AS (
+    SELECT 
+        TeacherId,
+        TeacherCode,
+        ROW_NUMBER() OVER(PARTITION BY TeacherCode ORDER BY TeacherId) as rn
+    FROM dbo.Teachers
+    WHERE TeacherCode IS NOT NULL AND LTRIM(RTRIM(TeacherCode)) <> N''
+)
+UPDATE t
+SET TeacherCode = CONCAT(t.TeacherCode, N'-DUP-', t.TeacherId)
+FROM dbo.Teachers t
+JOIN DuplicateTeachers d ON t.TeacherId = d.TeacherId
+WHERE d.rn > 1;
+GO
+
 IF NOT EXISTS (
     SELECT 1
     FROM sys.indexes
@@ -1097,7 +1112,8 @@ GO
 INSERT INTO dbo.CenterUsers (CenterId, UserId, UserType)
 SELECT c.CenterId, c.OwnerUserId, N'OWNER'
 FROM dbo.Centers c
-WHERE NOT EXISTS (
+WHERE c.OwnerUserId IS NOT NULL
+  AND NOT EXISTS (
     SELECT 1 FROM dbo.CenterUsers cu
     WHERE cu.CenterId = c.CenterId
       AND cu.UserId = c.OwnerUserId
@@ -1119,6 +1135,7 @@ INSERT INTO dbo.CenterUsers (CenterId, UserId, UserType)
 SELECT DISTINCT s.CenterId, s.ParentUserId, N'PARENT'
 FROM dbo.Students s
 WHERE ISNULL(s.IsDeleted, 0) = 0
+  AND s.ParentUserId IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM dbo.CenterUsers cu
       WHERE cu.CenterId = s.CenterId

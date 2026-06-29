@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -26,6 +26,8 @@ public partial class User
     public DateTime CreatedAt { get; set; }
 
     public DateTime? LastLoginAt { get; set; }
+
+    public string? StaffCode { get; set; }
 
     public string? NormalizedPhoneNumber { get; set; }
 
