@@ -104,7 +104,6 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
         }
 
         string primaryRole = availableRoles.Contains("SYSTEM_ADMIN") ? "SYSTEM_ADMIN" :
-                             availableRoles.Contains("PROJECT_ADMIN") ? "PROJECT_ADMIN" :
                              availableRoles.Contains("OWNER") ? "OWNER" :
                              availableRoles.Contains("BRANCH_MANAGER") ? "BRANCH_MANAGER" :
                              availableRoles.Contains("TEACHER") ? "TEACHER" :
@@ -150,7 +149,7 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
             .Select(u => u.Role.RoleCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (userRole == "SYSTEM_ADMIN" || userRole == "PROJECT_ADMIN" || userRole == "BRANCH_MANAGER")
+        if (userRole == "SYSTEM_ADMIN" || userRole == "BRANCH_MANAGER")
         {
             roles.Add(userRole);
         }
@@ -188,7 +187,7 @@ public sealed class AccountAuthenticationService : IAccountAuthenticationService
     {
         var normalizedRoleCode = roleCode.ToUpperInvariant();
 
-        if (normalizedRoleCode == "SYSTEM_ADMIN" || normalizedRoleCode == "PROJECT_ADMIN" || normalizedRoleCode == "BRANCH_MANAGER")
+        if (normalizedRoleCode == "SYSTEM_ADMIN" || normalizedRoleCode == "BRANCH_MANAGER")
         {
             return await _context.Users
                 .AsNoTracking()

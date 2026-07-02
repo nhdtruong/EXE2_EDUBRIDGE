@@ -107,6 +107,7 @@
                 <thead>
                     <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
                         <th class="py-4 px-4 text-center font-bold border-r border-slate-200">STT</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">ID</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Nhân sự</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Liên hệ</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Chuyên môn</th>
@@ -119,7 +120,7 @@
                     @if (Model.Staffs.Count == 0)
                     {
                         <tr>
-                            <td colspan="8" class="py-10 px-6 text-center text-gray-500">
+                            <td colspan="9" class="py-10 px-6 text-center text-gray-500">
                                 Chưa có nhân sự phù hợp.
                             </td>
                         </tr>
@@ -132,6 +133,9 @@
                             <tr class="group hover:bg-slate-100 transition-colors">
                                 <td class="py-4 px-4 text-center font-medium text-gray-700 border-r border-gray-200">
                                     @(Model.FirstItemNumber + index)
+                                </td>
+                                <td class="py-4 px-4 text-center font-medium text-gray-700 border-r border-gray-200">
+                                    @Staff.StaffId
                                 </td>
                                 <td class="py-4 px-6 border-r border-gray-200">
                                     <div class="flex items-center">

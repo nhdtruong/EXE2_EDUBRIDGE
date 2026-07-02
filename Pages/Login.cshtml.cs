@@ -101,7 +101,7 @@ namespace EduBridge.Pages
             return roleCode.ToUpperInvariant() switch
             {
                 "SYSTEM_ADMIN" => RedirectToPage("/SystemAdmin/Centers"),
-                "PROJECT_ADMIN" => RedirectToPage("/SystemAdmin/Centers"),
+
                 "OWNER" => RedirectToPage("/AdminDashboard"),
                 "BRANCH_MANAGER" => RedirectToPage("/AdminDashboard"),
                 "TEACHER" => RedirectToPage("/Teacher/Dashboard"),

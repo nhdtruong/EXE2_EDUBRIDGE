@@ -28,7 +28,7 @@
     var hasTeacherRole = availableRoles.Contains("TEACHER");
 
     var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
-    var isSystemAdmin = currentRole == "SYSTEM_ADMIN" || currentRole == "PROJECT_ADMIN";
+    var isSystemAdmin = currentRole == "SYSTEM_ADMIN";
     var isOwner = currentRole == "OWNER";
     
     var supportCenterIdStr = Context.Request.Cookies["SupportCenterId"];
@@ -267,11 +267,22 @@
             <nav class="admin-sidebar-nav p-4 space-y-1.5 mt-2">
                 @if (isSystemAdmin && !isSupportMode)
                 {
-                    <a href="/SystemAdmin/Centers" title="Quản lý Trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "SystemCenters" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    var statusCodeFeature = Context.Features.Get<Microsoft.AspNetCore.Diagnostics.IStatusCodeReExecuteFeature>();
+                    var currentPath = statusCodeFeature?.OriginalPath ?? Context.Request.Path.Value ?? "";
+                    
+                    var isCentersActive = ViewData["ActivePage"] as string == "SystemCenters" || (ViewData["ActivePage"] == null && (currentPath.StartsWith("/SystemAdmin/Centers", StringComparison.OrdinalIgnoreCase) || currentPath.Equals("/SystemAdmin", StringComparison.OrdinalIgnoreCase) || currentPath == "/"));
+                    var isStaffsActive = ViewData["ActivePage"] as string == "SystemStaffs" || (ViewData["ActivePage"] == null && currentPath.StartsWith("/SystemAdmin/Staffs", StringComparison.OrdinalIgnoreCase));
+                    var isAuditLogsActive = ViewData["ActivePage"] as string == "SystemAuditLogs" || (ViewData["ActivePage"] == null && currentPath.StartsWith("/SystemAdmin/AuditLogs", StringComparison.OrdinalIgnoreCase));
+
+                    <a href="/SystemAdmin/Centers" title="Quản lý Trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(isCentersActive ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
                         <span class="admin-sidebar-label">Trung tâm</span>
                     </a>
-                    <a href="/SystemAdmin/AuditLogs" title="Nhật ký hệ thống" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "SystemAuditLogs" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <a href="/SystemAdmin/Staffs" title="Nhân sự Admin" class="admin-sidebar-link flex items-center px-4 py-3 @(isStaffsActive ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span class="admin-sidebar-label">Nhân sự</span>
+                    </a>
+                    <a href="/SystemAdmin/AuditLogs" title="Nhật ký hệ thống" class="admin-sidebar-link flex items-center px-4 py-3 @(isAuditLogsActive ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         <span class="admin-sidebar-label">Nhật ký hệ thống</span>
                     </a>
@@ -341,7 +352,11 @@
                             </button>
                         </form>
                     }
-                    <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                    <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                          <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                          <span>Hồ sơ cá nhân</span>
+                      </a>
+                      <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                         <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                         <span>Đổi mật khẩu</span>
                     </a>

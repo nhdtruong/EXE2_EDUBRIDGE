@@ -43,8 +43,8 @@ public sealed class CurrentCenterService : ICurrentCenterService, ICurrentBranch
 
         var roleClaim = user.FindFirst(ClaimTypes.Role)?.Value;
 
-        // SYSTEM_ADMIN and PROJECT_ADMIN use SupportCenterId if set.
-        if (roleClaim == "SYSTEM_ADMIN" || roleClaim == "PROJECT_ADMIN")
+        // SYSTEM_ADMIN use SupportCenterId if set.
+        if (roleClaim == "SYSTEM_ADMIN")
         {
             if (_httpContextAccessor.HttpContext != null &&
                 _httpContextAccessor.HttpContext.Request.Cookies.TryGetValue("SupportCenterId", out var supportCenterIdStr) &&
