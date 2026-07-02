@@ -30,8 +30,12 @@
 
     @{
         var currentUrl = Context.Request.Path.Value?.ToLower();
+        var hideBottomNav = currentUrl == "/changepassword";
     }
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
+    
+    @if (!hideBottomNav)
+    {
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50">
         <div class="max-w-screen-xl mx-auto flex justify-around items-center h-16 px-2">
             
             <a href="/Dashboard" class="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors @(currentUrl == "/dashboard" ? "text-blue-600" : "text-gray-500 hover:text-gray-700")">
@@ -56,6 +60,7 @@
 
         </div>
     </nav>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

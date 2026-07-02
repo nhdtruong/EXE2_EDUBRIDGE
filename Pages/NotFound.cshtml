@@ -1,7 +1,22 @@
 @page
 @model NotFoundModel
+@using System.Security.Claims
 @{
     ViewData["Title"] = "Không tìm thấy trang";
+    
+    var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    if (currentRole == "TEACHER")
+    {
+        Layout = "_TeacherLayout";
+    }
+    else if (currentRole == "OWNER" || currentRole == "SYSTEM_ADMIN" || currentRole == "BRANCH_MANAGER")
+    {
+        Layout = "_AdminLayout";
+    }
+    else
+    {
+        Layout = "_Layout";
+    }
 }
 
 <div class="container mt-5 mb-5">
@@ -13,12 +28,6 @@
             <h1 class="display-1 fw-bold text-muted mb-0">404</h1>
             <h3 class="mb-3 mt-2">Không tìm thấy trang</h3>
             <p class="text-muted mb-4">Xin lỗi, trang bạn đang tìm kiếm không tồn tại, đã bị gỡ bỏ hoặc bạn đã nhập sai địa chỉ.</p>
-            
-            <div class="mt-4">
-                <a href="/" class="btn btn-primary">
-                    <i class="bi bi-house-door me-2"></i>Trở về Trang chủ
-                </a>
-            </div>
         </div>
     </div>
 </div>

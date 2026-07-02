@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -26,6 +26,8 @@ public partial class User
     public DateTime CreatedAt { get; set; }
 
     public DateTime? LastLoginAt { get; set; }
+
+    public string? StaffCode { get; set; }
 
     public string? NormalizedPhoneNumber { get; set; }
 
@@ -96,6 +98,8 @@ public partial class User
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 
     public virtual ICollection<StudyShift> StudyShifts { get; set; } = new List<StudyShift>();
+
+    public virtual ICollection<SystemAuditLog> SystemAuditLogs { get; set; } = new List<SystemAuditLog>();
 
     public virtual Teacher? Teacher { get; set; }
 }

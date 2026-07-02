@@ -10,9 +10,8 @@ appsettings.Development.json
 node_modules/
 
 App_Data/DataProtection-Keys/
-bin/
-obj/
 artifacts/
-*.user
 *.log
-.vscode/
+Test-Migrations.ps1
+
+edubridge_database/seed/

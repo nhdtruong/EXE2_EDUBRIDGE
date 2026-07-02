@@ -6,26 +6,26 @@ using EduBridge.Models;
 using EduBridge.Services.Classes;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Students;
 
 public class StudentManagementService : IStudentManagementService
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<StudentManagementService> _logger;
+    private readonly ICurrentCenterService _currentCenterService;
 
-    public StudentManagementService(AppDbContext context)
+    public StudentManagementService(AppDbContext context, ILogger<StudentManagementService> logger, ICurrentCenterService currentCenterService)
     {
         _context = context;
+        _logger = logger;
+        _currentCenterService = currentCenterService;
     }
 
-    private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken)
-    {
-        return await _context.Centers
-            .AsNoTracking()
-            .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-            .Select(c => (int?)c.CenterId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
+    private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken) =>
+        await _currentCenterService.GetCenterIdAsync(cancellationToken);
 
     private static string NormalizePhoneNumber(string value)
     {

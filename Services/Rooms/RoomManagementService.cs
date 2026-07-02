@@ -3,16 +3,19 @@ using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Services.Classes;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Rooms;
 
 public class RoomManagementService : IRoomManagementService
 {
     private readonly AppDbContext _context;
+    private readonly ICurrentCenterService _currentCenterService;
 
-    public RoomManagementService(AppDbContext context)
+    public RoomManagementService(AppDbContext context, ICurrentCenterService currentCenterService)
     {
         _context = context;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<RoomPagedResponse>> GetRoomsAsync(
@@ -269,10 +272,7 @@ public class RoomManagementService : IRoomManagementService
 
     private async Task<int?> GetActiveCenterIdAsync(int ownerUserId, CancellationToken cancellationToken)
     {
-        return await _context.Centers
-            .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-            .Select(c => c.CenterId)
-            .FirstOrDefaultAsync(cancellationToken);
+        return await _currentCenterService.GetCenterIdAsync(cancellationToken);
     }
 
     private static string GetRoomStatusText(string status) => status.ToUpperInvariant() switch

@@ -1,0 +1,208 @@
+@page
+@model EduBridge.Pages.SystemAdmin.CentersModel
+@{
+    ViewData["Title"] = "Quản lý Trung tâm";
+    Layout = "_AdminLayout";
+}
+
+@section Scripts {
+    <link rel="stylesheet" href="~/css/design-system/datepicker.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/design-system/pagination.css" asp-append-version="true" />
+    <script src="~/js/design-system/datepicker.js" asp-append-version="true"></script>
+    <script>
+        function setPageAndSubmit(page) {
+            document.getElementById('PageNumber').value = page;
+            document.getElementById('filterForm').submit();
+        }
+    </script>
+}
+
+<div class="space-y-6 pb-20">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Quản lý Trung tâm</h1>
+        <p class="text-gray-500 mt-1">Danh sách tất cả các trung tâm trên hệ thống.</p>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-blue-100 bg-blue-50/60 p-6">
+            <h3 class="text-base font-bold text-gray-900">Danh sách trung tâm</h3>
+            
+            <form id="filterForm" method="get" class="mt-5 space-y-4">
+                <input type="hidden" asp-for="PageNumber" id="PageNumber" />
+                <div class="grid gap-4 lg:grid-cols-4">
+                    <div>
+                        <label class="sr-only">Tên trung tâm</label>
+                        <input type="text" asp-for="SearchName" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tên trung tâm..." />
+                    </div>
+                    <div>
+                        <label class="sr-only">Email, SĐT</label>
+                        <input type="text" asp-for="SearchContact" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm email, sđt..." />
+                    </div>
+                    <div>
+                        <label class="sr-only">Ngày tạo</label>
+                        <div class="ds-datepicker" data-ds-datepicker data-ds-range="true">
+                            <input type="hidden" name="FilterDateRange" value="@Model.FilterDateRange" data-ds-date-value>
+                            <div class="ds-datepicker-field flex h-12 w-full items-center overflow-hidden rounded border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                                <input class="ds-datepicker-input h-full w-full border-none bg-transparent px-4 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0" type="text" placeholder="Ngày tạo (dd/mm/yyyy)" data-ds-date-display>
+                                <button type="button" class="ds-datepicker-button flex h-full w-12 items-center justify-center bg-blue-600 text-white hover:bg-blue-700 transition-colors" data-ds-date-toggle aria-label="Chọn ngày">
+                                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <select asp-for="FilterStatus" class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="">Trạng thái (Tất cả)</option>
+                            <option value="Active">Hoạt động</option>
+                            <option value="Inactive">Không hoạt động</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+                    <a href="/SystemAdmin/CreateCenter" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        Thêm mới
+                    </a>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <a asp-page="/SystemAdmin/Centers" class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
+                            Làm mới bộ lọc
+                        </a>
+                        <button type="submit" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                        <th class="py-4 px-4 text-center font-bold border-r border-slate-200 w-16">STT</th>
+                        <th class="py-4 px-4 text-center font-bold border-r border-slate-200">ID</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Mã</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Logo</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Tên Trung tâm</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Email</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Số điện thoại</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Ngày tạo</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Chủ sở hữu</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Trạng thái</th>
+                        <th class="py-4 px-6 text-center font-bold">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-100">
+                    @if (Model.Centers.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="11" class="px-6 py-8 text-center text-gray-500">
+                                Không tìm thấy trung tâm nào.
+                            </td>
+                        </tr>
+                    }
+                    @{ int index = 0; }
+                    @foreach (var center in Model.Centers)
+                    {
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="py-4 px-4 text-center font-medium text-slate-500 border-r border-slate-100">@(Model.FirstItemNumber + index)</td>
+                            <td class="py-4 px-4 text-center font-medium text-slate-700 border-r border-slate-100">@center.CenterId</td>
+                            <td class="py-4 px-6 text-center font-semibold text-blue-600 border-r border-slate-100">@center.CenterCode</td>
+                            @{ index++; }
+                            <td class="py-4 px-6 border-r border-slate-100">
+                                <div class="flex justify-center">
+                                    @if (!string.IsNullOrEmpty(center.Logo))
+                                    {
+                                        <img src="@center.Logo" alt="Logo" class="h-10 w-10 rounded-full object-cover border border-gray-200" />
+                                    }
+                                    else
+                                    {
+                                        <div class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="py-4 px-6 text-slate-900 font-semibold border-r border-slate-100">@center.CenterName</td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100">@(string.IsNullOrEmpty(center.Email) ? "-" : center.Email)</td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100">@(string.IsNullOrEmpty(center.PhoneNumber) ? "-" : center.PhoneNumber)</td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100">@center.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100">@(center.OwnerUser?.FullName ?? "-")</td>
+                            <td class="py-4 px-6 text-center border-r border-slate-100">
+                                <form method="post" asp-page-handler="ToggleStatus" asp-route-centerId="@center.CenterId" asp-route-searchName="@Model.SearchName" asp-route-searchContact="@Model.SearchContact" asp-route-filterDateRange="@Model.FilterDateRange" asp-route-filterStatus="@Model.FilterStatus" asp-route-pageNumber="@Model.PageNumber" asp-route-pageSize="@Model.PageSize" class="flex justify-center">
+                                    <button type="submit" class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(center.Status == "Active" ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100" : "border-slate-200 bg-slate-100 text-slate-600 hover:bg-slate-200")" title="Đổi trạng thái">
+                                        <span class="relative h-6 w-11 rounded-full transition-colors @(center.Status == "Active" ? "bg-emerald-500" : "bg-slate-300")">
+                                            <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(center.Status == "Active" ? "left-5" : "left-0.5")"></span>
+                                        </span>
+                                        <span class="min-w-[70px] text-left text-xs font-semibold">@(center.Status == "Active" ? "Hoạt động" : "Tạm ngưng")</span>
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <form method="post" asp-page-handler="EnterSupportMode" class="inline">
+                                    <input type="hidden" name="centerId" value="@center.CenterId" />
+                                    <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-blue-200 rounded-lg text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        Hỗ trợ
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="border-t border-slate-200 bg-white px-6 py-4">
+            <div class="ds-pagination">
+                <div class="ds-pagination-pages">
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(1)" class="ds-page-link @(Model.PageNumber <= 1 ? "ds-page-link-disabled" : "")">«</a>
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber - 1))" class="ds-page-link @(Model.PageNumber <= 1 ? "ds-page-link-disabled" : "")">‹</a>
+                    
+                    @{
+                        int startPage = Math.Max(1, Model.PageNumber - 2);
+                        int endPage = Math.Min(Model.TotalPages, startPage + 4);
+                        if (endPage - startPage < 4)
+                        {
+                            startPage = Math.Max(1, endPage - 4);
+                        }
+                    }
+                    
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        if (i == Model.PageNumber)
+                        {
+                            <a href="javascript:void(0)" class="ds-page-link ds-page-link-active">@i</a>
+                        }
+                        else
+                        {
+                            <a href="javascript:void(0)" onclick="setPageAndSubmit(@i)" class="ds-page-link">@i</a>
+                        }
+                    }
+                    
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber + 1))" class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">›</a>
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@Model.TotalPages)" class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">»</a>
+                </div>
+                <div class="ds-pagination-meta">
+                    <span>Tổng số: @Model.TotalItems bản ghi</span>
+                    <select class="ds-page-size" form="filterForm" name="PageSize" onchange="document.getElementById('PageNumber').value=1; this.form.submit()">
+                        @foreach (var size in Model.PageSizeOptions)
+                        {
+                            if (size == Model.PageSize)
+                            {
+                                <option value="@size" selected>@size</option>
+                            }
+                            else
+                            {
+                                <option value="@size">@size</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

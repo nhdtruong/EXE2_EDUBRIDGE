@@ -29,6 +29,10 @@ public partial class Room
 
     public int? DeletedByUserId { get; set; }
 
+    public int? BranchId { get; set; }
+
+    public virtual Branch? Branch { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();

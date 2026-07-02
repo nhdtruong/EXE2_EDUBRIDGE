@@ -29,6 +29,21 @@ BEGIN
 END;
 GO
 
+;WITH DuplicateTeachers AS (
+    SELECT 
+        TeacherId,
+        TeacherCode,
+        ROW_NUMBER() OVER(PARTITION BY TeacherCode ORDER BY TeacherId) as rn
+    FROM dbo.Teachers
+    WHERE TeacherCode IS NOT NULL AND LTRIM(RTRIM(TeacherCode)) <> N''
+)
+UPDATE t
+SET TeacherCode = CONCAT(t.TeacherCode, N'-DUP-', t.TeacherId)
+FROM dbo.Teachers t
+JOIN DuplicateTeachers d ON t.TeacherId = d.TeacherId
+WHERE d.rn > 1;
+GO
+
 ;WITH NumberedTeachers AS
 (
     SELECT

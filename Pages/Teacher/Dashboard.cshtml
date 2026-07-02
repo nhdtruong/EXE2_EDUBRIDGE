@@ -5,192 +5,193 @@
     ViewData["Title"] = "Dashboard Giáo viên";
 }
 
-<div class="dashboard-header mb-4" style="background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%); padding: 2rem; border-radius: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); border: 1px solid rgba(226,232,240,0.8);">
-    <h1 class="welcome-title" style="font-size: 1.8rem; background: linear-gradient(90deg, #3b82f6, #2563eb); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Chào mừng, @Model.TeacherName</h1>
-    <p class="current-date text-muted" style="font-size: 1rem; margin-top: 0.5rem;">Hôm nay là @Model.CurrentDate.ToString("dddd, dd 'tháng' MM 'năm' yyyy", new System.Globalization.CultureInfo("vi-VN"))</p>
+<!-- Welcome section -->
+<div class="mb-6 p-8 rounded-3xl bg-gradient-to-br from-white to-blue-50 border border-slate-200/80 shadow-sm">
+    <h1 class="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-700">Chào mừng, @Model.TeacherName</h1>
+    <p class="text-slate-500 mt-2 text-base font-medium">Hôm nay là @Model.CurrentDate.ToString("dddd, dd 'tháng' MM 'năm' yyyy", new System.Globalization.CultureInfo("vi-VN"))</p>
 </div>
 
 <!-- Stats Row -->
-<div class="stats-grid mb-4">
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Lớp phụ trách</span>
-            <div class="stat-icon bg-blue-light text-blue"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg></div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-sm font-semibold text-slate-500">Lớp phụ trách</span>
+            <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            </div>
         </div>
-        <div class="stat-value">@Model.TotalClasses</div>
+        <div class="text-3xl font-bold text-slate-800">@Model.TotalClasses</div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Tổng học sinh</span>
-            <div class="stat-icon bg-green-light text-green"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-sm font-semibold text-slate-500">Tổng học sinh</span>
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
         </div>
-        <div class="stat-value">@Model.TotalStudents</div>
+        <div class="text-3xl font-bold text-slate-800">@Model.TotalStudents</div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Bài tập chưa chấm</span>
-            <div class="stat-icon bg-orange-light text-orange"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-sm font-semibold text-slate-500">Bài tập chưa chấm</span>
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
         </div>
-        <div class="stat-value">@Model.UngradedAssignments</div>
+        <div class="text-3xl font-bold text-slate-800">@Model.UngradedAssignments</div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-header">
-            <span class="stat-title">Tin nhắn mới</span>
-            <div class="stat-icon bg-purple-light text-purple"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/60 hover:shadow-md transition-shadow">
+        <div class="flex justify-between items-center mb-4">
+            <span class="text-sm font-semibold text-slate-500">Tin nhắn mới</span>
+            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            </div>
         </div>
-        <div class="stat-value">@Model.UnreadMessages</div>
+        <div class="text-3xl font-bold text-slate-800">@Model.UnreadMessages</div>
     </div>
 </div>
 
 <!-- Main Content Split -->
-<div class="dashboard-grid mb-4">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <!-- Left Column: Schedule -->
-    <div class="dashboard-card">
-        <div class="card-header d-flex justify-content-between align-items-center mb-3">
-            <h3 class="card-title fw-semibold">Lịch dạy hôm nay</h3>
-            <svg class="text-muted" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 flex flex-col h-full">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-slate-800">Lịch dạy hôm nay</h3>
+            <svg class="text-slate-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         </div>
         
-        <div class="schedule-list">
+        <div class="flex-1 space-y-4 mb-6">
             @if (Model.TodaySchedules.Any())
             {
                 foreach (var schedule in Model.TodaySchedules)
                 {
-                    <div class="schedule-item">
-                        <div class="schedule-item-header">
-                            <div class="schedule-item-left">
-                                <h4>@schedule.ClassName</h4>
-                                <p>@schedule.Topic</p>
-                                <div class="schedule-time">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                                    @schedule.TimeRange
-                                </div>
+                    <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-1">@schedule.ClassName</h4>
+                            <p class="text-sm text-slate-600 mb-2">@schedule.Topic</p>
+                            <div class="flex items-center text-xs font-medium text-blue-600 bg-blue-50 w-fit px-2.5 py-1 rounded-md">
+                                <svg class="mr-1.5" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                @schedule.TimeRange
                             </div>
-                            <div class="badge-room">@schedule.Room</div>
                         </div>
+                        <span class="px-3 py-1 bg-slate-200/60 text-slate-700 text-xs font-bold rounded-lg border border-slate-300/50 shadow-sm">Phòng @schedule.Room</span>
                     </div>
                 }
             }
             else
             {
-                <div class="empty-state text-center py-4 text-muted">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                    <p>Chưa có lịch dạy nào trong hôm nay.</p>
+                <div class="h-full flex flex-col items-center justify-center text-center py-10">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-4 text-slate-300"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <p class="text-slate-500 font-medium">Chưa có lịch dạy nào trong hôm nay.</p>
                 </div>
             }
         </div>
 
-        <button class="btn btn-outline w-100" onclick="window.location.href='/Teacher/Lectures'">Xem lịch đầy đủ</button>
+        <button class="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl shadow-sm hover:bg-slate-50 transition-colors mt-auto" onclick="window.location.href='/Teacher/Lectures'">Xem lịch đầy đủ</button>
     </div>
     
     <!-- Right Column: Recent Assignments -->
-    <div class="dashboard-card border-left-on-mobile">
-        <div class="card-header d-flex justify-content-between align-items-center mb-4">
-            <h3 class="card-title fw-semibold">Bài tập gần đây</h3>
-            <svg class="text-muted" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 flex flex-col h-full">
+        <div class="flex justify-between items-center mb-5">
+            <h3 class="text-lg font-bold text-slate-800">Bài tập gần đây</h3>
+            <svg class="text-slate-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         </div>
         
-        <div class="assignment-list">
+        <div class="flex-1 space-y-4 mb-6">
             @if (Model.RecentAssignments.Any())
             {
                 foreach (var assignment in Model.RecentAssignments)
                 {
-                    <div class="assignment-item mb-4">
-                        <div class="d-flex justify-content-between mb-1">
-                            <h4 class="fw-bold">@assignment.Title</h4>
-                            <span class="text-muted text-sm fw-semibold">@assignment.CreatedAt.ToString("dd/MM/yyyy")</span>
+                    <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="font-bold text-slate-800 truncate">@assignment.Title</h4>
+                            <span class="text-xs font-semibold text-slate-500 shrink-0">@assignment.CreatedAt.ToString("dd/MM/yyyy")</span>
                         </div>
-                        <p class="text-muted text-sm mb-2">@assignment.ClassName</p>
+                        <p class="text-sm text-slate-600 mb-3 truncate">@assignment.ClassName</p>
                         
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="text-sm">Đã nộp</span>
-                            <span class="text-sm fw-bold">@assignment.Submitted/@assignment.Total</span>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <span class="text-xs font-medium text-slate-500">Đã nộp</span>
+                            <span class="text-xs font-bold text-slate-700">@assignment.Submitted/@assignment.Total</span>
                         </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill bg-dark" style="width: @assignment.PercentComplete%"></div>
+                        <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-slate-800 rounded-full" style="width: @assignment.PercentComplete%"></div>
                         </div>
                     </div>
                 }
             }
             else
             {
-                <div class="empty-state text-center py-4 text-muted">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <p>Chưa có bài tập nào gần đây.</p>
+                <div class="h-full flex flex-col items-center justify-center text-center py-10">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-4 text-slate-300"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <p class="text-slate-500 font-medium">Chưa có bài tập nào gần đây.</p>
                 </div>
             }
         </div>
 
-        <button class="btn btn-outline w-100" onclick="window.location.href='/Homework'">Xem tất cả bài tập</button>
+        <button class="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl shadow-sm hover:bg-slate-50 transition-colors mt-auto" onclick="window.location.href='/Homework'">Xem tất cả bài tập</button>
     </div>
 </div>
 
 <!-- Quick Actions -->
-<div class="dashboard-card mb-4">
-    <h3 class="card-title fw-semibold mb-4">Thao tác nhanh</h3>
-    <div class="quick-actions-grid">
-        <button class="action-btn" onclick="window.location.href='/Teacher/Lectures'">
-            <div class="action-btn-content">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                <span>Ghi chú bài giảng</span>
-            </div>
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 mb-8">
+    <h3 class="text-lg font-bold text-slate-800 mb-5">Thao tác nhanh</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-700 transition-all group" onclick="window.location.href='/Teacher/Lectures'">
+            <svg class="mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span class="text-sm font-semibold text-slate-700 group-hover:text-blue-700 transition-colors text-center">Ghi chú bài giảng</span>
         </button>
-        <button class="action-btn" onclick="window.location.href='/Homework'">
-            <div class="action-btn-content">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                <span>Giao bài tập</span>
-            </div>
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 transition-all group" onclick="window.location.href='/Homework'">
+            <svg class="mb-2 text-slate-400 group-hover:text-emerald-500 transition-colors" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            <span class="text-sm font-semibold text-slate-700 group-hover:text-emerald-700 transition-colors text-center">Giao bài tập</span>
         </button>
-        <button class="action-btn" onclick="window.location.href='/Grades'">
-            <div class="action-btn-content">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
-                <span>Nhập điểm</span>
-            </div>
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-amber-50 hover:border-amber-200 hover:text-amber-700 transition-all group" onclick="window.location.href='/Grades'">
+            <svg class="mb-2 text-slate-400 group-hover:text-amber-500 transition-colors" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+            <span class="text-sm font-semibold text-slate-700 group-hover:text-amber-700 transition-colors text-center">Nhập điểm</span>
         </button>
-        <button class="action-btn" onclick="window.location.href='/Teacher/Attendance'">
-            <div class="action-btn-content">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                <span>Điểm danh</span>
-            </div>
+        <button class="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-200/80 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-700 transition-all group" onclick="window.location.href='/Teacher/Attendance'">
+            <svg class="mb-2 text-slate-400 group-hover:text-indigo-500 transition-colors" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="text-sm font-semibold text-slate-700 group-hover:text-indigo-700 transition-colors text-center">Điểm danh</span>
         </button>
     </div>
 </div>
 
 <!-- Messages Section -->
-<div class="dashboard-card">
-    <div class="card-header d-flex justify-content-between align-items-center mb-4">
-        <h3 class="card-title fw-semibold">Tin nhắn gần đây</h3>
+<div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200/60 mb-8">
+    <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-slate-800">Tin nhắn gần đây</h3>
     </div>
 
-    <div class="messages-list">
+    <div class="space-y-4">
         @if (Model.RecentMessages.Any())
         {
             foreach (var message in Model.RecentMessages)
             {
-                <div class="message-item">
-                    <div class="message-avatar">@message.Avatar</div>
-                    <div class="message-body">
-                        <div class="message-header">
-                            <h4 class="message-sender">@message.SenderName</h4>
-                            <span class="message-time">@message.TimeAgo</span>
+                <div class="flex gap-4 p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors items-start">
+                    <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0">
+                        @message.Avatar
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-center mb-1">
+                            <h4 class="font-bold text-slate-800 truncate">@message.SenderName</h4>
+                            <span class="text-xs font-medium text-slate-500 shrink-0">@message.TimeAgo</span>
                         </div>
-                        <p class="message-parent">@message.ParentInfo</p>
-                        <p class="message-text">@message.Content</p>
+                        <p class="text-xs font-semibold text-slate-600 mb-1 truncate">@message.ParentInfo</p>
+                        <p class="text-sm text-slate-700 line-clamp-2 leading-relaxed">@message.Content</p>
                     </div>
                 </div>
             }
         }
         else
         {
-            <div class="empty-state text-center py-4 text-muted">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                <p>Bạn không có tin nhắn nào gần đây.</p>
+            <div class="flex flex-col items-center justify-center text-center py-8">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-4 text-slate-300"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <p class="text-slate-500 font-medium">Bạn không có tin nhắn nào gần đây.</p>
             </div>
         }
     </div>
 
-    <button class="btn btn-outline w-100 mt-4" onclick="window.location.href='/Messages'">Xem tất cả tin nhắn</button>
+    <button class="w-full py-2.5 px-4 bg-white border border-slate-200 text-slate-700 font-semibold rounded-xl shadow-sm hover:bg-slate-50 transition-colors mt-6" onclick="window.location.href='/Messages'">Xem tất cả tin nhắn</button>
 </div>

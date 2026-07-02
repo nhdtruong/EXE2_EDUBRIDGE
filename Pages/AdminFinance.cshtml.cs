@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace EduBridge.Pages;
 
-[Authorize(Roles = "OWNER")]
+[Authorize(Policy = "AdminOnly")]
 public class AdminFinanceModel : PageModel
 {
     private readonly IFinanceSummaryService _summaryService;

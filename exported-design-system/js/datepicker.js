@@ -26,16 +26,35 @@
 
             root.dataset.dsReady = 'true';
 
-            const initial = parseDate(hidden.value || display.value);
             const state = {
                 mode: 'days',
-                selected: initial,
-                cursor: initial || new Date()
+                isRange: root.hasAttribute('data-ds-range'),
+                selected: null,
+                rangeStart: null,
+                rangeEnd: null,
+                cursor: new Date()
             };
 
-            if (initial) {
+            let initial = null;
+            if (state.isRange) {
+                const parts = (hidden.value || display.value).split(' to ');
+                if (parts.length === 2) {
+                    state.rangeStart = parseDate(parts[0]);
+                    state.rangeEnd = parseDate(parts[1]);
+                    if (state.rangeStart) state.cursor = state.rangeStart;
+                }
+            } else {
+                initial = parseDate(hidden.value || display.value);
+                state.selected = initial;
+                if (initial) state.cursor = initial;
+            }
+
+            if (!state.isRange && initial) {
                 hidden.value = toIso(initial);
                 display.value = toDisplay(initial);
+            } else if (state.isRange && state.rangeStart && state.rangeEnd) {
+                hidden.value = toIso(state.rangeStart) + ' to ' + toIso(state.rangeEnd);
+                display.value = toDisplay(state.rangeStart) + ' - ' + toDisplay(state.rangeEnd);
             }
 
             const panel = document.createElement('div');
@@ -44,13 +63,37 @@
             root.appendChild(panel);
 
             const selectDate = date => {
-                state.selected = stripTime(date);
-                state.cursor = stripTime(date);
-                hidden.value = toIso(state.selected);
-                display.value = toDisplay(state.selected);
-                hidden.dispatchEvent(new Event('change', { bubbles: true }));
-                display.dispatchEvent(new Event('change', { bubbles: true }));
-                panel.hidden = true;
+                if (state.isRange) {
+                    if (!state.rangeStart || (state.rangeStart && state.rangeEnd)) {
+                        state.rangeStart = stripTime(date);
+                        state.rangeEnd = null;
+                        display.value = toDisplay(state.rangeStart);
+                        hidden.value = toIso(state.rangeStart);
+                        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                        display.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else {
+                        if (date < state.rangeStart) {
+                            state.rangeEnd = state.rangeStart;
+                            state.rangeStart = stripTime(date);
+                        } else {
+                            state.rangeEnd = stripTime(date);
+                        }
+                        hidden.value = toIso(state.rangeStart) + ' to ' + toIso(state.rangeEnd);
+                        display.value = toDisplay(state.rangeStart) + ' - ' + toDisplay(state.rangeEnd);
+                        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                        display.dispatchEvent(new Event('change', { bubbles: true }));
+                        panel.hidden = true;
+                    }
+                    if (!panel.hidden) render(panel, state, selectDate);
+                } else {
+                    state.selected = stripTime(date);
+                    state.cursor = stripTime(date);
+                    hidden.value = toIso(state.selected);
+                    display.value = toDisplay(state.selected);
+                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                    display.dispatchEvent(new Event('change', { bubbles: true }));
+                    panel.hidden = true;
+                }
             };
 
             const open = () => {
@@ -72,11 +115,21 @@
                 syncTyped(display, hidden, state);
             });
 
-            display.addEventListener('click', open);
+            const toggleOpen = () => {
+                if (panel.hidden) {
+                    open();
+                } else {
+                    panel.hidden = true;
+                }
+            };
+
+            display.addEventListener('click', () => {
+                if (panel.hidden) open();
+            });
             toggle.addEventListener('click', event => {
                 event.preventDefault();
                 event.stopPropagation();
-                open();
+                toggleOpen();
             });
 
             panel.addEventListener('mousedown', event => {
@@ -126,11 +179,17 @@
             const date = new Date(start);
             date.setDate(start.getDate() + index);
             const isCurrentMonth = date.getMonth() === month;
-            const isSelected = state.selected && sameDate(date, state.selected);
+            const isSelected = state.isRange
+                ? (state.rangeStart && sameDate(date, state.rangeStart)) || (state.rangeEnd && sameDate(date, state.rangeEnd))
+                : (state.selected && sameDate(date, state.selected));
+
+            const inRange = state.isRange && state.rangeStart && state.rangeEnd && date > state.rangeStart && date < state.rangeEnd;
+
             const classes = [
                 'ds-datepicker-cell',
                 isCurrentMonth ? '' : 'ds-datepicker-cell-muted',
-                isSelected ? 'ds-datepicker-cell-selected' : ''
+                isSelected ? 'ds-datepicker-cell-selected' : '',
+                inRange ? 'ds-datepicker-cell-in-range' : ''
             ].filter(Boolean).join(' ');
 
             cells.push(`<button type="button" class="${classes}" data-date="${toIso(date)}">${date.getDate()}</button>`);
@@ -226,6 +285,8 @@
             const display = root?.querySelector('[data-ds-date-display]');
             const hidden = root?.querySelector('[data-ds-date-value]');
             state.selected = null;
+            state.rangeStart = null;
+            state.rangeEnd = null;
             if (display) display.value = '';
             if (hidden) {
                 hidden.value = '';
@@ -246,22 +307,43 @@
     }
 
     function syncTyped(display, hidden, state) {
-        const typedDate = parseDate(display.value);
-
-        if (!typedDate) {
-            if (!display.value.trim()) {
-                hidden.value = '';
-                state.selected = null;
-                hidden.dispatchEvent(new Event('change', { bubbles: true }));
-            }
+        if (!display.value.trim()) {
+            hidden.value = '';
+            state.selected = null;
+            state.rangeStart = null;
+            state.rangeEnd = null;
+            hidden.dispatchEvent(new Event('change', { bubbles: true }));
             return;
         }
 
-        state.selected = typedDate;
-        state.cursor = typedDate;
-        hidden.value = toIso(typedDate);
-        display.value = toDisplay(typedDate);
-        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        if (state.isRange) {
+            const parts = display.value.split('-');
+            const start = parseDate(parts[0]);
+            const end = parseDate(parts[1]);
+            
+            if (start && end) {
+                state.rangeStart = start;
+                state.rangeEnd = end;
+                hidden.value = toIso(start) + ' to ' + toIso(end);
+                display.value = toDisplay(start) + ' - ' + toDisplay(end);
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (start) {
+                state.rangeStart = start;
+                state.rangeEnd = null;
+                hidden.value = toIso(start);
+                display.value = toDisplay(start);
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else {
+            const typedDate = parseDate(display.value);
+            if (typedDate) {
+                state.selected = typedDate;
+                state.cursor = typedDate;
+                hidden.value = toIso(typedDate);
+                display.value = toDisplay(typedDate);
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
     }
 
     function parseDate(value) {

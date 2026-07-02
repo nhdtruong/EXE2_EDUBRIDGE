@@ -3,16 +3,19 @@ using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Services.Classes;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Shifts;
 
 public class ShiftManagementService : IShiftManagementService
 {
     private readonly AppDbContext _context;
+    private readonly ICurrentCenterService _currentCenterService;
 
-    public ShiftManagementService(AppDbContext context)
+    public ShiftManagementService(AppDbContext context, ICurrentCenterService currentCenterService)
     {
         _context = context;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<ShiftPagedResponse>> GetShiftsAsync(
@@ -289,10 +292,7 @@ public class ShiftManagementService : IShiftManagementService
 
     private async Task<int?> GetActiveCenterIdAsync(int ownerUserId, CancellationToken cancellationToken)
     {
-        return await _context.Centers
-            .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-            .Select(c => c.CenterId)
-            .FirstOrDefaultAsync(cancellationToken);
+        return await _currentCenterService.GetCenterIdAsync(cancellationToken);
     }
 
     private static string GetShiftStatusText(string status) => status.ToUpperInvariant() switch

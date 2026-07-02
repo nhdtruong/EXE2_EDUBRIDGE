@@ -1,4 +1,4 @@
-USE EduBridgeDB;
+﻿USE EduBridgeDB;
 GO
 
 /* 1. Thêm cột soft delete cho Courses */
@@ -262,36 +262,6 @@ BEGIN
 END;
 GO
 
-/* Seed ca học mẫu nếu trung tâm chưa có ca nào */
-INSERT INTO dbo.StudyShifts
-    (CenterId, ShiftCode, ShiftName, StartTime, EndTime, Status, Note)
-SELECT
-    c.CenterId,
-    v.ShiftCode,
-    v.ShiftName,
-    v.StartTime,
-    v.EndTime,
-    N'Active',
-    N'Ca học mẫu'
-FROM dbo.Centers c
-CROSS APPLY
-(
-    VALUES
-        (N'CA01', N'Ca sáng 1', CAST('07:00' AS TIME(0)), CAST('09:00' AS TIME(0))),
-        (N'CA02', N'Ca sáng 2', CAST('09:00' AS TIME(0)), CAST('11:00' AS TIME(0))),
-        (N'CA03', N'Ca chiều 1', CAST('13:30' AS TIME(0)), CAST('15:30' AS TIME(0))),
-        (N'CA04', N'Ca chiều 2', CAST('15:30' AS TIME(0)), CAST('17:30' AS TIME(0))),
-        (N'CA05', N'Ca tối 1', CAST('18:00' AS TIME(0)), CAST('20:00' AS TIME(0))),
-        (N'CA06', N'Ca tối 2', CAST('19:00' AS TIME(0)), CAST('21:00' AS TIME(0)))
-) v(ShiftCode, ShiftName, StartTime, EndTime)
-WHERE c.Status = N'Active'
-  AND NOT EXISTS (
-      SELECT 1
-      FROM dbo.StudyShifts s
-      WHERE s.CenterId = c.CenterId
-        AND s.IsDeleted = 0
-  );
-GO
 
 /* View phục vụ màn hình danh sách ca học */
 IF OBJECT_ID(N'dbo.vw_StudyShiftOverview', N'V') IS NOT NULL

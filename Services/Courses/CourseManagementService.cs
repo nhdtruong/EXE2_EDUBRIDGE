@@ -4,6 +4,7 @@ using EduBridge.Data;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Courses;
 
@@ -11,21 +12,17 @@ public class CourseManagementService : ICourseManagementService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<CourseManagementService> _logger;
+    private readonly ICurrentCenterService _currentCenterService;
 
-    public CourseManagementService(AppDbContext context, ILogger<CourseManagementService> logger)
+    public CourseManagementService(AppDbContext context, ILogger<CourseManagementService> logger, ICurrentCenterService currentCenterService)
     {
         _context = context;
         _logger = logger;
+        _currentCenterService = currentCenterService;
     }
 
-    private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken)
-    {
-        return await _context.Centers
-            .AsNoTracking()
-            .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-            .Select(c => (int?)c.CenterId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
+    private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken) =>
+        await _currentCenterService.GetCenterIdAsync(cancellationToken);
 
     public async Task<ClassOperationResult<CoursePagedResponse>> GetCoursesAsync(int ownerUserId, CourseQuery query, CancellationToken cancellationToken = default)
     {

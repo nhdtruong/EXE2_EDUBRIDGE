@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace EduBridge.Pages
 {
-    [Authorize(Roles = "OWNER")]
+    [Authorize(Policy = "AdminOnly")]
     public class AdminSettingsModel : PageModel
     {
         private readonly ICenterSettingsService _settingsService;

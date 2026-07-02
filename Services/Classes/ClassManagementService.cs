@@ -3,6 +3,7 @@ using EduBridge.Contracts.Classes;
 using EduBridge.Data;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Classes;
 
@@ -12,17 +13,20 @@ public sealed class ClassManagementService : IClassManagementService
     private readonly IClassCreationService _creationService;
     private readonly IClassLessonPlanner _lessonPlanner;
     private readonly ILogger<ClassManagementService> _logger;
+    private readonly ICurrentCenterService _currentCenterService;
 
     public ClassManagementService(
         AppDbContext context,
         IClassCreationService creationService,
         IClassLessonPlanner lessonPlanner,
-        ILogger<ClassManagementService> logger)
+        ILogger<ClassManagementService> logger,
+        ICurrentCenterService currentCenterService)
     {
         _context = context;
         _creationService = creationService;
         _lessonPlanner = lessonPlanner;
         _logger = logger;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<ClassEditResponse>> GetEditAsync(
@@ -30,7 +34,8 @@ public sealed class ClassManagementService : IClassManagementService
         int classId,
         CancellationToken cancellationToken = default)
     {
-        var entity = await ManagedClasses(ownerUserId)
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        var entity = await managedClasses
             .AsNoTracking()
             .Include(c => c.ClassSchedules)
             .FirstOrDefaultAsync(c => c.ClassId == classId, cancellationToken);
@@ -108,7 +113,8 @@ public sealed class ClassManagementService : IClassManagementService
                 IsolationLevel.Serializable,
                 cancellationToken);
 
-            var entity = await ManagedClasses(ownerUserId)
+            var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+            var entity = await managedClasses
                 .Include(c => c.ClassSchedules)
                 .Include(c => c.Lessons)
                     .ThenInclude(l => l.Attendances)
@@ -258,7 +264,8 @@ public sealed class ClassManagementService : IClassManagementService
         int classId,
         CancellationToken cancellationToken = default)
     {
-        var entity = await ManagedClasses(ownerUserId)
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        var entity = await managedClasses
             .Include(c => c.Lessons)
             .FirstOrDefaultAsync(c => c.ClassId == classId, cancellationToken);
 
@@ -295,7 +302,8 @@ public sealed class ClassManagementService : IClassManagementService
         int classId,
         CancellationToken cancellationToken = default)
     {
-        var entity = await ManagedClasses(ownerUserId)
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        var entity = await managedClasses
             .Include(c => c.Enrollments)
             .Include(c => c.Invoices)
             .Include(c => c.Grades)
@@ -353,7 +361,9 @@ public sealed class ClassManagementService : IClassManagementService
         ClassQuery query,
         CancellationToken cancellationToken = default)
     {
-        var queryable = ManagedClasses(ownerUserId)
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        var queryable = managedClasses
+            .AsNoTracking()
             .Include(c => c.Course)
             .Include(c => c.Teacher)
                 .ThenInclude(t => t.User)
@@ -432,7 +442,7 @@ public sealed class ClassManagementService : IClassManagementService
         CancellationToken cancellationToken = default)
     {
         var centerId = await _context.Centers
-            .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
+            .Where(c => c.Status == "Active" && (c.OwnerUserId == ownerUserId || _context.CenterUsers.Any(cu => cu.CenterId == c.CenterId && cu.UserId == ownerUserId && cu.UserType == "OWNER" && cu.Status == "Active")))
             .Select(c => c.CenterId)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -494,7 +504,8 @@ public sealed class ClassManagementService : IClassManagementService
         CancellationToken cancellationToken)
     {
         var errors = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-        var entity = await ManagedClasses(ownerUserId)
+        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
+        var entity = await managedClasses
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.ClassId == request.ClassId, cancellationToken);
 
@@ -593,13 +604,11 @@ public sealed class ClassManagementService : IClassManagementService
         return result.Distinct().ToList();
     }
 
-    private IQueryable<Class> ManagedClasses(int ownerUserId) =>
-        _context.Classes.Where(c =>
-            !c.IsDeleted &&
-            (c.Center.OwnerUserId == ownerUserId ||
-             _context.CenterUsers.Any(cu =>
-                 cu.CenterId == c.CenterId && cu.UserId == ownerUserId &&
-                 cu.UserType == "OWNER" && cu.Status == "Active")));
+    private async Task<IQueryable<Class>> ManagedClassesAsync(int ownerUserId, CancellationToken cancellationToken)
+    {
+        var centerId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
+        return _context.Classes.Where(c => !c.IsDeleted && c.CenterId == centerId);
+    }
 
     private async Task<ClassCreateOptionsResponse> IncludeCurrentOptionsAsync(
         Class entity,

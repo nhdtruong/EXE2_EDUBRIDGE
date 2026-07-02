@@ -81,6 +81,7 @@ namespace EduBridge.Services.Chat
                     ParentName = group.First().ParentName,
                     StudentNames = string.Join(", ", group.Select(s => s.StudentName).Distinct()),
                     LastMessage = lastMsg?.Content,
+                    LastMessageSenderId = lastMsg?.SenderUserId,
                     LastMsgAt = lastMsg?.SentAt,
                     UnreadCount = unreadCount
                 };
@@ -94,6 +95,7 @@ namespace EduBridge.Services.Chat
                 ParentName = c.ParentName,
                 StudentNames = c.StudentNames,
                 LastMessage = c.LastMessage,
+                LastMessageSenderId = c.LastMessageSenderId,
                 LastMessageTime = c.LastMsgAt?.ToString("dd/MM/yyyy HH:mm"),
                 UnreadCount = c.UnreadCount
             })
@@ -166,6 +168,7 @@ namespace EduBridge.Services.Chat
                     TeacherName = teacherName,
                     StudentNames = studentNames,
                     LastMessage = lastMsg?.Content,
+                    LastMessageSenderId = lastMsg?.SenderUserId,
                     LastMsgAt = lastMsg?.SentAt,
                     UnreadCount = unreadCount
                 };
@@ -179,6 +182,7 @@ namespace EduBridge.Services.Chat
                 ParentName = c.TeacherName,
                 StudentNames = c.StudentNames,
                 LastMessage = c.LastMessage,
+                LastMessageSenderId = c.LastMessageSenderId,
                 LastMessageTime = c.LastMsgAt?.ToString("dd/MM/yyyy HH:mm"),
                 UnreadCount = c.UnreadCount
             })

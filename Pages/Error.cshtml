@@ -2,29 +2,37 @@
 @model ErrorModel
 @{
     ViewData["Title"] = "Lỗi hệ thống";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = null;
 }
 
-<div class="container mt-5 mb-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 text-center">
-            <h1 class="text-danger mb-3"><i class="bi bi-exclamation-triangle-fill"></i> Đã xảy ra lỗi</h1>
-            <h4 class="text-muted mb-4">Xin lỗi, hệ thống đã gặp sự cố trong quá trình xử lý yêu cầu của bạn.</h4>
-            
-            @if (Model.ShowRequestId)
-            {
-                <div class="alert alert-secondary d-inline-block">
-                    <strong>Mã lỗi (Request ID):</strong> <code>@Model.RequestId</code>
-                </div>
-                <p class="mt-3 text-muted small">
-                    Vui lòng cung cấp mã lỗi này cho bộ phận hỗ trợ kỹ thuật để được trợ giúp.
-                </p>
-            }
-            
-            <div class="mt-4">
-                <a href="/" class="btn btn-primary">
-                    <i class="bi bi-house-door me-2"></i>Trở về Trang chủ
-                </a>
+<div class="flex items-center justify-center min-h-[60vh]">
+    <div class="text-center max-w-lg">
+        <div class="flex items-center justify-center mb-6">
+            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+                <svg class="h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
             </div>
         </div>
+
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Đã xảy ra lỗi</h1>
+        <p class="text-gray-500 text-sm mb-6">
+            Xin lỗi, hệ thống đã gặp sự cố trong quá trình xử lý yêu cầu của bạn.
+        </p>
+
+        @if (Model.ShowRequestId)
+        {
+            <div class="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3">
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold">Mã lỗi (Request ID):</span>
+                    <code class="ml-1 text-xs font-mono text-red-600 break-all">@Model.RequestId</code>
+                </p>
+            </div>
+            <p class="text-xs text-gray-400">
+                Vui lòng cung cấp mã lỗi này cho bộ phận hỗ trợ kỹ thuật để được trợ giúp.
+            </p>
+        }
     </div>
 </div>

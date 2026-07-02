@@ -10,7 +10,7 @@ namespace EduBridge.Controllers.Api
 {
     [Route("api/v1/owner/settings")]
     [ApiController]
-    [Authorize(Roles = "OWNER")]
+    [Authorize(Policy = "AdminOnly")]
     public class OwnerSettingsController : ControllerBase
     {
         private readonly ICenterSettingsService _settingsService;

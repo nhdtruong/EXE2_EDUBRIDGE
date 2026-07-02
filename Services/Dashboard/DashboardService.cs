@@ -3,6 +3,7 @@ using EduBridge.Data;
 using EduBridge.Services.Classes;
 using Microsoft.EntityFrameworkCore;
 using EduBridge.Models.DTOs.TeacherDashboard;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Dashboard;
 
@@ -10,22 +11,26 @@ public class DashboardService : IDashboardService
 {
     private readonly AppDbContext _context;
     private readonly ILogger<DashboardService> _logger;
+    private readonly ICurrentCenterService _currentCenterService;
 
     public DashboardService(
         AppDbContext context,
-        ILogger<DashboardService> logger)
+        ILogger<DashboardService> logger,
+        ICurrentCenterService currentCenterService)
     {
         _context = context;
         _logger = logger;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<DashboardSummaryResponse>> GetDashboardSummaryAsync(
         int ownerUserId,
         CancellationToken cancellationToken = default)
     {
+        var centerId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
         var center = await _context.Centers
             .AsNoTracking()
-            .Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
+            .Where(c => c.CenterId == centerId)
             .Select(c => new
             {
                 c.CenterId,

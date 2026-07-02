@@ -55,7 +55,11 @@ public partial class Student
 
     public string? PlaceOfBirth { get; set; }
 
+    public int? BranchId { get; set; }
+
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
+
+    public virtual Branch? Branch { get; set; }
 
     public virtual Center Center { get; set; } = null!;
 

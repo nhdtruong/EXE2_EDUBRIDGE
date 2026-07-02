@@ -6,6 +6,7 @@ using EduBridge.Data;
 using EduBridge.Models;
 using EduBridge.Services.Classes;
 using Microsoft.EntityFrameworkCore;
+using EduBridge.Services.Auth;
 
 namespace EduBridge.Services.Parents;
 
@@ -14,11 +15,13 @@ public sealed class ParentManagementService : IParentManagementService
     private static readonly int[] AllowedPageSizes = [10, 20, 50, 100, 200, 500];
     private readonly AppDbContext _context;
     private readonly ILogger<ParentManagementService> _logger;
+    private readonly ICurrentCenterService _currentCenterService;
 
-    public ParentManagementService(AppDbContext context, ILogger<ParentManagementService> logger)
+    public ParentManagementService(AppDbContext context, ILogger<ParentManagementService> logger, ICurrentCenterService currentCenterService)
     {
         _context = context;
         _logger = logger;
+        _currentCenterService = currentCenterService;
     }
 
     public async Task<ClassOperationResult<ParentPagedResponse>> GetParentsAsync(
@@ -322,8 +325,7 @@ public sealed class ParentManagementService : IParentManagementService
         _context.CenterUsers.AsNoTracking().Where(cu => cu.CenterId == centerId && cu.UserType == "PARENT" && !cu.User.IsDeleted);
 
     private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken) =>
-        await _context.Centers.AsNoTracking().Where(c => c.OwnerUserId == ownerUserId && c.Status == "Active")
-            .Select(c => (int?)c.CenterId).FirstOrDefaultAsync(cancellationToken);
+        await _currentCenterService.GetCenterIdAsync(cancellationToken);
 
     private static ClassOperationResult<ParentMutationResponse>? ValidateAndNormalize(SaveParentRequest request)
     {
