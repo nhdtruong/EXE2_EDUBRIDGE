@@ -255,220 +255,209 @@
 else
 {
     <!-- ==========================================
-         TEACHER INTERFACE (DESKTOP & DESIGN SYSTEM)
+         TEACHER INTERFACE (TAILWIND)
          ========================================== -->
-    <div class="homework-header-section">
+    <div class="flex justify-between items-start mb-6">
         <div>
-            <h1 class="homework-main-title">Quản lý bài tập</h1>
-            <p class="homework-subtitle">Giao bài tập và chấm điểm</p>
+            <h1 class="text-3xl font-bold text-gray-900">Quản lý bài tập</h1>
+            <p class="text-gray-500 mt-1">Giao bài tập và chấm điểm</p>
         </div>
-        <button class="btn-create-homework" data-bs-toggle="modal" data-bs-target="#createHomeworkModal">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <button onclick="toggleModal('createHomeworkModal', true)" class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             Giao bài tập mới
         </button>
     </div>
 
     <!-- Main Card -->
-    <div class="homework-main-card">
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden mb-8">
         <!-- List Header -->
-        <div class="homework-list-header">
-            <h3 class="list-title">Danh sách bài tập</h3>
-            <div class="search-wrapper">
-                <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="text" placeholder="Tìm kiếm bài tập..." class="search-input-field" />
+        <div class="rounded-t-2xl border-b border-blue-100 bg-blue-50/60 p-6 flex justify-between items-center">
+            <h3 class="text-base font-bold text-gray-900">Danh sách bài tập</h3>
+            <div class="relative w-full max-w-sm">
+                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" placeholder="Tìm kiếm bài tập..." class="block h-10 w-full rounded border border-gray-300 bg-white pl-10 pr-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
             </div>
         </div>
 
-        <!-- Assignments List -->
-        <div class="assignments-container">
-            @if (Model.HomeworkList.Any())
-            {
-                foreach (var hw in Model.HomeworkList)
-                {
-                    var submitPct = hw.TotalStudents == 0 ? 0 : (double)hw.SubmittedCount / hw.TotalStudents * 100;
-                    var gradePct = hw.SubmittedCount == 0 ? 0 : (double)hw.GradedCount / hw.SubmittedCount * 100;
+        <!-- Assignments Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Bài tập</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Đã nộp</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Đã chấm</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Hạn nộp</th>
+                        <th class="py-4 px-6 font-bold text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-100">
+                    @if (!Model.HomeworkList.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="py-10 px-6 text-center text-gray-500">
+                                Chưa có bài tập nào được giao.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var hw in Model.HomeworkList)
+                        {
+                            var submitPct = hw.TotalStudents == 0 ? 0 : (double)hw.SubmittedCount / hw.TotalStudents * 100;
+                            var gradePct = hw.SubmittedCount == 0 ? 0 : (double)hw.GradedCount / hw.SubmittedCount * 100;
 
-                    <div class="assignment-row">
-                        <!-- Left: Info -->
-                        <div class="assignment-info">
-                            <div class="assignment-top">
-                                <div>
-                                    <h4 class="assignment-name">@hw.Title</h4>
-                                    <span class="class-badge">@hw.ClassName</span>
-                                </div>
-                                <button class="ds-icon-btn ds-icon-btn-view detail-btn" data-homework-id="@hw.HomeworkId" data-title="@hw.Title" data-class-name="@hw.ClassName" title="Xem chi tiết">
-                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
-                                        <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
-                                    </svg>
-                                </button>
-                            </div>
-                            <p class="assignment-desc">@hw.Description</p>
-                            
-                            @if (!string.IsNullOrEmpty(hw.AttachmentUrl))
-                            {
-                                <div class="mb-2">
-                                    <a href="@hw.AttachmentUrl" target="_blank" class="text-danger text-decoration-none fw-semibold text-sm d-inline-flex align-items-center gap-1">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                        Xem tệp PDF đề bài đã giao
-                                    </a>
-                                </div>
-                            }
-
-                            <div class="assignment-dates-row">
-                                <span>Giao: @hw.CreatedAtString</span>
-                                <span>Hạn: @hw.DueDateString</span>
-                            </div>
-                        </div>
-
-                        <!-- Right: Progress -->
-                        <div class="assignment-progress-row">
-                            <!-- Đã nộp -->
-                            <div class="progress-item">
-                                <label class="progress-item-label">Đã nộp</label>
-                                <div class="progress-bar-row">
-                                    <div class="progress-bar-bg">
-                                        <div class="progress-bar-fill" style="width: @submitPct%;"></div>
+                            <tr class="group hover:bg-slate-100 transition-colors">
+                                <td class="py-5 px-6 border-r border-gray-200">
+                                    <div class="font-semibold text-blue-700 group-hover:text-blue-800 text-base">@hw.Title</div>
+                                    <div class="mt-1 text-xs font-semibold text-slate-600 bg-slate-200 inline-block px-2 py-0.5 rounded">@hw.ClassName</div>
+                                    <div class="mt-2 text-sm text-gray-600">@hw.Description</div>
+                                    @if (!string.IsNullOrEmpty(hw.AttachmentUrl))
+                                    {
+                                        <div class="mt-2">
+                                            <a href="@hw.AttachmentUrl" target="_blank" class="text-red-600 hover:text-red-800 text-decoration-none fw-semibold text-xs inline-flex items-center gap-1">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                                Tài liệu đính kèm
+                                            </a>
+                                        </div>
+                                    }
+                                    <div class="mt-3 text-xs text-gray-500">
+                                        Giao: @hw.CreatedAtString
                                     </div>
-                                    <span class="progress-value">@hw.SubmittedCount/@hw.TotalStudents</span>
-                                </div>
-                            </div>
-
-                            <!-- Đã chấm -->
-                            <div class="progress-item">
-                                <label class="progress-item-label">Đã chấm</label>
-                                <div class="progress-bar-row">
-                                    <div class="progress-bar-bg">
-                                        <div class="progress-bar-fill" style="width: @gradePct%;"></div>
+                                </td>
+                                <td class="py-5 px-6 text-center border-r border-gray-200">
+                                    <div class="font-semibold text-gray-900">@hw.SubmittedCount / @hw.TotalStudents</div>
+                                    <div class="mt-2 w-full max-w-[120px] mx-auto bg-gray-200 rounded-full h-2">
+                                        <div class="bg-blue-600 h-2 rounded-full" style="width: @submitPct%"></div>
                                     </div>
-                                    <span class="progress-value">@hw.GradedCount/@hw.SubmittedCount</span>
-                                </div>
-                            </div>
-
-                            <!-- Cần chấm -->
-                            <div class="progress-item">
-                                <label class="progress-item-label">Cần chấm</label>
-                                <span class="pending-count">@hw.PendingCount bài</span>
-                            </div>
-                        </div>
-                    </div>
-                }
-            }
-            else
-            {
-                <div class="empty-state text-center py-5 text-muted">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-2 text-gray-400" style="opacity:0.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <p>Chưa có bài tập nào được giao.</p>
-                </div>
-            }
+                                </td>
+                                <td class="py-5 px-6 text-center border-r border-gray-200">
+                                    <div class="font-semibold text-gray-900">@hw.GradedCount / @hw.SubmittedCount</div>
+                                    <div class="mt-2 w-full max-w-[120px] mx-auto bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: @gradePct%"></div>
+                                    </div>
+                                    @if (hw.PendingCount > 0)
+                                    {
+                                        <div class="mt-2 inline-block px-2 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full">
+                                            @hw.PendingCount cần chấm
+                                        </div>
+                                    }
+                                </td>
+                                <td class="py-5 px-6 text-center border-r border-gray-200">
+                                    <div class="text-sm font-semibold text-gray-700">@hw.DueDateString</div>
+                                </td>
+                                <td class="py-5 px-6 text-center">
+                                    <button type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100 detail-btn" data-homework-id="@hw.HomeworkId" data-title="@hw.Title" data-class-name="@hw.ClassName" title="Xem/Chấm điểm">
+                                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Add/Create Homework Modal -->
-    <div class="modal fade" id="createHomeworkModal" tabindex="-1" aria-labelledby="createHomeworkModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-                <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                    <h5 class="modal-title fw-bold" id="createHomeworkModalLabel">Giao bài tập mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="post" asp-page-handler="Create" enctype="multipart/form-data">
-                    <div class="modal-body" style="padding: 1.5rem;">
-                        @if (TempData["ErrorMessage"] != null)
-                        {
-                            <div class="alert alert-danger mb-3" style="border-radius: 12px; font-size: 0.9rem;">
-                                @TempData["ErrorMessage"]
-                            </div>
-                        }
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-sm">Lớp học</label>
-                            <select id="selectClass" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
-                                <option value="">-- Chọn lớp học --</option>
-                                @foreach (var cls in Model.TeacherClasses)
-                                {
-                                    <option value="@cls.ClassId">@cls.ClassName</option>
-                                }
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-sm">Buổi học (Lesson)</label>
-                            <select id="selectLesson" name="lessonId" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required disabled>
-                                <option value="">-- Vui lòng chọn lớp học trước --</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-sm">Tiêu đề bài tập</label>
-                            <input type="text" name="title" class="form-control" placeholder="Nhập tiêu đề (vd: Bài tập về nhà hàm số)" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-sm">Mô tả / Yêu cầu</label>
-                            <textarea name="description" class="form-control" rows="3" placeholder="Nhập mô tả chi tiết, bài tập trang mấy..." style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-sm">Hạn nộp (Due Date)</label>
-                            <input type="datetime-local" name="dueDate" class="form-control" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-sm">Tài liệu đính kèm (File PDF đề bài)</label>
-                            <input type="file" name="pdfFile" class="form-control" accept=".pdf" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0;">
-                            <span class="text-muted text-xs d-block mt-1">Chỉ chấp nhận file PDF, dung lượng tối đa 20MB.</span>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                        <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Hủy</button>
-                        <button type="submit" class="btn-primary-green">Giao bài tập</button>
-                    </div>
-                </form>
+    <!-- Create Homework Modal -->
+    <div id="createHomeworkModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
+        <div class="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                <h3 class="text-lg font-bold text-gray-900">Giao bài tập mới</h3>
+                <button type="button" onclick="toggleModal('createHomeworkModal', false)" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             </div>
+            <form method="post" asp-page-handler="Create" enctype="multipart/form-data">
+                <div class="px-6 py-4">
+                    @if (TempData["ErrorMessage"] != null)
+                    {
+                        <div class="mb-4 rounded-xl bg-red-50 p-4 text-sm text-red-600">
+                            @TempData["ErrorMessage"]
+                        </div>
+                    }
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Lớp học</label>
+                        <select id="selectClass" class="block h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                            <option value="">-- Chọn lớp học --</option>
+                            @foreach (var cls in Model.TeacherClasses)
+                            {
+                                <option value="@cls.ClassId">@cls.ClassName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Buổi học (Lesson)</label>
+                        <select id="selectLesson" name="lessonId" class="block h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" required disabled>
+                            <option value="">-- Vui lòng chọn lớp học trước --</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Tiêu đề bài tập</label>
+                        <input type="text" name="title" class="block h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập tiêu đề..." required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Mô tả / Yêu cầu</label>
+                        <textarea name="description" rows="3" class="block w-full rounded-xl border border-gray-300 bg-white p-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập mô tả chi tiết..."></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Hạn nộp (Due Date)</label>
+                        <input type="datetime-local" name="dueDate" class="block h-11 w-full rounded-xl border border-gray-300 bg-white px-4 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="mb-1.5 block text-sm font-semibold text-gray-700">Tài liệu đính kèm (File PDF đề bài)</label>
+                        <input type="file" name="pdfFile" accept=".pdf" class="block w-full rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <p class="mt-1 text-xs text-gray-500">Chỉ chấp nhận file PDF, dung lượng tối đa 20MB.</p>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
+                    <button type="button" onclick="toggleModal('createHomeworkModal', false)" class="inline-flex h-10 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Hủy</button>
+                    <button type="submit" class="inline-flex h-10 items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700">Giao bài tập</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- Homework Submission Detail Modal -->
-    <div class="modal fade" id="homeworkDetailModal" tabindex="-1" aria-labelledby="homeworkDetailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-                <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                    <div>
-                        <h5 class="modal-title fw-bold" id="homeworkDetailModalLabel">Chi tiết & Chấm điểm bài tập</h5>
-                        <span id="detailSubTitle" class="text-muted text-sm" style="font-weight: 600;"></span>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div id="homeworkDetailModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
+        <div class="w-full max-w-5xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 flex-shrink-0">
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Chi tiết & Chấm điểm bài tập</h3>
+                    <p id="detailSubTitle" class="mt-1 text-sm font-semibold text-gray-500"></p>
                 </div>
-                <div class="modal-body" style="padding: 1.5rem; max-height: 450px; overflow-y: auto;">
-                    <div class="ds-table-wrap">
-                        <table class="ds-table" style="min-width: 700px;">
-                            <thead>
-                                <tr>
-                                    <th class="ds-table-center" style="width: 60px;">STT</th>
-                                    <th>Học sinh</th>
-                                    <th>Nội dung nộp</th>
-                                    <th class="ds-table-center" style="width: 120px;">Trạng thái</th>
-                                    <th style="width: 80px;">Điểm</th>
-                                    <th style="width: 180px;">Nhận xét</th>
-                                    <th class="ds-table-center" style="width: 100px;">Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="submissionsTableBody">
-                                <!-- Sẽ được fill bằng JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
+                <button type="button" onclick="toggleModal('homeworkDetailModal', false)" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="overflow-y-auto p-6 bg-gray-50 flex-grow">
+                <div class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                            <tr class="bg-slate-100 text-sm font-bold text-slate-800 border-b border-gray-200">
+                                <th class="py-3 px-4 text-center border-r border-gray-200 w-16">STT</th>
+                                <th class="py-3 px-4 border-r border-gray-200">Học sinh</th>
+                                <th class="py-3 px-4 border-r border-gray-200 w-64">Nội dung nộp</th>
+                                <th class="py-3 px-4 text-center border-r border-gray-200 w-32">Trạng thái</th>
+                                <th class="py-3 px-4 border-r border-gray-200 w-24">Điểm</th>
+                                <th class="py-3 px-4 border-r border-gray-200 w-48">Nhận xét</th>
+                                <th class="py-3 px-4 text-center w-28">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="submissionsTableBody" class="text-sm divide-y divide-gray-100">
+                            <!-- Sẽ được fill bằng JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Đóng</button>
-                </div>
+            </div>
+            <div class="flex items-center justify-end border-t border-gray-100 px-6 py-4 flex-shrink-0">
+                <button type="button" onclick="toggleModal('homeworkDetailModal', false)" class="inline-flex h-10 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">Đóng</button>
             </div>
         </div>
     </div>
 
     <!-- Form ẩn phục vụ việc Submit chấm điểm -->
-    <form id="hiddenGradeForm" method="post" asp-page-handler="Grade" style="display: none;">
+    <form id="hiddenGradeForm" method="post" asp-page-handler="Grade" class="hidden">
         <input type="hidden" name="homeworkId" id="gradeHomeworkId" />
         <input type="hidden" name="studentId" id="gradeStudentId" />
         <input type="hidden" name="score" id="gradeScore" />
@@ -664,12 +653,26 @@ else
     }
     else
     {
+        <script>
+            // Utility toggleModal function (since this is Teacher UI)
+            function toggleModal(modalId, show) {
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+                if (show) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                } else {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+        </script>
+
         @if (TempData["ErrorMessage"] != null)
         {
             <script>
                 document.addEventListener("DOMContentLoaded", function() {
-                    var createHomeworkModal = new bootstrap.Modal(document.getElementById('createHomeworkModal'));
-                    createHomeworkModal.show();
+                    toggleModal('createHomeworkModal', true);
                 });
             </script>
         }
@@ -714,8 +717,6 @@ else
 
                 // 2. Chi tiết và chấm điểm bài nộp
                 const detailButtons = document.querySelectorAll(".detail-btn");
-                const detailModalEl = document.getElementById("homeworkDetailModal");
-                const detailModal = new bootstrap.Modal(detailModalEl);
                 const submissionsTableBody = document.getElementById("submissionsTableBody");
                 const detailSubTitle = document.getElementById("detailSubTitle");
 
@@ -726,9 +727,9 @@ else
                         const className = this.getAttribute("data-class-name");
 
                         detailSubTitle.textContent = `Lớp: ${className} | Bài tập: ${title}`;
-                        submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4">Đang tải danh sách bài nộp...</td></tr>';
+                        submissionsTableBody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-gray-500">Đang tải danh sách bài nộp...</td></tr>';
                         
-                        detailModal.show();
+                        toggleModal('homeworkDetailModal', true);
 
                         try {
                             const response = await fetch(`/api/v1/teacher/homework/${homeworkId}/submissions`);
@@ -746,8 +747,8 @@ else
                                     const fileUrl = sub.submissionFileUrl || sub.SubmissionFileUrl;
                                     const content = sub.submissionContent || sub.SubmissionContent;
 
-                                    let submissionContent = content || '<span class="text-muted italic">Chưa nộp bài</span>';
-                                    const badgeClass = status === 'Graded' ? 'ds-badge-success' : (status === 'Submitted' ? 'ds-badge-warning' : 'ds-badge-danger');
+                                    let submissionContent = content || '<span class="text-gray-400 italic">Chưa nộp bài</span>';
+                                    const badgeClass = status === 'Graded' ? 'bg-green-100 text-green-700' : (status === 'Submitted' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700');
                                     const statusText = status === 'Graded' ? 'Đã chấm' : (status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
                                     
                                     // Xử lý an toàn cho Score (Điểm số)
@@ -771,16 +772,16 @@ else
                                         const isImg = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i);
                                         if (isImg) {
                                             submissionContent = `
-                                                <div class="mb-1 text-truncate" title="${content || ''}">${content || 'Nộp bằng ảnh'}</div>
-                                                <a href="${fileUrl}" target="_blank" class="d-block">
-                                                    <img src="${fileUrl}" style="max-height: 60px; border-radius: 6px; display: block; border: 1px solid #e2e8f0; object-fit: cover;" />
+                                                <div class="mb-1 truncate text-xs text-gray-700" title="${content || ''}">${content || 'Nộp bằng ảnh'}</div>
+                                                <a href="${fileUrl}" target="_blank" class="block mt-1">
+                                                    <img src="${fileUrl}" class="max-h-16 rounded border border-gray-200 object-cover" />
                                                 </a>
                                             `;
                                         } else {
                                             const fileDisplay = fileUrl.split('_').slice(1).join('_') || "file_bai_lam";
                                             submissionContent = `
-                                                <div class="mb-1 text-truncate" title="${content || ''}">${content || 'Nộp bằng file'}</div>
-                                                <a href="${fileUrl}" target="_blank" class="text-decoration-none text-primary d-inline-flex align-items-center gap-1 font-semibold text-xs">
+                                                <div class="mb-1 truncate text-xs text-gray-700" title="${content || ''}">${content || 'Nộp bằng file'}</div>
+                                                <a href="${fileUrl}" target="_blank" class="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800">
                                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                                                     Tải bài làm
                                                 </a>
@@ -789,29 +790,31 @@ else
                                     }
 
                                     html += `
-                                        <tr>
-                                            <td class="ds-table-center">${index + 1}</td>
-                                            <td>
-                                                <div class="ds-entity">
-                                                    <div class="ds-avatar">${avatarText}</div>
+                                        <tr class="hover:bg-slate-50 transition-colors">
+                                            <td class="py-3 px-4 text-center border-r border-gray-200 text-gray-700 font-medium">${index + 1}</td>
+                                            <td class="py-3 px-4 border-r border-gray-200">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs flex-shrink-0">${avatarText}</div>
                                                     <div>
-                                                        <div class="ds-entity-title">${sName}</div>
-                                                        <div class="ds-entity-subtitle">Mã: ${sCode}</div>
+                                                        <div class="font-semibold text-gray-900">${sName}</div>
+                                                        <div class="text-xs text-gray-500">Mã: ${sCode}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style="max-width: 250px;">${submissionContent}</td>
-                                            <td class="ds-table-center"><span class="ds-badge ${badgeClass}">${statusText}</span></td>
-                                            <td>
-                                                <input type="number" class="form-control score-input" style="height: 32px !important; padding: 0.25rem 0.5rem;" step="0.1" min="0" max="10" value="${scoreValue}" placeholder="Điểm" data-student-id="${sId}" />
+                                            <td class="py-3 px-4 border-r border-gray-200" style="max-width: 250px;">
+                                                ${submissionContent}
                                             </td>
-                                            <td>
-                                                <input type="text" class="form-control feedback-input" style="height: 32px !important; padding: 0.25rem 0.5rem;" value="${feedbackValue}" placeholder="Nhận xét" data-student-id="${sId}" />
+                                            <td class="py-3 px-4 text-center border-r border-gray-200">
+                                                <span class="inline-block px-2 py-1 text-xs font-bold rounded-full ${badgeClass}">${statusText}</span>
                                             </td>
-                                            <td class="ds-table-center">
-                                                <div class="ds-table-actions">
-                                                    <button class="ds-btn ds-btn-primary ds-btn-sm save-grade-btn" style="height: 32px; border-radius: 6px; font-size: 0.8rem;" data-homework-id="${homeworkId}" data-student-id="${sId}">Lưu</button>
-                                                </div>
+                                            <td class="py-3 px-4 border-r border-gray-200">
+                                                <input type="number" class="block h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 score-input" step="0.1" min="0" max="10" value="${scoreValue}" placeholder="Điểm" data-student-id="${sId}" />
+                                            </td>
+                                            <td class="py-3 px-4 border-r border-gray-200">
+                                                <input type="text" class="block h-9 w-full rounded border border-gray-300 bg-white px-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 feedback-input" value="${feedbackValue}" placeholder="Nhận xét" data-student-id="${sId}" />
+                                            </td>
+                                            <td class="py-3 px-4 text-center">
+                                                <button type="button" class="inline-flex h-9 items-center justify-center rounded bg-blue-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 save-grade-btn" data-homework-id="${homeworkId}" data-student-id="${sId}">Lưu</button>
                                             </td>
                                         </tr>
                                     `;
