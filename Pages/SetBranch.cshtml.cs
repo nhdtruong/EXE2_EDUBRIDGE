@@ -21,14 +21,14 @@ public class SetBranchModel : PageModel
             };
             Response.Cookies.Append("CurrentBranchId", branchId.ToString(), cookieOptions);
             TempData["ToastTitle"] = "Thành công";
-            TempData["ToastMessage"] = "Đã chuyển cơ sở làm việc.";
+            TempData["ToastMessage"] = "Đổi cơ sở thành công";
             TempData["ToastType"] = "success";
         }
         else
         {
             Response.Cookies.Delete("CurrentBranchId");
             TempData["ToastTitle"] = "Thành công";
-            TempData["ToastMessage"] = "Đã hiển thị tất cả cơ sở.";
+            TempData["ToastMessage"] = "Đổi cơ sở thành công";
             TempData["ToastType"] = "success";
         }
 

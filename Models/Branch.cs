@@ -25,9 +25,15 @@ public partial class Branch
 
     public DateTime? UpdatedAt { get; set; }
 
+    public string? Description { get; set; }
+
+    public int? HeadUserId { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
+
+    public virtual User? HeadUser { get; set; }
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
 

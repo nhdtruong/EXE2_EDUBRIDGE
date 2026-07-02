@@ -71,5 +71,7 @@ public partial class Student
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
+    public virtual ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
+
     public virtual User? ParentUser { get; set; }
 }
