@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -8,8 +8,6 @@ public partial class Center
     public int CenterId { get; set; }
 
     public int? OwnerUserId { get; set; }
-
-    public string CenterCode { get; set; } = null!;
 
     public string CenterName { get; set; } = null!;
 
@@ -28,6 +26,8 @@ public partial class Center
     public int? ProjectId { get; set; }
 
     public string? Logo { get; set; }
+
+    public string CenterCode { get; set; } = null!;
 
     public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
 

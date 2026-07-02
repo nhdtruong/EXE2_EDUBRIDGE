@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +34,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
+    public virtual DbSet<DevicePushToken> DevicePushTokens { get; set; }
+
     public virtual DbSet<Enrollment> Enrollments { get; set; }
 
     public virtual DbSet<EnrollmentHistory> EnrollmentHistories { get; set; }
@@ -47,6 +49,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Invoice> Invoices { get; set; }
 
     public virtual DbSet<InvoiceCodeCounter> InvoiceCodeCounters { get; set; }
+
+    public virtual DbSet<LeaveRequest> LeaveRequests { get; set; }
 
     public virtual DbSet<Lesson> Lessons { get; set; }
 
@@ -122,10 +126,13 @@ public partial class AppDbContext : DbContext
         {
             entity.HasIndex(e => e.CenterId, "IX_Branches_CenterId");
 
+            entity.HasIndex(e => e.HeadUserId, "IX_Branches_HeadUserId").HasFilter("([HeadUserId] IS NOT NULL)");
+
             entity.Property(e => e.Address).HasMaxLength(255);
             entity.Property(e => e.BranchCode).HasMaxLength(30);
             entity.Property(e => e.BranchName).HasMaxLength(150);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.Email).HasMaxLength(150);
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.Status)
@@ -135,6 +142,11 @@ public partial class AppDbContext : DbContext
             entity.HasOne(d => d.Center).WithMany(p => p.Branches)
                 .HasForeignKey(d => d.CenterId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.HeadUser).WithMany(p => p.Branches)
+                .HasForeignKey(d => d.HeadUserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Branches_HeadUser");
         });
 
         modelBuilder.Entity<Center>(entity =>
@@ -343,6 +355,28 @@ public partial class AppDbContext : DbContext
                 .HasConstraintName("FK_Courses_DeletedByUser");
         });
 
+        modelBuilder.Entity<DevicePushToken>(entity =>
+        {
+            entity.HasKey(e => e.DevicePushTokenId).HasName("PK__DevicePu__82991D08DFC2FC71");
+
+            entity.HasIndex(e => new { e.UserId, e.IsActive }, "IX_DevicePushTokens_User_Active");
+
+            entity.HasIndex(e => e.ExpoPushToken, "UQ__DevicePu__3A1E83AFC3FE6668").IsUnique();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.ExpoPushToken).HasMaxLength(255);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Platform)
+                .HasMaxLength(20)
+                .IsUnicode(false);
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysdatetime())");
+
+            entity.HasOne(d => d.User).WithMany(p => p.DevicePushTokens)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_DevicePushTokens_User");
+        });
+
         modelBuilder.Entity<Enrollment>(entity =>
         {
             entity.HasKey(e => e.EnrollmentId).HasName("PK__Enrollme__7F68771BF29B79D2");
@@ -533,6 +567,40 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.CenterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_InvoiceCodeCounters_Centers");
+        });
+
+        modelBuilder.Entity<LeaveRequest>(entity =>
+        {
+            entity.HasKey(e => e.LeaveRequestId).HasName("PK__LeaveReq__609421EE7A6727F0");
+
+            entity.HasIndex(e => new { e.StudentId, e.CreatedAt }, "IX_LeaveRequests_Student_CreatedAt").IsDescending(false, true);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
+            entity.Property(e => e.Reason).HasMaxLength(1000);
+            entity.Property(e => e.ReviewNote).HasMaxLength(1000);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
+
+            entity.HasOne(d => d.Lesson).WithMany(p => p.LeaveRequests)
+                .HasForeignKey(d => d.LessonId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeaveRequests_Lesson");
+
+            entity.HasOne(d => d.ParentUser).WithMany(p => p.LeaveRequestParentUsers)
+                .HasForeignKey(d => d.ParentUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeaveRequests_Parent");
+
+            entity.HasOne(d => d.ReviewedByUser).WithMany(p => p.LeaveRequestReviewedByUsers)
+                .HasForeignKey(d => d.ReviewedByUserId)
+                .HasConstraintName("FK_LeaveRequests_Reviewer");
+
+            entity.HasOne(d => d.Student).WithMany(p => p.LeaveRequests)
+                .HasForeignKey(d => d.StudentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeaveRequests_Student");
         });
 
         modelBuilder.Entity<Lesson>(entity =>
@@ -960,6 +1028,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.PlaceOfBirth).HasMaxLength(150);
             entity.Property(e => e.Religion).HasMaxLength(50);
+            entity.Property(e => e.StaffCode).HasMaxLength(50);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Active");

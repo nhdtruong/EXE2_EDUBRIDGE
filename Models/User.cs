@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -26,8 +26,6 @@ public partial class User
     public DateTime CreatedAt { get; set; }
 
     public DateTime? LastLoginAt { get; set; }
-
-    public string? StaffCode { get; set; }
 
     public string? NormalizedPhoneNumber { get; set; }
 
@@ -61,6 +59,10 @@ public partial class User
 
     public int? DeletedByUserId { get; set; }
 
+    public string? StaffCode { get; set; }
+
+    public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
+
     public virtual ICollection<CenterUser> CenterUsers { get; set; } = new List<CenterUser>();
 
     public virtual ICollection<Center> Centers { get; set; } = new List<Center>();
@@ -73,11 +75,17 @@ public partial class User
 
     public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 
+    public virtual ICollection<DevicePushToken> DevicePushTokens { get; set; } = new List<DevicePushToken>();
+
     public virtual ICollection<EnrollmentHistory> EnrollmentHistories { get; set; } = new List<EnrollmentHistory>();
 
     public virtual ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
+    public virtual ICollection<LeaveRequest> LeaveRequestParentUsers { get; set; } = new List<LeaveRequest>();
+
+    public virtual ICollection<LeaveRequest> LeaveRequestReviewedByUsers { get; set; } = new List<LeaveRequest>();
 
     public virtual ICollection<Message> MessageReceiverUsers { get; set; } = new List<Message>();
 
