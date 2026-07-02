@@ -35,6 +35,16 @@ public class SystemAdminCenterService : ISystemAdminCenterService
             logoUrl = await _fileStorageService.SaveFileAsync(request.Logo, "center-logos", cancellationToken);
         }
 
+        if (!request.ProjectId.HasValue)
+        {
+            var defaultProjectId = await _context.Projects
+                .Where(p => p.ProjectCode == "DEFAULT_PROJ")
+                .Select(p => p.ProjectId)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            request.ProjectId = defaultProjectId > 0 ? defaultProjectId : 1;
+        }
+
         // Add Center
         var center = new Center
         {
