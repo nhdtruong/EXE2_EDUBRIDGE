@@ -1,16 +1,11 @@
 @using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
+@inject EduBridge.Services.Auth.ICurrentCenterService CurrentCenterService
 @inject EduBridge.Services.Auth.IAccountAuthenticationService AuthService
+@inject EduBridge.Data.AppDbContext DbContext
 @{
     var fullName = User.FindFirstValue(ClaimTypes.Name) ?? "Người dùng";
     var email = User.FindFirstValue(ClaimTypes.Email) ?? string.Empty;
-    var role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
-    var roleDisplay = role switch
-    {
-        "OWNER" => "Chủ trung tâm",
-        "TEACHER" => "Giáo viên",
-        "PARENT" => "Phụ huynh",
-        _ => "Người dùng"
-    };
     var initials = string.Join(
         string.Empty,
         fullName
@@ -31,89 +26,164 @@
         availableRoles = await AuthService.GetAvailableRolesAsync(layoutUserId);
     }
     var hasOwnerRole = availableRoles.Contains("OWNER");
+
+    var currentRole = User.FindFirst(ClaimTypes.Role)?.Value;
+    var isSystemAdmin = currentRole == "SYSTEM_ADMIN";
+    var isOwner = currentRole == "OWNER";
+    
+    var supportCenterIdStr = Context.Request.Cookies["SupportCenterId"];
+    var isSupportMode = isSystemAdmin && !string.IsNullOrEmpty(supportCenterIdStr);
+    
+    var showCenterMenu = false;
+
+    // Lấy danh sách Branches
+    var currentCenterId = await CurrentCenterService.GetCenterIdAsync();
+    var branches = new List<EduBridge.Models.Branch>();
+    if (currentCenterId.HasValue)
+    {
+        branches = await DbContext.Branches
+            .AsNoTracking()
+            .Where(b => b.CenterId == currentCenterId.Value && b.Status == "ACTIVE")
+            .OrderBy(b => b.BranchName)
+            .ToListAsync();
+    }
+    
+    var currentBranchIdStr = Context.Request.Cookies["CurrentBranchId"];
+    int.TryParse(currentBranchIdStr, out int currentBranchId);
 }
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - EduBridge</title>
-    <!-- Import Google Fonts API -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>@ViewData["Title"] - EduBridge Teacher Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <!-- Exported Design System Stylesheets -->
-    <link rel="stylesheet" href="~/css/design-system/design-system.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/buttons.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/forms.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/filters.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/tables.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/pagination.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/toggle.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/toast.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/datepicker.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/design-system/icons.css" asp-append-version="true" />
-    
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/teacher.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/teacher-premium.css" asp-append-version="true" />
     <style>
-        .sidebar,
-        .main-content {
-            transition: width 0.2s ease, margin-left 0.2s ease;
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; font-size: 14px; }
+
+        .admin-main {
+            padding: 1.25rem;
         }
 
-        .teacher-sidebar-toggle {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            flex-shrink: 0;
-            border: 0;
-            border-radius: 10px;
-            background: transparent;
-            color: #64748b;
+        .admin-main h1 {
+            font-size: 1.625rem;
+            line-height: 2rem;
         }
 
-        .teacher-sidebar-toggle:hover {
-            background: #f1f5f9;
-            color: #2563eb;
+        .admin-main h1 + p {
+            font-size: 0.875rem;
         }
 
-        .brand-text,
-        .sidebar-nav .nav-item span,
-        .sidebar-footer .user-info,
-        .teacher-sidebar-logout-label {
+        .admin-main .rounded-2xl {
+            border-radius: 0.75rem;
+        }
+
+        .admin-main .bg-blue-50\/60.p-6 {
+            padding: 1.25rem;
+        }
+
+        .admin-main input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):not([type="file"]),
+        .admin-main select,
+        .admin-main [data-dropdown-toggle],
+        .admin-main [data-range-toggle] {
+            min-height: 2.5rem !important;
+            height: 2.5rem !important;
+            font-size: 0.8125rem !important;
+            padding-left: 0.875rem !important;
+            padding-right: 0.875rem !important;
+        }
+
+        .admin-main [data-range-toggle] span:last-child {
+            width: 2.75rem !important;
+        }
+
+        .admin-main [data-range-toggle] {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        .admin-main [data-dropdown-search] {
+            height: 2.375rem !important;
+        }
+
+        .admin-main a.inline-flex:not(.h-11):not(.h-12),
+        .admin-main button.inline-flex:not(.h-11):not(.h-12) {
+            font-size: 0.8125rem;
+        }
+
+        .admin-main a.h-11,
+        .admin-main button.h-11,
+        .admin-main a.h-12,
+        .admin-main button.h-12 {
+            height: 2.5rem !important;
+            min-height: 2.5rem !important;
+            font-size: 0.8125rem !important;
+        }
+
+        .admin-main table thead tr {
+            font-size: 0.8125rem !important;
+        }
+
+        .admin-main table th {
+            padding: 0.75rem 0.875rem !important;
+        }
+
+        .admin-main table td {
+            padding: 0.75rem 0.875rem !important;
+            font-size: 0.8125rem !important;
+        }
+
+        .admin-main table .h-10.w-10,
+        .admin-main table .w-10.h-10 {
+            width: 2rem !important;
+            height: 2rem !important;
+            margin-right: 0.75rem !important;
+        }
+
+        .admin-main table .h-11.w-11,
+        .admin-main table .w-11.h-11 {
+            width: 2.375rem !important;
+            height: 2.375rem !important;
+        }
+
+        .admin-main table .h-5.w-5,
+        .admin-main table .w-5.h-5 {
+            width: 1.125rem !important;
+            height: 1.125rem !important;
+        }
+
+        .admin-main table .gap-3 {
+            gap: 0.5rem !important;
+        }
+
+        .admin-main table .min-w-28 {
+            min-width: 5.75rem !important;
+        }
+
+        .admin-main .border-t.bg-white.px-6.py-4 {
+            padding: 0.75rem 1rem !important;
+        }
+
+        #admin-sidebar {
+            transition: width 0.2s ease;
+        }
+
+        .admin-sidebar-label,
+        .admin-sidebar-brand-text,
+        .admin-sidebar-user-info,
+        .admin-sidebar-logout-label {
             transition: opacity 0.15s ease, visibility 0.15s ease;
         }
 
-        body.teacher-sidebar-collapsed .sidebar {
-            width: 84px;
+        body.admin-sidebar-collapsed #admin-sidebar {
+            width: 5rem !important;
         }
 
-        body.teacher-sidebar-collapsed .main-content {
-            margin-left: 84px;
-        }
-
-        body.teacher-sidebar-collapsed .sidebar-brand {
-            justify-content: center;
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-            gap: 0.5rem;
-        }
-
-        body.teacher-sidebar-collapsed .logo-box {
-            display: none;
-        }
-
-        body.teacher-sidebar-collapsed .brand-text,
-        body.teacher-sidebar-collapsed .sidebar-nav .nav-item span,
-        body.teacher-sidebar-collapsed .sidebar-footer .user-info,
-        body.teacher-sidebar-collapsed .teacher-sidebar-logout-label,
-        body.teacher-sidebar-collapsed .teacher-sidebar-dropdown-icon {
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-brand-text,
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-label,
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-user-info,
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logout-label {
             width: 0;
             opacity: 0;
             visibility: hidden;
@@ -121,180 +191,246 @@
             white-space: nowrap;
         }
 
-        body.teacher-sidebar-collapsed .sidebar-nav {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-
-        body.teacher-sidebar-collapsed .nav-item {
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo-row {
             justify-content: center;
             padding-left: 0.75rem;
             padding-right: 0.75rem;
         }
 
-        body.teacher-sidebar-collapsed .nav-icon,
-        body.teacher-sidebar-collapsed .logout-btn svg {
-            margin-right: 0 !important;
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo {
+            display: none;
         }
 
-        body.teacher-sidebar-collapsed .user-profile {
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-nav {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link {
+            justify-content: center;
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link svg {
+            margin-right: 0;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar form button svg {
+            margin-right: 0;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-footer {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-profile {
             justify-content: center;
         }
 
-        body.teacher-sidebar-collapsed .avatar {
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-avatar {
             margin-right: 0;
         }
     </style>
 </head>
-<body class="bg-gray">
-    <!-- Stacked Toast Container from Design System -->
-    <div id="layout-toast-container" class="ds-toast-container"></div>
+<body class="text-gray-800 flex h-screen overflow-hidden">
+    <div id="layout-toast-container" class="fixed right-6 top-6 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col gap-3"></div>
 
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="sidebar-brand">
-                <div class="logo-box">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                    </svg>
+    <!-- Sidebar -->
+    <aside id="admin-sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
+        <div>
+            <!-- Logo -->
+            <div class="admin-sidebar-logo-row h-20 flex items-center justify-between px-6 border-b border-gray-50">
+                <div class="flex min-w-0 items-center">
+                    <div class="admin-sidebar-logo text-blue-600 mr-3 flex-shrink-0">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                        </svg>
+                    </div>
+                    <div class="admin-sidebar-brand-text min-w-0">
+                        <div class="font-bold text-xl text-gray-900 leading-tight">EduBridge</div>
+                        <div class="text-xs text-gray-500 font-medium">
+                            Giáo viên
+                        </div>
+                    </div>
                 </div>
-                <div class="brand-text">
-                    <span class="brand-name">EduBridge</span>
-                    <span class="brand-sub">Giáo viên</span>
-                </div>
-                <button id="teacher-sidebar-toggle" type="button" class="teacher-sidebar-toggle" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="admin-sidebar-toggle" type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path>
                     </svg>
                 </button>
             </div>
 
-            <nav class="sidebar-nav">
-                <a href="/Teacher/Dashboard" title="Dashboard" class="nav-item @(ViewData["ActivePage"] as string == "Dashboard" ? "active" : "")">
-                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span>Dashboard</span>
+            <!-- Navigation -->
+            <nav class="admin-sidebar-nav p-4 space-y-1.5 mt-2">
+                <a href="/Teacher/Dashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Dashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span class="admin-sidebar-label">Dashboard</span>
                 </a>
-                <a href="/Teacher/Lectures" title="Bài giảng" class="nav-item @(ViewData["ActivePage"] as string == "Lectures" ? "active" : "")">
-                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                    <span>Bài giảng</span>
+                <a href="/Teacher/Lectures" title="Bài giảng" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Lectures" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path></svg>
+                    <span class="admin-sidebar-label">Bài giảng</span>
                 </a>
-                <a href="/Homework" title="Bài tập" class="nav-item @(ViewData["ActivePage"] as string == "Assignments" ? "active" : "")">
-                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    <span>Bài tập</span>
+                <a href="/Homework" title="Bài tập" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Assignments" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span class="admin-sidebar-label">Bài tập</span>
                 </a>
-                <a href="/Grades" title="Sổ điểm" class="nav-item @(ViewData["ActivePage"] as string == "Grades" ? "active" : "")">
-                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
-                    <span>Sổ điểm</span>
+                <a href="/Grades" title="Sổ điểm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Grades" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                    <span class="admin-sidebar-label">Sổ điểm</span>
                 </a>
-                <a href="/Teacher/Attendance" title="Điểm danh" class="nav-item @(ViewData["ActivePage"] as string == "Attendance" ? "active" : "")">
-                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span>Điểm danh</span>
+                <a href="/Teacher/Attendance" title="Điểm danh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Attendance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="admin-sidebar-label">Điểm danh</span>
                 </a>
-                <a href="/Messages" title="Tin nhắn" class="nav-item @(ViewData["ActivePage"] as string == "Messages" ? "active" : "")">
-                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    <span>Tin nhắn</span>
+                <a href="/Messages" title="Tin nhắn" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Messages" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <span class="admin-sidebar-label">Tin nhắn</span>
                 </a>
             </nav>
+        </div>
 
-            <div class="sidebar-footer position-relative">
-                <button type="button" id="teacherProfileBtn" class="user-profile w-100 bg-transparent border-0 d-flex align-items-center text-start p-0 m-0" style="cursor: pointer;">
-                    <div class="avatar flex-shrink-0">@initials</div>
-                    <div class="user-info flex-grow-1 overflow-hidden" style="min-width: 0;">
-                        <span class="user-name text-truncate d-block">@fullName</span>
-                        <span class="user-role text-truncate d-block">@roleDisplay</span>
-                    </div>
-                    <svg class="teacher-sidebar-dropdown-icon text-muted ms-2 flex-shrink-0" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-                </button>
-                
-                <div id="teacherProfileMenu" class="d-none position-absolute start-0 w-100 mb-2 px-3 z-3" style="bottom: 72px;">
-                    <div class="bg-white rounded shadow border p-2">
-                        @if (hasOwnerRole)
-                        {
-                            <form method="post" asp-page="/SwitchRole" class="w-100 mb-1">
-                                <input type="hidden" name="roleCode" value="OWNER" />
-                                <button type="submit" class="logout-btn w-100 justify-content-start border-0 px-3 py-2" style="color: #2563eb; background: #eff6ff; border-radius: 8px;">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-3 flex-shrink-0"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                                    <span>Giao diện Quản lý</span>
-                                </button>
-                            </form>
-                        }
-                        <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+        <!-- User Profile & Logout Dropdown -->
+        <div class="admin-sidebar-footer p-5 border-t border-gray-100 relative">
+            <button type="button" id="adminProfileBtn" class="admin-sidebar-profile flex items-center w-full focus:outline-none cursor-pointer">
+                <div class="admin-sidebar-avatar w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
+                    @initials
+                </div>
+                <div class="admin-sidebar-user-info min-w-0 text-left flex-1">
+                    <div class="font-bold text-sm text-gray-900 truncate">@fullName</div>
+                    <div class="text-xs text-gray-500 truncate">@email</div>
+                </div>
+                <svg class="admin-sidebar-dropdown-icon w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
+            </button>
+            
+            <!-- Dropdown Menu -->
+            <div id="adminProfileMenu" class="hidden absolute bottom-[72px] left-4 w-[calc(100%-2rem)] min-w-[220px] z-50">
+                <div class="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.15)] border border-gray-100 p-2 space-y-1">
+                    @if (hasOwnerRole)
+                    {
+                        <form method="post" asp-page="/SwitchRole" class="w-full m-0">
+                            <input type="hidden" name="roleCode" value="OWNER" />
+                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
+                                <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                                <span>Giao diện Quản lý</span>
+                            </button>
+                        </form>
+                    }
+                    <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
                           <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                           <span>Hồ sơ cá nhân</span>
                       </a>
-                      <a href="/ChangePassword" class="logout-btn w-100 justify-content-start border-0 px-3 py-2 mb-1" style="text-decoration: none; color: #4b5563; background: #fff; border-radius: 8px;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-3 flex-shrink-0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            <span>Đổi mật khẩu</span>
-                        </a>
-                        <form method="post" asp-page="/Logout" class="w-100 m-0">
-                            <button type="submit" class="logout-btn w-100 justify-content-start border-0 px-3 py-2" style="color: #dc3545; background: #fff; border-radius: 8px;">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-3 flex-shrink-0"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                                <span>Đăng xuất</span>
-                            </button>
-                        </form>
-                    </div>
+                      <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        <span>Đổi mật khẩu</span>
+                    </a>
+                    <form method="post" asp-page="/Logout" class="w-full m-0">
+                        <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
+                            <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                            <span>Đăng xuất</span>
+                        </button>
+                    </form>
                 </div>
             </div>
-        </aside>
+        </div>
+    </aside>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            @RenderBody()
-        </main>
-    </div>
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        const teacherSidebarStorageKey = 'edubridge.teacher.sidebar.collapsed';
-        const teacherSidebarToggle = document.getElementById('teacher-sidebar-toggle');
-
-        function setTeacherSidebarCollapsed(isCollapsed) {
-            document.body.classList.toggle('teacher-sidebar-collapsed', isCollapsed);
-            teacherSidebarToggle?.setAttribute('aria-expanded', (!isCollapsed).toString());
-            localStorage.setItem(teacherSidebarStorageKey, isCollapsed ? 'true' : 'false');
+    <!-- Main Content -->
+    <main class="admin-main flex-1 overflow-y-auto relative">
+        <!-- Top bar containing Branch Selector -->
+        @if (showCenterMenu && branches.Any())
+        {
+            <div class="flex justify-end mb-4">
+                <form method="post" asp-page="/SetBranch" class="flex items-center space-x-2">
+                    <label for="branchSelector" class="text-sm font-medium text-gray-700">Cơ sở:</label>
+                    <select id="branchSelector" name="branchId" onchange="this.form.submit()" class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="0">Tất cả cơ sở</option>
+                        @foreach (var branch in branches)
+                        {
+                            if (currentBranchId == branch.BranchId)
+                            {
+                                <option value="@branch.BranchId" selected>@branch.BranchName</option>
+                            }
+                            else
+                            {
+                                <option value="@branch.BranchId">@branch.BranchName</option>
+                            }
+                        }
+                    </select>
+                </form>
+            </div>
         }
 
-        setTeacherSidebarCollapsed(localStorage.getItem(teacherSidebarStorageKey) === 'true');
-        teacherSidebarToggle?.addEventListener('click', () => {
-            setTeacherSidebarCollapsed(!document.body.classList.contains('teacher-sidebar-collapsed'));
+        @if (isSupportMode)
+        {
+            <div class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl mb-4 flex justify-between items-center shadow-sm">
+                <div class="font-medium flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    Bạn đang trong chế độ Hỗ Trợ (Support Mode). Mọi thao tác sẽ được ghi lại.
+                </div>
+                <form method="post" asp-page="/SystemAdmin/ExitSupportMode">
+                    <button type="submit" class="bg-white text-red-600 px-3 py-1.5 rounded-lg border border-red-200 text-sm font-bold hover:bg-red-50 transition-colors">
+                        Thoát chế độ hỗ trợ
+                    </button>
+                </form>
+            </div>
+        }
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        const adminSidebarStorageKey = 'edubridge.admin.sidebar.collapsed';
+        const adminSidebarToggle = document.getElementById('admin-sidebar-toggle');
+
+        function setAdminSidebarCollapsed(isCollapsed) {
+            document.body.classList.toggle('admin-sidebar-collapsed', isCollapsed);
+            adminSidebarToggle?.setAttribute('aria-expanded', (!isCollapsed).toString());
+            localStorage.setItem(adminSidebarStorageKey, isCollapsed ? 'true' : 'false');
+        }
+
+        setAdminSidebarCollapsed(localStorage.getItem(adminSidebarStorageKey) === 'true');
+        adminSidebarToggle?.addEventListener('click', () => {
+            setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
         });
 
-        const teacherProfileBtn = document.getElementById('teacherProfileBtn');
-        const teacherProfileMenu = document.getElementById('teacherProfileMenu');
+        const adminProfileBtn = document.getElementById('adminProfileBtn');
+        const adminProfileMenu = document.getElementById('adminProfileMenu');
         
-        if (teacherProfileBtn && teacherProfileMenu) {
-            teacherProfileBtn.addEventListener('click', (e) => {
+        if (adminProfileBtn && adminProfileMenu) {
+            adminProfileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (document.body.classList.contains('teacher-sidebar-collapsed')) {
-                    setTeacherSidebarCollapsed(false);
+                if (document.body.classList.contains('admin-sidebar-collapsed')) {
+                    setAdminSidebarCollapsed(false);
                     setTimeout(() => {
-                        teacherProfileMenu.classList.toggle('d-none');
+                        adminProfileMenu.classList.toggle('hidden');
                     }, 200);
                 } else {
-                    teacherProfileMenu.classList.toggle('d-none');
+                    adminProfileMenu.classList.toggle('hidden');
                 }
             });
             
             document.addEventListener('click', (e) => {
-                if (!teacherProfileMenu.contains(e.target) && !teacherProfileBtn.contains(e.target)) {
-                    teacherProfileMenu.classList.add('d-none');
+                if (!adminProfileMenu.contains(e.target) && !adminProfileBtn.contains(e.target)) {
+                    adminProfileMenu.classList.add('hidden');
                 }
             });
         }
 
-        // Dynamic stacked toast logic
-        const layoutToastStorageKey = 'edubridge.teacher.toasts';
+        const layoutToastStorageKey = 'edubridge.admin.toasts';
 
         function getStoredLayoutToasts() {
             try {
                 const value = localStorage.getItem(layoutToastStorageKey);
                 const toasts = value ? JSON.parse(value) : [];
                 const now = Date.now();
-                return Array.isArray(toasts) ? toasts.filter(toast => toast && toast.expiresAt > now) : [];
+
+                return Array.isArray(toasts)
+                    ? toasts.filter(toast => toast && toast.expiresAt > now)
+                    : [];
             } catch {
                 return [];
             }
@@ -309,7 +445,10 @@
         }
 
         function pushStoredLayoutToast(title, message, type) {
-            if (!message) return;
+            if (!message) {
+                return;
+            }
+
             const toasts = getStoredLayoutToasts();
             toasts.push({
                 id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -318,52 +457,68 @@
                 type,
                 expiresAt: Date.now() + 4500
             });
+
             saveStoredLayoutToasts(toasts);
         }
 
         function showLayoutToast(title, message, type, id, remainingMs) {
-            if (!message) return;
-            const container = document.getElementById('layout-toast-container');
-            if (!container) return;
+            if (!message) {
+                return;
+            }
 
-            const isError = type === 'error' || type === 'danger' || type === 'failed' || type === false;
+            const container = document.getElementById('layout-toast-container');
+            const isError = type === 'error' || type === 'danger' || type === 'failed';
             const toast = document.createElement('div');
-            
-            toast.className = `ds-toast ${isError ? 'ds-toast-error' : 'ds-toast-success'}`;
+            const colorClasses = isError
+                ? 'border-red-300 bg-red-100 text-red-900'
+                : 'border-green-300 bg-green-100 text-green-900';
+            const iconColor = isError ? 'text-red-700' : 'text-green-700';
+
+            toast.className = `${colorClasses} pointer-events-auto flex translate-x-5 gap-3 rounded border-l-4 px-4 py-4 opacity-0 shadow-xl transition-all duration-300`;
             toast.innerHTML = `
-                <div class="min-w-0 flex-1">
-                    <div class="ds-toast-title">${title || (isError ? 'Thất bại' : 'Thành công')}</div>
-                    <div class="ds-toast-message">${message}</div>
+                <div class="${iconColor} mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/60">
+                    ${isError
+                        ? '<svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M6 18L18 6M6 6l12 12"></path></svg>'
+                        : '<svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.4" d="M5 13l4 4L19 7"></path></svg>'}
                 </div>
-                <button type="button" class="ds-toast-close" aria-label="Đóng thông báo">&times;</button>
+                <div class="min-w-0 flex-1">
+                    <div class="text-base font-bold leading-5">${title || (isError ? 'Thất bại' : 'Thành công')}</div>
+                    <div class="mt-1 text-sm font-medium leading-5">${message}</div>
+                </div>
+                <button type="button" class="${iconColor} -mr-1 -mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded hover:bg-white/60" aria-label="Đóng thông báo">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             `;
 
             const closeToast = () => {
+                toast.classList.add('translate-x-5', 'opacity-0');
                 if (id) {
                     removeStoredLayoutToast(id);
                 }
-                toast.remove();
+                setTimeout(() => toast.remove(), 300);
             };
 
-            toast.querySelector('.ds-toast-close')?.addEventListener('click', closeToast);
+            toast.querySelector('button')?.addEventListener('click', closeToast);
             container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-5', 'opacity-0');
+            });
 
             setTimeout(closeToast, Math.max(1200, remainingMs ?? 4500));
         }
 
-        // Global showToast helper
         window.showToast = function(message, isSuccess = true) {
-            showLayoutToast(isSuccess ? 'Thành công' : 'Lỗi', message, isSuccess ? 'success' : 'error');
+            const type = isSuccess ? 'success' : 'error';
+            const title = isSuccess ? 'Thành công' : 'Thất bại';
+            showLayoutToast(title, message, type, null, 4500);
         };
 
-        // Push layout toasts from TempData
-        const tempToastTitle = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastTitle"] as string));
-        const tempToastMessage = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string));
-        const tempToastType = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastType"] as string));
-
-        if (tempToastMessage) {
-            pushStoredLayoutToast(tempToastTitle, tempToastMessage, tempToastType);
-        }
+        pushStoredLayoutToast(
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastTitle"] as string)),
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastMessage"] as string)),
+            @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastType"] as string))
+        );
 
         getStoredLayoutToasts().forEach(toast => {
             showLayoutToast(
@@ -375,6 +530,7 @@
             );
         });
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

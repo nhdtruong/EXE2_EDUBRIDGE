@@ -11,11 +11,11 @@
     {
         return status switch
         {
-            "Completed" => "badge-success",
-            "Scheduled" => "badge-warning",
-            "Cancelled" => "badge-danger",
-            "Rescheduled" => "badge-info",
-            _ => "badge-default"
+            "Completed" => "bg-green-100 text-green-800 border border-green-200",
+            "Scheduled" => "bg-yellow-100 text-yellow-800 border border-yellow-200",
+            "Cancelled" => "bg-red-100 text-red-800 border border-red-200",
+            "Rescheduled" => "bg-blue-100 text-blue-800 border border-blue-200",
+            _ => "bg-gray-100 text-gray-800 border border-gray-200"
         };
     }
 
@@ -32,118 +32,116 @@
     }
 }
 
-<div class="lectures-header-section">
+<div class="mb-6 bg-gradient-to-br from-white to-blue-50 p-6 rounded-2xl shadow-sm border border-gray-100">
     <div>
-        <h1 class="lectures-main-title">Quản lý bài giảng</h1>
-        <p class="lectures-subtitle">Ghi chú nội dung và tiến độ bài học</p>
+        <h1 class="text-2xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Quản lý bài giảng</h1>
+        <p class="text-gray-500 mt-1">Ghi chú nội dung và tiến độ bài học</p>
     </div>
 </div>
 
 <!-- Progress Cards -->
-<div class="lectures-progress-grid">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
     @if (Model.ClassesProgress.Any())
     {
         foreach (var progress in Model.ClassesProgress)
         {
-            <div class="lecture-progress-card">
-                <h3>@progress.ClassName</h3>
-                <div class="progress-row">
-                    <span class="progress-label">Tiến độ giảng dạy</span>
-                    <span class="progress-value">@progress.CompletedLessons/@progress.TotalLessons bài</span>
+            <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4 truncate">@progress.ClassName</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-medium text-gray-500">Tiến độ giảng dạy</span>
+                    <span class="text-sm font-bold text-blue-600">@progress.CompletedLessons/@progress.TotalLessons bài</span>
                 </div>
-                <div class="progress-bar-container mb-2">
-                    <div class="progress-bar-fill" style="width: @progress.PercentComplete%"></div>
+                <div class="w-full bg-gray-100 rounded-full h-2 mb-2 overflow-hidden">
+                    <div class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: @progress.PercentComplete%"></div>
                 </div>
-                <div class="text-muted text-sm">@progress.PercentComplete% hoàn thành</div>
+                <div class="text-gray-400 text-xs">@progress.PercentComplete% hoàn thành</div>
             </div>
         }
     }
     else
     {
-        <div class="empty-state text-center py-4 text-muted w-100" style="grid-column: 1 / -1;">
+        <div class="col-span-full text-center py-8 text-gray-500 bg-white rounded-xl border border-gray-100 shadow-sm">
             <p>Bạn chưa phụ trách lớp học nào.</p>
         </div>
     }
 </div>
 
 <!-- History Table Section -->
-<div class="dashboard-card">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 class="card-title fw-semibold">Lịch sử bài giảng</h3>
-        <div class="search-wrapper">
-            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="lectureSearchInput" class="search-input" placeholder="Tìm kiếm bài giảng...">
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-lg font-bold text-gray-800">Lịch sử bài giảng</h3>
+        <div class="relative">
+            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="lectureSearchInput" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-64 transition-all" placeholder="Tìm kiếm bài giảng...">
         </div>
     </div>
 
-    <div class="ds-table-wrap">
-        <table class="ds-table">
+    <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <table class="w-full text-left border-collapse">
             <thead>
-                <tr>
-                    <th class="ds-table-center" style="width: 80px;">STT</th>
-                    <th class="ds-table-center" style="width: 120px;">Ngày</th>
-                    <th class="ds-table-center" style="width: 120px;">Lớp</th>
-                    <th>Chủ đề</th>
-                    <th>Nội dung</th>
-                    <th class="ds-table-center" style="width: 150px;">Trạng thái</th>
-                    <th class="ds-table-center" style="width: 100px;">Thao tác</th>
+                <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                    <th class="py-4 px-4 text-center font-bold border-r border-slate-200 w-20">STT</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-32">Ngày</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-40">Lớp</th>
+                    <th class="py-4 px-6 font-bold border-r border-slate-200">Chủ đề</th>
+                    <th class="py-4 px-6 font-bold border-r border-slate-200">Nội dung</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-40">Trạng thái</th>
+                    <th class="py-4 px-6 font-bold text-center w-24">Thao tác</th>
                 </tr>
             </thead>
-            <tbody id="lecturesTableBody">
+            <tbody id="lecturesTableBody" class="text-sm divide-y divide-gray-100">
                 <!-- Nạp động bằng JavaScript -->
             </tbody>
         </table>
+        <div id="lecturesPagination"></div>
     </div>
-    <div id="lecturesPagination" class="ds-pagination"></div>
 </div>
 
-
-
 <!-- Edit Note Modal -->
-<div class="modal fade" id="editLectureModal" tabindex="-1" aria-labelledby="editLectureModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-            <div class="modal-header" style="border-bottom: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                <h5 class="modal-title fw-bold" id="editLectureModalLabel">Sửa ghi chú bài giảng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" asp-page-handler="EditNote">
-                <input type="hidden" id="editLessonId" asp-for="Input.LessonId" />
-                <div class="modal-body" style="padding: 1.5rem;">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Lớp học</label>
-                        <input type="text" id="editClassNameDisplay" class="form-control" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0; background-color: #f8fafc;" readonly>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Chủ đề bài giảng</label>
-                        <input id="editTopic" asp-for="Input.Topic" class="form-control" placeholder="Nhập chủ đề (vd: Hàm số bậc nhất)" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" required>
-                        <span asp-validation-for="Input.Topic" class="text-danger text-sm mt-1 d-block"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Nội dung ghi chú</label>
-                        <textarea id="editContent" asp-for="Input.Content" class="form-control" rows="4" placeholder="Nhập nội dung bài học..." style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);" required></textarea>
-                        <span asp-validation-for="Input.Content" class="text-danger text-sm mt-1 d-block"></span>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-sm">Trạng thái</label>
-                        <select id="editStatus" asp-for="Input.Status" class="form-select" style="border-radius: 12px; padding: 0.75rem 1rem; border-color: #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                            <option value="Completed">Hoàn thành</option>
-                            <option value="Scheduled">Lên lịch / Chưa hoàn thành</option>
-                            <option value="Cancelled">Đã hủy</option>
-                            <option value="Rescheduled">Thay đổi lịch</option>
-                        </select>
-                        <span asp-validation-for="Input.Status" class="text-danger text-sm mt-1 d-block"></span>
-                    </div>
-                </div>
-                <div class="modal-footer" style="border-top: 1px solid rgba(226,232,240,0.8); padding: 1.5rem;">
-                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="border-radius: 12px; font-weight: 600;">Hủy</button>
-                    <button type="submit" class="btn-primary-green">Lưu thay đổi</button>
-                </div>
-            </form>
+<div id="editLectureModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4">
+    <div class="w-full max-w-xl rounded-2xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-gray-100 p-5 bg-gray-50/50 rounded-t-2xl">
+            <h3 class="text-lg font-bold text-gray-800">Sửa ghi chú bài giảng</h3>
+            <button type="button" onclick="closeEditLectureModal()" class="text-gray-500 hover:text-gray-700">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
         </div>
+        <form method="post" asp-page-handler="EditNote">
+            <input type="hidden" id="editLessonId" asp-for="Input.LessonId" />
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Lớp học</label>
+                    <input type="text" id="editClassNameDisplay" class="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600 focus:outline-none" readonly>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Chủ đề bài giảng</label>
+                    <input id="editTopic" asp-for="Input.Topic" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" placeholder="Nhập chủ đề (vd: Hàm số bậc nhất)" required>
+                    <span asp-validation-for="Input.Topic" class="text-red-500 text-xs mt-1 block"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nội dung ghi chú</label>
+                    <textarea id="editContent" asp-for="Input.Content" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none" rows="4" placeholder="Nhập nội dung bài học..." required></textarea>
+                    <span asp-validation-for="Input.Content" class="text-red-500 text-xs mt-1 block"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Trạng thái</label>
+                    <select id="editStatus" asp-for="Input.Status" class="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white">
+                        <option value="Completed">Hoàn thành</option>
+                        <option value="Scheduled">Lên lịch / Chưa hoàn thành</option>
+                        <option value="Cancelled">Đã hủy</option>
+                        <option value="Rescheduled">Thay đổi lịch</option>
+                    </select>
+                    <span asp-validation-for="Input.Status" class="text-red-500 text-xs mt-1 block"></span>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-100 p-5 bg-gray-50/50 rounded-b-2xl">
+                <button type="button" onclick="closeEditLectureModal()" class="px-4 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm shadow-blue-600/30 transition-all">Lưu thay đổi</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -196,7 +194,7 @@
             const pageItems = filteredLectures.slice(start, end);
 
             if (pageItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Chưa có lịch sử bài giảng nào.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="py-10 px-6 text-center text-gray-500">Chưa có lịch sử bài giảng nào.</td></tr>`;
                 if (paginationEl) paginationEl.innerHTML = "";
                 return;
             }
@@ -204,27 +202,32 @@
             pageItems.forEach((lh, index) => {
                 const indexGlobal = start + index + 1;
                 const tr = document.createElement("tr");
+                tr.className = "group hover:bg-slate-100 transition-colors";
                 tr.innerHTML = `
-                    <td class="ds-table-center">${indexGlobal}</td>
-                    <td class="ds-table-center">${lh.DateString}</td>
-                    <td class="ds-table-center"><span class="ds-badge ds-badge-muted">${lh.ClassName}</span></td>
-                    <td class="fw-semibold">${lh.Topic}</td>
-                    <td class="text-muted text-sm">${lh.Content || ''}</td>
-                    <td class="ds-table-center">
-                        <span class="ds-badge ${getBadgeClass(lh.Status)}">
-                            ${getStatusText(lh.Status)}
+                    <td class="py-5 px-4 text-center font-medium text-gray-700 border-r border-gray-200">${indexGlobal}</td>
+                    <td class="py-5 px-6 text-center text-gray-700 border-r border-gray-200">${lh.DateString}</td>
+                    <td class="py-5 px-6 text-center border-r border-gray-200">
+                        <span class="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded-md border border-gray-200">
+                            ${lh.ClassName}
                         </span>
                     </td>
-                    <td class="ds-table-center">
-                        <div class="ds-table-actions">
-                            <button class="ds-icon-btn ds-icon-btn-view edit-btn" 
+                    <td class="py-5 px-6 font-semibold text-gray-800 border-r border-gray-200">${lh.Topic}</td>
+                    <td class="py-5 px-6 text-gray-500 border-r border-gray-200">${lh.Content || ''}</td>
+                    <td class="py-5 px-6 text-center border-r border-gray-200">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${getBadgeClass(lh.Status)}">
+                            ${getStatusIcon(lh.Status)} ${getStatusText(lh.Status)}
+                        </span>
+                    </td>
+                    <td class="py-5 px-6 text-center">
+                        <div class="flex items-center justify-center gap-3">
+                            <button type="button" class="edit-btn inline-flex h-10 w-10 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" 
                                     data-id="${lh.LessonId}"
                                     data-class-id="${lh.ClassId}"
                                     data-topic="${lh.Topic}"
                                     data-content="${lh.Content || ''}"
                                     data-status="${lh.Status}"
                                     data-classname="${lh.ClassName}">
-                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
                                     <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
                                 </svg>
@@ -251,18 +254,25 @@
                     document.getElementById("editStatus").value = status;
 
                     const editModalEl = document.getElementById("editLectureModal");
-                    const editModal = new bootstrap.Modal(editModalEl);
-                    editModal.show();
+                    editModalEl.classList.remove('hidden');
+                    editModalEl.classList.add('flex');
                 });
             });
 
             renderPagination(totalPages, totalItems);
         }
 
+        function closeEditLectureModal() {
+            const editModalEl = document.getElementById("editLectureModal");
+            editModalEl.classList.add('hidden');
+            editModalEl.classList.remove('flex');
+        }
+
         function getBadgeClass(status) {
-            return status === "Completed" ? "status-present" :
-                   status === "Scheduled" ? "status-late" :
-                   status === "Cancelled" ? "status-absent" : "status-empty";
+            return status === "Completed" ? "bg-green-100 text-green-800 border border-green-200" :
+                   status === "Scheduled" ? "bg-yellow-100 text-yellow-800 border border-yellow-200" :
+                   status === "Cancelled" ? "bg-red-100 text-red-800 border border-red-200" : 
+                   status === "Rescheduled" ? "bg-blue-100 text-blue-800 border border-blue-200" : "bg-gray-100 text-gray-800 border border-gray-200";
         }
 
         function getStatusText(status) {
@@ -274,11 +284,11 @@
 
         function getStatusIcon(status) {
             if (status === "Completed") {
-                return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="me-1" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="mr-1" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
             } else if (status === "Scheduled") {
-                return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="me-1" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
+                return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="mr-1" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
             } else if (status === "Cancelled") {
-                return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="me-1" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
+                return `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" class="mr-1" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`;
             }
             return '';
         }
@@ -287,9 +297,12 @@
             const container = document.getElementById("lecturesPagination");
             if (!container) return;
 
-            let html = `<div class="ds-pagination-pages">`;
-            html += `<a class="ds-page-link ${currentPage === 1 ? 'ds-page-link-disabled' : ''}" data-page="1">«</a>`;
-            html += `<a class="ds-page-link ${currentPage === 1 ? 'ds-page-link-disabled' : ''}" data-page="${currentPage - 1}">‹</a>`;
+            let html = `<div class="flex flex-wrap items-center justify-center gap-6 rounded-b-2xl border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">`;
+            
+            html += `<div class="flex items-center gap-1">`;
+            
+            html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 hover:text-blue-600'}" data-page="1" ${currentPage === 1 ? 'disabled' : ''}>«</button>`;
+            html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 transition-colors ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 hover:text-blue-600'}" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
 
             let startPage = Math.max(1, currentPage - 2);
             let endPage = Math.min(totalPages, startPage + 4);
@@ -298,36 +311,46 @@
             }
 
             for (let i = startPage; i <= endPage; i++) {
-                html += `<a class="ds-page-link ${i === currentPage ? 'ds-page-link-active' : ''}" data-page="${i}">${i}</a>`;
+                if (i === currentPage) {
+                    html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded bg-blue-100 text-blue-700 font-semibold" data-page="${i}">${i}</button>`;
+                } else {
+                    html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors" data-page="${i}">${i}</button>`;
+                }
             }
 
-            html += `<a class="ds-page-link ${currentPage === totalPages ? 'ds-page-link-disabled' : ''}" data-page="${currentPage + 1}">›</a>`;
-            html += `<a class="ds-page-link ${currentPage === totalPages ? 'ds-page-link-disabled' : ''}" data-page="${totalPages}">»</a>`;
+            html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 transition-colors ${currentPage === totalPages || totalPages === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 hover:text-blue-600'}" data-page="${currentPage + 1}" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>›</button>`;
+            html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 transition-colors ${currentPage === totalPages || totalPages === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50 hover:text-blue-600'}" data-page="${totalPages}" ${currentPage === totalPages || totalPages === 0 ? 'disabled' : ''}>»</button>`;
+            
             html += `</div>`;
 
-            html += `
-                <div class="ds-pagination-meta">
-                    <span>Tổng số: ${totalItems} bản ghi</span>
-                    <select class="ds-page-size">
-                        <option value="5" ${pageSize === 5 ? 'selected' : ''}>5</option>
-                        <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
-                        <option value="20" ${pageSize === 20 ? 'selected' : ''}>20</option>
-                        <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
-                    </select>
-                </div>
-            `;
-
+            html += `<div class="font-medium text-gray-600">Tổng số: ${totalItems} bản ghi</div>`;
+            
+            html += `<div class="flex items-center">
+                        <select class="page-size-select h-10 rounded border border-blue-300 bg-white px-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="10" ${pageSize === 10 ? 'selected' : ''}>10</option>
+                            <option value="20" ${pageSize === 20 ? 'selected' : ''}>20</option>
+                            <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                            <option value="100" ${pageSize === 100 ? 'selected' : ''}>100</option>
+                            <option value="200" ${pageSize === 200 ? 'selected' : ''}>200</option>
+                            <option value="500" ${pageSize === 500 ? 'selected' : ''}>500</option>
+                        </select>
+                     </div>`;
+                     
+            html += `</div>`;
+            
             container.innerHTML = html;
 
-            container.querySelectorAll(".ds-page-link:not(.ds-page-link-disabled)").forEach(link => {
-                link.addEventListener("click", function(e) {
-                    e.preventDefault();
-                    currentPage = parseInt(this.getAttribute("data-page"));
-                    renderLecturesTable();
-                });
+            container.querySelectorAll(".page-link-btn").forEach(link => {
+                if(!link.hasAttribute('disabled')){
+                    link.addEventListener("click", function(e) {
+                        e.preventDefault();
+                        currentPage = parseInt(this.getAttribute("data-page"));
+                        renderLecturesTable();
+                    });
+                }
             });
 
-            container.querySelector(".ds-page-size").addEventListener("change", function() {
+            container.querySelector(".page-size-select").addEventListener("change", function() {
                 pageSize = parseInt(this.value);
                 currentPage = 1;
                 renderLecturesTable();
@@ -335,4 +358,3 @@
         }
     </script>
 }
-

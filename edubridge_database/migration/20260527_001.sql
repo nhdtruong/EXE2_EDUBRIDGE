@@ -1,20 +1,10 @@
-USE EduBridgeDB;
+﻿USE EduBridgeDB;
 GO
 
 /* =========================================================
    1. Đảm bảo role PARENT tồn tại
    ========================================================= */
 
-IF NOT EXISTS (
-    SELECT 1
-    FROM dbo.Roles
-    WHERE RoleCode = N'PARENT'
-)
-BEGIN
-    INSERT INTO dbo.Roles (RoleCode, RoleName)
-    VALUES (N'PARENT', N'Phụ huynh');
-END;
-GO
 
 
 /* =========================================================
@@ -333,76 +323,6 @@ GO
    - RoomName lấy từ Classes.Room
    - RoomCode chuẩn hóa từ RoomName, ví dụ PHONG-201
    ========================================================= */
-
-;WITH DistinctRooms AS
-(
-    SELECT DISTINCT
-        c.CenterId,
-        RoomName = LTRIM(RTRIM(c.Room))
-    FROM dbo.Classes c
-    WHERE c.Room IS NOT NULL
-      AND LTRIM(RTRIM(c.Room)) <> N''
-),
-NormalizedRooms AS
-(
-    SELECT
-        CenterId,
-        RoomName,
-        BaseRoomCode =
-            UPPER(
-                REPLACE(
-                REPLACE(
-                REPLACE(
-                REPLACE(
-                REPLACE(RoomName, N' ', N'-'),
-                    N'Đ', N'D'),
-                    N'đ', N'd'),
-                    N'/', N'-'),
-                    N'\', N'-')
-            )
-    FROM DistinctRooms
-),
-NumberedRooms AS
-(
-    SELECT
-        CenterId,
-        RoomName,
-        RoomCode =
-            LEFT(
-                CASE
-                    WHEN BaseRoomCode IS NULL OR BaseRoomCode = N'' THEN N'ROOM'
-                    ELSE BaseRoomCode
-                END,
-                24
-            ) + N'-' + RIGHT(N'0000' + CAST(
-                ROW_NUMBER() OVER (
-                    PARTITION BY CenterId,
-                    LEFT(
-                        CASE
-                            WHEN BaseRoomCode IS NULL OR BaseRoomCode = N'' THEN N'ROOM'
-                            ELSE BaseRoomCode
-                        END,
-                        24
-                    )
-                    ORDER BY RoomName
-                ) AS NVARCHAR(10)), 4)
-    FROM NormalizedRooms
-)
-INSERT INTO dbo.Rooms
-    (CenterId, RoomCode, RoomName, Status)
-SELECT
-    nr.CenterId,
-    nr.RoomCode,
-    nr.RoomName,
-    N'Active'
-FROM NumberedRooms nr
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM dbo.Rooms r
-    WHERE r.CenterId = nr.CenterId
-      AND r.RoomName = nr.RoomName
-);
-GO
 
 
 /* =========================================================
@@ -1108,40 +1028,6 @@ BEGIN
 END;
 GO
 
-/* 3. Backfill CenterUsers */
-INSERT INTO dbo.CenterUsers (CenterId, UserId, UserType)
-SELECT c.CenterId, c.OwnerUserId, N'OWNER'
-FROM dbo.Centers c
-WHERE c.OwnerUserId IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM dbo.CenterUsers cu
-    WHERE cu.CenterId = c.CenterId
-      AND cu.UserId = c.OwnerUserId
-);
-GO
-
-INSERT INTO dbo.CenterUsers (CenterId, UserId, UserType)
-SELECT DISTINCT t.CenterId, t.UserId, N'TEACHER'
-FROM dbo.Teachers t
-WHERE ISNULL(t.IsDeleted, 0) = 0
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.CenterUsers cu
-      WHERE cu.CenterId = t.CenterId
-        AND cu.UserId = t.UserId
-  );
-GO
-
-INSERT INTO dbo.CenterUsers (CenterId, UserId, UserType)
-SELECT DISTINCT s.CenterId, s.ParentUserId, N'PARENT'
-FROM dbo.Students s
-WHERE ISNULL(s.IsDeleted, 0) = 0
-  AND s.ParentUserId IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1 FROM dbo.CenterUsers cu
-      WHERE cu.CenterId = s.CenterId
-        AND cu.UserId = s.ParentUserId
-  );
-GO
 
 /* 4. Drop unique StudentCode toàn hệ thống nếu còn */
 DECLARE @sql NVARCHAR(MAX);
@@ -1438,89 +1324,6 @@ GO
 /* =========================================================
    8. Backfill OWNER
    ========================================================= */
-
-INSERT INTO dbo.CenterUsers
-    (CenterId, UserId, UserType, Status)
-SELECT
-    c.CenterId,
-    c.OwnerUserId,
-    N'OWNER',
-    CASE
-        WHEN c.Status = N'Active' THEN N'Active'
-        ELSE N'Inactive'
-    END
-FROM dbo.Centers c
-WHERE c.OwnerUserId IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1
-      FROM dbo.CenterUsers cu
-      WHERE cu.CenterId = c.CenterId
-        AND cu.UserId = c.OwnerUserId
-        AND cu.UserType = N'OWNER'
-  );
-GO
-
-
-/* =========================================================
-   9. Backfill TEACHER
-   ========================================================= */
-
-INSERT INTO dbo.CenterUsers
-    (CenterId, UserId, UserType, Status)
-SELECT DISTINCT
-    t.CenterId,
-    t.UserId,
-    N'TEACHER',
-    CASE
-        WHEN ISNULL(t.IsDeleted, 0) = 0
-         AND t.Status = N'Active'
-         AND u.Status = N'Active'
-         AND ISNULL(u.IsDeleted, 0) = 0
-        THEN N'Active'
-        ELSE N'Inactive'
-    END
-FROM dbo.Teachers t
-JOIN dbo.Users u
-    ON u.UserId = t.UserId
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM dbo.CenterUsers cu
-    WHERE cu.CenterId = t.CenterId
-      AND cu.UserId = t.UserId
-      AND cu.UserType = N'TEACHER'
-);
-GO
-
-
-/* =========================================================
-   10. Backfill PARENT
-   ========================================================= */
-
-INSERT INTO dbo.CenterUsers
-    (CenterId, UserId, UserType, Status)
-SELECT DISTINCT
-    s.CenterId,
-    s.ParentUserId,
-    N'PARENT',
-    CASE
-        WHEN ISNULL(s.IsDeleted, 0) = 0
-         AND u.Status = N'Active'
-         AND ISNULL(u.IsDeleted, 0) = 0
-        THEN N'Active'
-        ELSE N'Inactive'
-    END
-FROM dbo.Students s
-JOIN dbo.Users u
-    ON u.UserId = s.ParentUserId
-WHERE s.ParentUserId IS NOT NULL
-  AND NOT EXISTS (
-      SELECT 1
-      FROM dbo.CenterUsers cu
-      WHERE cu.CenterId = s.CenterId
-        AND cu.UserId = s.ParentUserId
-        AND cu.UserType = N'PARENT'
-  );
-GO
 
 
 /* =========================================================

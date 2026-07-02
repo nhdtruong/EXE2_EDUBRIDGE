@@ -1,4 +1,4 @@
-USE EduBridgeDB;
+﻿USE EduBridgeDB;
 GO
 
 SET XACT_ABORT ON;
@@ -641,31 +641,6 @@ GO
 /* =========================================================
    7. Seed lịch sử ban đầu cho dữ liệu hiện tại
    ========================================================= */
-
-INSERT INTO dbo.EnrollmentHistories
-(
-    EnrollmentId,
-    OldStatus,
-    NewStatus,
-    ChangedAt,
-    ChangedByUserId,
-    Note
-)
-SELECT
-    e.EnrollmentId,
-    NULL,
-    e.Status,
-    e.StatusChangedAt,
-    e.UpdatedByUserId,
-    N'Dữ liệu lịch sử được khởi tạo từ Enrollment hiện tại'
-FROM dbo.Enrollments e
-WHERE NOT EXISTS
-(
-    SELECT 1
-    FROM dbo.EnrollmentHistories h
-    WHERE h.EnrollmentId = e.EnrollmentId
-);
-GO
 
 
 /* =========================================================

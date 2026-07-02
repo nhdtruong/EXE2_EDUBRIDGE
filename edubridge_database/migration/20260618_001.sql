@@ -1,4 +1,4 @@
-USE EduBridgeDB;
+﻿USE EduBridgeDB;
 GO
 -- =============================================
 -- IMPACT ANALYSIS:
@@ -127,30 +127,8 @@ BEGIN
     );
 END
 
--- 8. Seed Roles
-IF NOT EXISTS (SELECT 1 FROM Roles WHERE RoleCode = 'SYSTEM_ADMIN')
-BEGIN
-    INSERT INTO Roles (RoleCode, RoleName) VALUES ('SYSTEM_ADMIN', N'System Administrator');
-END
-
-IF NOT EXISTS (SELECT 1 FROM Roles WHERE RoleCode = 'PROJECT_ADMIN')
-BEGIN
-    INSERT INTO Roles (RoleCode, RoleName) VALUES ('PROJECT_ADMIN', N'Project Administrator');
-END
-
-IF NOT EXISTS (SELECT 1 FROM Roles WHERE RoleCode = 'BRANCH_MANAGER')
-BEGIN
-    INSERT INTO Roles (RoleCode, RoleName) VALUES ('BRANCH_MANAGER', N'Branch Manager');
-END
-
 COMMIT TRANSACTION;
 
-
-UPDATE Users
-SET PasswordHash = '$2a$11$4AS8zQyRXz.pz14rBox1TekJ5O2z4uSzRVPaPbtogeEi2bZ3xnCAC'
-WHERE Email IN (
-    'admin@edubridge.com'
-);
 
 
 -- Thay đổi cấu trúc cột thành NULL
