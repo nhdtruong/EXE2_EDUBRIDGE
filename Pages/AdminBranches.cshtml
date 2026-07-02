@@ -1,0 +1,358 @@
+@page
+@model EduBridge.Pages.AdminBranchesModel
+@{
+    ViewData["Title"] = "Danh sách Cơ sở";
+    Layout = "_AdminLayout";
+}
+
+@section Scripts {
+    <link rel="stylesheet" href="~/css/design-system/pagination.css" asp-append-version="true" />
+    <script>
+        function setPageAndSubmit(page) {
+            document.getElementById('PageNumber').value = page;
+            document.getElementById('filterForm').submit();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropdown = document.getElementById('branchStatusDropdown');
+            const button = document.getElementById('branchStatusToggle');
+            const panel = document.getElementById('branchStatusPanel');
+            const input = document.getElementById('branchStatusSearch');
+            const hidden = document.getElementById('FilterStatus');
+            const label = document.getElementById('branchStatusLabel');
+            const options = Array.from(document.querySelectorAll('[data-branch-status-option]'));
+
+            if (!dropdown || !button || !panel || !input || !hidden || !label) {
+                return;
+            }
+
+            const setOpen = (isOpen) => {
+                panel.classList.toggle('hidden', !isOpen);
+                button.setAttribute('aria-expanded', isOpen.toString());
+                if (isOpen) {
+                    requestAnimationFrame(() => input.focus());
+                }
+            };
+
+            const filterOptions = () => {
+                const keyword = normalizeSearchText(input.value);
+                options.forEach(option => {
+                    const text = option.dataset.searchText || '';
+                    option.classList.toggle('hidden', keyword.length > 0 && !text.includes(keyword));
+                });
+            };
+
+            const normalizeSearchText = (value) => {
+                return (value || '')
+                    .toLocaleLowerCase('vi-VN')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/đ/g, 'd')
+                    .trim();
+            };
+
+            button.addEventListener('click', (event) => {
+                event.stopPropagation();
+                setOpen(panel.classList.contains('hidden'));
+            });
+
+            input.addEventListener('input', filterOptions);
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hidden.value = option.dataset.value || '';
+                    label.textContent = option.dataset.label || 'Trạng thái (Tất cả)';
+                    document.getElementById('PageNumber').value = 1;
+                    setOpen(false);
+                });
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!dropdown.contains(event.target)) {
+                    setOpen(false);
+                }
+            });
+        });
+    </script>
+}
+
+<div class="space-y-6 pb-20">
+    <div>
+        <h1 class="text-3xl font-bold text-gray-900">Danh sách Cơ sở</h1>
+        <p class="text-gray-500 mt-1">Quản lý các cơ sở thuộc trung tâm của bạn.</p>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-blue-100 bg-blue-50/60 p-6">
+            <h3 class="text-base font-bold text-gray-900">Danh sách cơ sở</h3>
+
+            <form id="filterForm" method="get" class="mt-5 space-y-4">
+                <input type="hidden" asp-for="PageNumber" id="PageNumber" />
+
+                <div class="grid gap-4 lg:grid-cols-3">
+                    <div>
+                        <label class="sr-only">Mã, tên cơ sở</label>
+                        <input type="text"
+                               asp-for="SearchKeyword"
+                               class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                               placeholder="Mã, tên cơ sở..." />
+                    </div>
+                    <div>
+                        <label class="sr-only">Email, SĐT</label>
+                        <input type="text"
+                               asp-for="SearchContact"
+                               class="block h-12 w-full rounded border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                               placeholder="Tìm email, số điện thoại..." />
+                    </div>
+                    <div>
+                        <label class="sr-only">Trạng thái</label>
+                        <input type="hidden" asp-for="FilterStatus" />
+                        <div id="branchStatusDropdown" class="relative">
+                            <button type="button"
+                                    id="branchStatusToggle"
+                                    class="flex h-12 w-full items-center justify-between rounded border border-gray-300 bg-white px-4 text-left text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    aria-expanded="false"
+                                    aria-controls="branchStatusPanel">
+                                <span id="branchStatusLabel">
+                                    @(Model.FilterStatus == "Active" ? "Hoạt động" : Model.FilterStatus == "Inactive" ? "Không hoạt động" : "Trạng thái (Tất cả)")
+                                </span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div id="branchStatusPanel" class="absolute z-40 mt-2 hidden w-full rounded border border-gray-200 bg-white shadow-lg">
+                                <div class="border-b border-gray-100 p-2">
+                                    <input id="branchStatusSearch"
+                                           type="search"
+                                           class="h-10 w-full rounded border border-gray-300 px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                           placeholder="Tìm trạng thái..." />
+                                </div>
+                                <div class="max-h-48 overflow-y-auto py-1">
+                                    <button type="button" data-branch-status-option data-value="" data-label="Trạng thái (Tất cả)" data-search-text="trang thai tat ca" class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Trạng thái (Tất cả)</button>
+                                    <button type="button" data-branch-status-option data-value="Active" data-label="Hoạt động" data-search-text="hoat dong active" class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Hoạt động</button>
+                                    <button type="button" data-branch-status-option data-value="Inactive" data-label="Không hoạt động" data-search-text="khong hoat dong tam ngung inactive" class="block w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700">Không hoạt động</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+                    <a href="/AdminBranches/Create"
+                       class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Thêm mới
+                    </a>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <a asp-page="/AdminBranches"
+                           class="inline-flex h-11 items-center rounded bg-slate-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-slate-700">
+                            Làm mới bộ lọc
+                        </a>
+                        <button type="submit"
+                                class="inline-flex h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700">
+                            <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Tìm kiếm
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                        <th class="py-4 px-4 text-center font-bold border-r border-slate-200 w-16">STT</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Tên cơ sở</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Mã cơ sở</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Địa chỉ</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Email / SĐT</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Mô tả</th>
+                        <th class="py-4 px-6 font-bold border-r border-slate-200">Trưởng cơ sở</th>
+                        <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Trạng thái</th>
+                        <th class="py-4 px-6 text-center font-bold">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm divide-y divide-gray-100">
+                    @if (Model.Branches.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                <div class="flex flex-col items-center gap-2">
+                                    <svg class="h-10 w-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"></path>
+                                    </svg>
+                                    <span>Không tìm thấy cơ sở nào.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @{ int index = 0; }
+                    @foreach (var branch in Model.Branches)
+                    {
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="py-4 px-4 text-center font-medium text-slate-500 border-r border-slate-100">
+                                @(Model.FirstItemNumber + index)
+                            </td>
+                            <td class="py-4 px-6 border-r border-slate-100">
+                                <div class="font-semibold text-slate-900">@branch.BranchName</div>
+                            </td>
+                            @{ index++; }
+                            <td class="py-4 px-6 text-center border-r border-slate-100">
+                                <span class="font-semibold text-slate-700">@branch.BranchCode</span>
+                            </td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100 max-w-[220px]">
+                                <span class="line-clamp-2" title="@branch.Address">
+                                    @(string.IsNullOrEmpty(branch.Address) ? "-" : branch.Address)
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100">
+                                @if (!string.IsNullOrEmpty(branch.Email))
+                                {
+                                    <div class="flex items-center gap-1.5">
+                                        <svg class="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                        </svg>
+                                        <span class="text-xs">@branch.Email</span>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(branch.PhoneNumber))
+                                {
+                                    <div class="flex items-center gap-1.5 mt-1">
+                                        <svg class="h-3.5 w-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                                        </svg>
+                                        <span class="text-xs">@branch.PhoneNumber</span>
+                                    </div>
+                                }
+                                @if (string.IsNullOrEmpty(branch.Email) && string.IsNullOrEmpty(branch.PhoneNumber))
+                                {
+                                    <span class="text-slate-400">-</span>
+                                }
+                            </td>
+                            <td class="py-4 px-6 text-slate-600 border-r border-slate-100 max-w-[200px]">
+                                @if (!string.IsNullOrEmpty(branch.Description))
+                                {
+                                    <span class="line-clamp-2 text-sm" title="@branch.Description">@branch.Description</span>
+                                }
+                                else
+                                {
+                                    <span class="text-slate-400">-</span>
+                                }
+                            </td>
+                            <td class="py-4 px-6 border-r border-slate-100">
+                                @if (branch.HeadUser != null)
+                                {
+                                    <div class="flex items-center gap-2">
+                                        <div class="h-7 w-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                                            <span class="text-xs font-semibold text-blue-600">
+                                                @branch.HeadUser.FullName.Substring(0, 1).ToUpper()
+                                            </span>
+                                        </div>
+                                        <span class="text-sm text-slate-800 font-medium">@branch.HeadUser.FullName</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-slate-400">-</span>
+                                }
+                            </td>
+                            <td class="py-4 px-6 text-center border-r border-slate-100">
+                                <form method="post"
+                                      asp-page-handler="ToggleStatus"
+                                      asp-route-branchId="@branch.BranchId"
+                                      asp-route-currentStatus="@branch.Status"
+                                      class="flex justify-center">
+                                    <input type="hidden" name="SearchKeyword" value="@Model.SearchKeyword" />
+                                    <input type="hidden" name="SearchContact" value="@Model.SearchContact" />
+                                    <input type="hidden" name="FilterStatus" value="@Model.FilterStatus" />
+                                    <input type="hidden" name="PageNumber" value="@Model.PageNumber" />
+                                    <input type="hidden" name="PageSize" value="@Model.PageSize" />
+                                    <button type="submit"
+                                            class="inline-flex items-center gap-3 rounded-full border px-3 py-1.5 transition-colors @(branch.Status == "Active" ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" : "border-gray-200 bg-gray-100 text-gray-600 hover:bg-gray-200")"
+                                            title="Đổi trạng thái cơ sở">
+                                        <span class="relative h-6 w-11 rounded-full transition-colors @(branch.Status == "Active" ? "bg-green-500" : "bg-gray-300")">
+                                            <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform @(branch.Status == "Active" ? "left-5" : "left-0.5")"></span>
+                                        </span>
+                                        <span class="min-w-24 text-left text-xs font-semibold">@(branch.Status == "Active" ? "Hoạt động" : "Tạm ngưng")</span>
+                                    </button>
+                                </form>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <div class="flex items-center justify-center">
+                                    <a href="/AdminBranches/Detail?id=@branch.BranchId"
+                                       class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
+                                       title="Xem chi tiết"
+                                       aria-label="Xem chi tiết cơ sở @branch.BranchName">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
+                                            <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
+                                        </svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="border-t border-slate-200 bg-white px-6 py-4">
+            <div class="ds-pagination">
+                <div class="ds-pagination-pages">
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(1)"
+                       class="ds-page-link @(Model.PageNumber <= 1 ? "ds-page-link-disabled" : "")">«</a>
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber - 1))"
+                       class="ds-page-link @(Model.PageNumber <= 1 ? "ds-page-link-disabled" : "")">‹</a>
+
+                    @{
+                        int startPage = Math.Max(1, Model.PageNumber - 2);
+                        int endPage = Math.Min(Model.TotalPages, startPage + 4);
+                        if (endPage - startPage < 4)
+                        {
+                            startPage = Math.Max(1, endPage - 4);
+                        }
+                    }
+
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        if (i == Model.PageNumber)
+                        {
+                            <a href="javascript:void(0)" class="ds-page-link ds-page-link-active">@i</a>
+                        }
+                        else
+                        {
+                            <a href="javascript:void(0)" onclick="setPageAndSubmit(@i)" class="ds-page-link">@i</a>
+                        }
+                    }
+
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber + 1))"
+                       class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">›</a>
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@Model.TotalPages)"
+                       class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">»</a>
+                </div>
+                <div class="ds-pagination-meta">
+                    <span>Tổng số: @Model.TotalItems bản ghi</span>
+                    <select class="ds-page-size" form="filterForm" name="PageSize"
+                            onchange="document.getElementById('PageNumber').value=1; this.form.submit()">
+                        @foreach (var size in Model.PageSizeOptions)
+                        {
+                            if (size == Model.PageSize)
+                            {
+                                <option value="@size" selected>@size</option>
+                            }
+                            else
+                            {
+                                <option value="@size">@size</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

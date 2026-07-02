@@ -34,4 +34,6 @@ public partial class Lesson
     public virtual ClassSchedule? ClassSchedule { get; set; }
 
     public virtual ICollection<Homework> Homeworks { get; set; } = new List<Homework>();
+
+    public virtual ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
 }

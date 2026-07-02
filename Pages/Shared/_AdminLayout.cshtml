@@ -36,20 +36,34 @@
     
     var showCenterMenu = isOwner || isSupportMode;
 
-    // Lấy danh sách Branches
+    // Lấy trung tâm và danh sách cơ sở đang hoạt động.
     var currentCenterId = await CurrentCenterService.GetCenterIdAsync();
+    var currentBranchIdStr = Context.Request.Cookies["CurrentBranchId"];
+    int.TryParse(currentBranchIdStr, out int currentBranchId);
+
+    var currentCenterName = "Trung tâm";
+    var ownerContextLabel = currentCenterName;
     var branches = new List<EduBridge.Models.Branch>();
     if (currentCenterId.HasValue)
     {
+        currentCenterName = await DbContext.Centers
+            .AsNoTracking()
+            .Where(c => c.CenterId == currentCenterId.Value)
+            .Select(c => c.CenterName)
+            .FirstOrDefaultAsync() ?? currentCenterName;
+
         branches = await DbContext.Branches
             .AsNoTracking()
-            .Where(b => b.CenterId == currentCenterId.Value && b.Status == "ACTIVE")
+            .Where(b => b.CenterId == currentCenterId.Value && b.Status.ToUpper() == "ACTIVE")
             .OrderBy(b => b.BranchName)
             .ToListAsync();
+
+        ownerContextLabel = branches
+            .FirstOrDefault(branch => branch.BranchId == currentBranchId)
+            ?.BranchName ?? currentCenterName;
     }
-    
-    var currentBranchIdStr = Context.Request.Cookies["CurrentBranchId"];
-    int.TryParse(currentBranchIdStr, out int currentBranchId);
+
+    var isCenterManagementScope = showCenterMenu && currentBranchId == 0;
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -232,10 +246,695 @@
         body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-avatar {
             margin-right: 0;
         }
+
+        .owner-shell {
+            background: #f5f7f9;
+            color: #2f3f4d;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .owner-topbar {
+            height: 52px;
+            flex-shrink: 0;
+            background: #3f96c4;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+            z-index: 30;
+        }
+
+        .owner-topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 46px;
+            min-width: 0;
+        }
+
+        .owner-topbar-title {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: 0;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .owner-topbar-toggle {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: #fff;
+            transition: background-color .15s ease;
+        }
+
+        .owner-topbar-toggle:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .owner-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .owner-profile-menu-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .owner-icon-btn {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            background: transparent;
+            color: #fff;
+            border-radius: 50%;
+        }
+
+        .owner-topbar-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 999px;
+            border: 4px solid rgba(255,255,255,.65);
+            background: #edf6ff;
+            color: #2c4662;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .owner-topbar-avatar:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255,255,255,.9);
+        }
+
+        .owner-profile-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 240px;
+            z-index: 60;
+        }
+
+        .owner-profile-menu-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, .18);
+            padding: 8px;
+        }
+
+        .owner-profile-menu::before {
+            content: "";
+            position: absolute;
+            top: -6px;
+            right: 14px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-left: 1px solid #e5e7eb;
+            border-top: 1px solid #e5e7eb;
+            transform: rotate(45deg);
+        }
+
+        .owner-workspace {
+            display: flex;
+            min-height: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #admin-sidebar {
+            width: 270px !important;
+            background: #1d2c33 !important;
+            border-right: 0 !important;
+            color: #fff;
+            justify-content: flex-start !important;
+            overflow-y: auto;
+            box-shadow: 4px 0 14px rgba(15, 23, 42, .12);
+        }
+
+        #admin-sidebar .admin-sidebar-logo-row {
+            display: none !important;
+        }
+
+        #admin-sidebar > div:first-child {
+            display: flex;
+            min-height: 0;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .owner-sidebar-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 30px 26px 22px;
+        }
+
+        .owner-sidebar-profile .owner-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 4px solid #d8efff;
+            background: #f3f8fc;
+            color: #2b4050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .owner-profile-name {
+            max-width: 160px;
+            font-size: 15px;
+            line-height: 1.25;
+            font-weight: 800;
+            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .owner-profile-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 4px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .owner-profile-status::before {
+            content: "";
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #21c66f;
+            box-shadow: 0 0 0 2px rgba(33,198,111,.18);
+        }
+
+        .owner-sidebar-section {
+            padding: 8px 11px 20px;
+            position: relative;
+            z-index: 25;
+        }
+
+        .owner-sidebar-label {
+            margin: 8px 0 8px;
+            text-align: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 15px;
+        }
+
+        .owner-center-tree {
+            position: relative;
+            margin-bottom: 22px;
+            z-index: 30;
+        }
+
+        .owner-center-toggle {
+            width: 100%;
+            min-height: 47px;
+            border: 0;
+            border-radius: 2px;
+            background: #fff;
+            color: #25384a;
+            padding: 0 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: left;
+            outline: none;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .12);
+        }
+
+        .owner-center-toggle:hover,
+        .owner-center-toggle:focus-visible {
+            box-shadow: 0 0 0 2px #8ec8f3, 0 1px 2px rgba(15, 23, 42, .12);
+        }
+
+        .owner-center-toggle-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            text-align: center;
+            flex: 1;
+        }
+
+        .owner-center-toggle-icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            transition: transform .15s ease;
+        }
+
+        .owner-center-tree.is-open .owner-center-toggle-icon {
+            transform: rotate(180deg);
+        }
+
+        .owner-center-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background: #fff;
+            color: #334155;
+            border-radius: 2px;
+            box-shadow: 0 7px 18px rgba(15, 23, 42, .22);
+            border: 1px solid #e5e7eb;
+            max-height: 310px;
+            overflow-y: auto;
+            z-index: 80;
+        }
+
+        .owner-center-search {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 10px;
+            border-bottom: 1px solid #edf0f3;
+        }
+
+        .owner-center-search-box {
+            height: 42px;
+            flex: 1;
+            border: 1px solid #d7dde4;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            color: #66717d;
+            background: #fff;
+        }
+
+        .owner-center-search-input {
+            width: 100%;
+            height: 100%;
+            border: 0;
+            outline: none;
+            color: #263442;
+            background: transparent;
+            font-size: 14px;
+            min-height: 0 !important;
+            padding: 0 8px 0 0 !important;
+        }
+
+        .owner-center-search-input::placeholder {
+            color: #98a2ad;
+        }
+
+        .owner-center-close {
+            width: 36px;
+            height: 36px;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: #66717d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .owner-center-close:hover {
+            background: #f2f6f9;
+        }
+
+        .owner-center-list {
+            padding: 8px 0 10px;
+        }
+
+        .owner-center-node,
+        .owner-branch-node {
+            width: 100%;
+            min-height: 36px;
+            border: 0;
+            background: transparent;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 7px 14px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: left;
+        }
+
+        .owner-center-node {
+            color: #1f2f3d;
+        }
+
+        .owner-center-node-form {
+            flex: 1;
+            min-width: 0;
+            margin: 0;
+        }
+
+        .owner-center-row {
+            display: flex;
+            align-items: stretch;
+        }
+
+        .owner-center-row .owner-center-node {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .owner-center-branch-toggle {
+            width: 34px;
+            border: 0;
+            background: transparent;
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .owner-center-row.is-active {
+            background: #3f96c4;
+            color: #fff;
+        }
+
+        .owner-center-row.is-active .owner-center-node,
+        .owner-center-row.is-active .owner-center-branch-toggle {
+            color: #fff;
+        }
+
+        .owner-center-row.is-active .owner-center-node:hover,
+        .owner-center-row.is-active .owner-center-branch-toggle:hover {
+            background: #3a8ab5;
+        }
+
+        .owner-center-row.is-collapsed .owner-tree-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .owner-center-children.is-hidden {
+            display: none;
+        }
+
+        .owner-tree-empty.is-hidden {
+            display: none;
+        }
+
+        .owner-branch-node {
+            padding-left: 42px;
+            color: #475569;
+        }
+
+        .owner-center-node:hover,
+        .owner-branch-node:hover {
+            background: #eef7fc;
+            color: #1f5f86;
+        }
+
+        .owner-center-node.is-active,
+        .owner-branch-node.is-active {
+            background: #dff1fb;
+            color: #0f5f8f;
+            font-weight: 700;
+        }
+
+        .owner-branch-node.is-active:hover {
+            background: #d4ebf8;
+            color: #0f5f8f;
+        }
+
+        .owner-center-node-label,
+        .owner-branch-node-label {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .owner-tree-chevron,
+        .owner-tree-building {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+
+        .owner-tree-empty {
+            padding: 14px 16px 18px;
+            color: #6b7280;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        #admin-sidebar .admin-sidebar-nav {
+            position: relative;
+            z-index: 1;
+            margin-top: 0 !important;
+            padding: 0 0 24px !important;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #admin-sidebar .admin-sidebar-link {
+            min-height: 45px;
+            border-radius: 0 !important;
+            color: #fff !important;
+            padding: 0 16px !important;
+            font-weight: 800 !important;
+            background: transparent !important;
+        }
+
+        #admin-sidebar .admin-sidebar-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #admin-sidebar .admin-sidebar-link:hover {
+            background: rgba(255,255,255,.08) !important;
+            color: #fff !important;
+        }
+
+        #admin-sidebar .admin-sidebar-link.bg-blue-50,
+        #admin-sidebar .admin-sidebar-link.text-blue-600 {
+            background: transparent !important;
+            color: #fff !important;
+        }
+
+        #admin-sidebar .admin-sidebar-link svg {
+            color: #fff;
+            width: 18px !important;
+            height: 18px !important;
+            margin-right: 8px !important;
+            flex-shrink: 0;
+        }
+
+        #admin-sidebar .admin-sidebar-label {
+            color: inherit;
+            font-size: 15px;
+            line-height: 1.2;
+        }
+
+        #admin-sidebar .admin-sidebar-link::after {
+            content: "⌄";
+            margin-left: auto;
+            color: rgba(255,255,255,.92);
+            font-size: 17px;
+            line-height: 1;
+            transition: transform .15s ease;
+        }
+
+        #admin-sidebar .admin-sidebar-link.bg-blue-50::after,
+        #admin-sidebar .admin-sidebar-link.text-blue-600::after {
+            content: "⌃";
+        }
+
+        #admin-sidebar .admin-sidebar-link.bg-blue-50:hover,
+        #admin-sidebar .admin-sidebar-link.text-blue-600:hover {
+            background: rgba(255,255,255,.08) !important;
+        }
+
+        #admin-sidebar .admin-sidebar-item.is-open > .admin-sidebar-link::after {
+            content: "⌃";
+        }
+
+        #admin-sidebar .admin-sidebar-submenu {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            padding: 4px 0 7px;
+        }
+
+        #admin-sidebar .admin-sidebar-item.is-open > .admin-sidebar-submenu {
+            display: flex;
+        }
+
+        #admin-sidebar .admin-sidebar-submenu-link {
+            min-height: 37px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px 0 31px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        #admin-sidebar .admin-sidebar-submenu-link::before {
+            content: "›";
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        #admin-sidebar .admin-sidebar-submenu-link:hover,
+        #admin-sidebar .admin-sidebar-submenu-link.is-active {
+            background: #4298c7;
+            color: #fff;
+        }
+
+        #admin-sidebar .admin-sidebar-footer {
+            border-top: 1px solid rgba(255,255,255,.08) !important;
+            padding: 16px 18px 20px !important;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar {
+            width: 5rem !important;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .owner-sidebar-profile,
+        body.admin-sidebar-collapsed #admin-sidebar .owner-sidebar-section {
+            display: none !important;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link::after {
+            display: none;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-submenu {
+            display: none !important;
+        }
+
+        #admin-sidebar .admin-sidebar-profile {
+            color: #fff;
+        }
+
+        #admin-sidebar .admin-sidebar-avatar {
+            background: #e8f5ff !important;
+            color: #2e485e !important;
+            border: 3px solid #cdeaff;
+        }
+
+        #admin-sidebar .admin-sidebar-user-info div:first-child {
+            color: #fff !important;
+        }
+
+        #admin-sidebar .admin-sidebar-user-info div:last-child {
+            color: rgba(255,255,255,.7) !important;
+        }
+
+        .admin-main {
+            background: #f5f7f9;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .owner-main-branch-row {
+            display: none !important;
+        }
+
+        @@media (max-width: 768px) {
+            .owner-topbar {
+                padding: 0 16px;
+            }
+
+            .owner-topbar-brand {
+                gap: 18px;
+            }
+
+            .owner-topbar-title {
+                font-size: 17px;
+            }
+
+            #admin-sidebar {
+                width: 240px !important;
+            }
+        }
     </style>
 </head>
-<body class="text-gray-800 flex h-screen overflow-hidden">
+<body class="text-gray-800 h-screen overflow-hidden owner-shell">
     <div id="layout-toast-container" class="fixed right-6 top-6 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col gap-3"></div>
+
+    <header class="owner-topbar">
+        <div class="owner-topbar-brand">
+            <div class="owner-topbar-title">EDUBRIDGE</div>
+            <button id="admin-sidebar-toggle" type="button" class="owner-topbar-toggle" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 7h16M4 12h16M4 17h16"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="owner-topbar-actions">
+            <button type="button" class="owner-icon-btn" aria-label="Thông báo">
+                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h4"></path>
+                </svg>
+            </button>
+            <div class="owner-profile-menu-wrap">
+                <button type="button" id="adminProfileBtn" class="owner-topbar-avatar" aria-label="Tài khoản" aria-expanded="false">@initials</button>
+                <div id="adminProfileMenu" class="owner-profile-menu hidden">
+                    <div class="owner-profile-menu-panel space-y-1">
+                        @if (hasTeacherRole)
+                        {
+                            <form method="post" asp-page="/SwitchRole" class="w-full m-0">
+                                <input type="hidden" name="roleCode" value="TEACHER" />
+                                <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
+                                    <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                                    <span>Giao diện Giáo viên</span>
+                                </button>
+                            </form>
+                        }
+                        <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <span>Hồ sơ cá nhân</span>
+                        </a>
+                        <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>Đổi mật khẩu</span>
+                        </a>
+                        <form method="post" asp-page="/Logout" class="w-full m-0">
+                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
+                                <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="owner-workspace">
 
     <!-- Sidebar -->
     <aside id="admin-sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
@@ -256,13 +955,89 @@
                         </div>
                     </div>
                 </div>
-                <button id="admin-sidebar-toggle" type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                <button type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path>
                     </svg>
                 </button>
             </div>
 
+            @if (showCenterMenu)
+            {
+                <div class="owner-sidebar-profile">
+                    <div class="owner-avatar">@initials</div>
+                    <div class="min-w-0">
+                        <div class="owner-profile-name">Tên: @fullName</div>
+                        <div class="owner-profile-status">Trực tuyến</div>
+                    </div>
+                </div>
+
+                <div class="owner-sidebar-section">
+                    <div class="owner-sidebar-label">@(isCenterManagementScope ? "Trung tâm quản lý" : "Cơ sở quản lý")</div>
+                    <div id="ownerCenterTree" class="owner-center-tree">
+                        <button type="button" id="ownerCenterToggle" class="owner-center-toggle" aria-expanded="false" aria-controls="ownerCenterPanel">
+                            <span class="owner-center-toggle-label">@ownerContextLabel</span>
+                            <svg class="owner-center-toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"></path>
+                            </svg>
+                        </button>
+                        <div id="ownerCenterPanel" class="owner-center-panel hidden">
+                            <div class="owner-center-search">
+                                <div class="owner-center-search-box">
+                                    <input id="ownerCenterSearchInput" type="search" class="owner-center-search-input" autocomplete="off" aria-label="Tìm trung tâm hoặc cơ sở" />
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15z"></path>
+                                    </svg>
+                                </div>
+                                <button type="button" id="ownerCenterClose" class="owner-center-close" aria-label="Đóng danh sách cơ sở">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="owner-center-list">
+                                <div id="ownerCenterRow" class="owner-center-row @(currentBranchId == 0 ? "is-active" : "")" data-search-text="@currentCenterName">
+                                    <button type="button" id="ownerBranchToggle" class="owner-center-branch-toggle" aria-label="Đóng/mở danh sách cơ sở" aria-expanded="true">
+                                        <svg class="owner-tree-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9l6 6 6-6"></path>
+                                        </svg>
+                                    </button>
+                                    <form method="post" asp-page="/SetBranch" class="owner-center-node-form">
+                                        <input type="hidden" name="branchId" value="0" />
+                                        <button type="submit" class="owner-center-node">
+                                            <span class="owner-center-node-label">@currentCenterName</span>
+                                        </button>
+                                    </form>
+                                </div>
+                                @if (branches.Any())
+                                {
+                                    <div id="ownerCenterChildren" class="owner-center-children">
+                                        @foreach (var branch in branches)
+                                        {
+                                            <form method="post" asp-page="/SetBranch" class="m-0 owner-branch-form" data-search-text="@($"{currentCenterName} {branch.BranchName}")">
+                                                <input type="hidden" name="branchId" value="@branch.BranchId" />
+                                                <button type="submit" class="owner-branch-node @(currentBranchId == branch.BranchId ? "is-active" : "")" title="@branch.BranchName">
+                                                    <svg class="owner-tree-building" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 21h16M7 21V4h10v17M9.5 8h1M13.5 8h1M9.5 12h1M13.5 12h1M9.5 16h1M13.5 16h1"></path>
+                                                    </svg>
+                                                    <span class="owner-branch-node-label">@branch.BranchName</span>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div id="ownerCenterChildren" class="owner-center-children">
+                                        <div class="owner-tree-empty">Trung tâm này chưa có cơ sở đang hoạt động.</div>
+                                    </div>
+                                }
+                                <div id="ownerCenterNoResult" class="owner-tree-empty is-hidden">Không tìm thấy trung tâm hoặc cơ sở phù hợp.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
             <!-- Navigation -->
             <nav class="admin-sidebar-nav p-4 space-y-1.5 mt-2">
                 @if (isSystemAdmin && !isSupportMode)
@@ -290,6 +1065,45 @@
                 
                 @if (showCenterMenu)
                 {
+                    if (isCenterManagementScope)
+                    {
+                        var isCenterSettingsActive = ViewData["ActivePage"] as string == "AdminSettings";
+                        var isBranchesActive = ViewData["ActivePage"] as string == "AdminBranches";
+                        var isCenterGroupActive = isCenterSettingsActive || isBranchesActive;
+
+                        <a href="/AdminDashboard" title="Dashboard trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminDashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            <span class="admin-sidebar-label">Dashboard trung tâm</span>
+                        </a>
+                        <div class="admin-sidebar-item @(isCenterGroupActive ? "is-open" : "")">
+                            <a href="/AdminSettings" title="Quản lý trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors" role="button" aria-expanded="@isCenterGroupActive.ToString().ToLowerInvariant()">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l8-4 6 4v14"></path><path d="M9 10h1"></path><path d="M13 10h1"></path><path d="M9 14h1"></path><path d="M13 14h1"></path></svg>
+                                <span class="admin-sidebar-label">Quản lý trung tâm</span>
+                            </a>
+                            <div class="admin-sidebar-submenu">
+                                <a href="/AdminSettings" class="admin-sidebar-submenu-link @(isCenterSettingsActive ? "is-active" : "")">Quản lý trung tâm</a>
+                                <a href="/AdminBranches" class="admin-sidebar-submenu-link @(isBranchesActive ? "is-active" : "")">Danh sách cơ sở</a>
+                            </div>
+                        </div>
+                        <a href="/AdminCourses" title="Chương trình đào tạo" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminCourses" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path><path d="M8 6h8"></path><path d="M8 10h6"></path></svg>
+                            <span class="admin-sidebar-label">Chương trình đào tạo</span>
+                        </a>
+                        <a href="/AdminStaff" title="Nhân sự trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminStaff" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+                            <span class="admin-sidebar-label">Nhân sự trung tâm</span>
+                        </a>
+                        <a href="/AdminFinance" title="Tài chính trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                            <span class="admin-sidebar-label">Tài chính trung tâm</span>
+                        </a>
+                        <a href="/AdminSettings" title="Cài đặt trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            <span class="admin-sidebar-label">Cài đặt trung tâm</span>
+                        </a>
+                    }
+                    else
+                    {
                     <a href="/AdminDashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminDashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         <span class="admin-sidebar-label">Dashboard</span>
@@ -322,53 +1136,11 @@
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                         <span class="admin-sidebar-label">Cài đặt</span>
                     </a>
+                    }
                 }
             </nav>
         </div>
 
-        <!-- User Profile & Logout Dropdown -->
-        <div class="admin-sidebar-footer p-5 border-t border-gray-100 relative">
-            <button type="button" id="adminProfileBtn" class="admin-sidebar-profile flex items-center w-full focus:outline-none cursor-pointer">
-                <div class="admin-sidebar-avatar w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
-                    @initials
-                </div>
-                <div class="admin-sidebar-user-info min-w-0 text-left flex-1">
-                    <div class="font-bold text-sm text-gray-900 truncate">@fullName</div>
-                    <div class="text-xs text-gray-500 truncate">@email</div>
-                </div>
-                <svg class="admin-sidebar-dropdown-icon w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-            </button>
-            
-            <!-- Dropdown Menu -->
-            <div id="adminProfileMenu" class="hidden absolute bottom-[72px] left-4 w-[calc(100%-2rem)] min-w-[220px] z-50">
-                <div class="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.15)] border border-gray-100 p-2 space-y-1">
-                    @if (hasTeacherRole)
-                    {
-                        <form method="post" asp-page="/SwitchRole" class="w-full m-0">
-                            <input type="hidden" name="roleCode" value="TEACHER" />
-                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
-                                <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                                <span>Giao diện Giáo viên</span>
-                            </button>
-                        </form>
-                    }
-                    <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                          <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                          <span>Hồ sơ cá nhân</span>
-                      </a>
-                      <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                        <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        <span>Đổi mật khẩu</span>
-                    </a>
-                    <form method="post" asp-page="/Logout" class="w-full m-0">
-                        <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
-                            <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            <span>Đăng xuất</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
     </aside>
 
     <!-- Main Content -->
@@ -376,7 +1148,7 @@
         <!-- Top bar containing Branch Selector -->
         @if (showCenterMenu && branches.Any())
         {
-            <div class="flex justify-end mb-4">
+            <div class="owner-main-branch-row flex justify-end mb-4">
                 <form method="post" asp-page="/SetBranch" class="flex items-center space-x-2">
                     <label for="branchSelector" class="text-sm font-medium text-gray-700">Cơ sở:</label>
                     <select id="branchSelector" name="branchId" onchange="this.form.submit()" class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
@@ -413,6 +1185,7 @@
         }
         @RenderBody()
     </main>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -431,25 +1204,153 @@
             setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
         });
 
+        document.querySelectorAll('#admin-sidebar .admin-sidebar-nav > a.admin-sidebar-link').forEach((link) => {
+            const item = document.createElement('div');
+            item.className = 'admin-sidebar-item';
+            const label = link.querySelector('.admin-sidebar-label')?.textContent?.trim() || link.textContent.trim();
+            const href = link.getAttribute('href') || '#';
+            const isActive = link.classList.contains('bg-blue-50') || link.classList.contains('text-blue-600');
+
+            link.parentNode.insertBefore(item, link);
+            item.appendChild(link);
+            link.setAttribute('role', 'button');
+            link.setAttribute('aria-expanded', isActive.toString());
+
+            const submenu = document.createElement('div');
+            submenu.className = 'admin-sidebar-submenu';
+
+            const submenuLink = document.createElement('a');
+            submenuLink.href = href;
+            submenuLink.className = `admin-sidebar-submenu-link${isActive ? ' is-active' : ''}`;
+            submenuLink.textContent = label;
+            submenu.appendChild(submenuLink);
+            item.appendChild(submenu);
+
+            item.classList.toggle('is-open', isActive);
+            link.dataset.sidebarToggleBound = 'true';
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const shouldOpen = !item.classList.contains('is-open');
+                item.classList.toggle('is-open', shouldOpen);
+                link.setAttribute('aria-expanded', shouldOpen.toString());
+            });
+        });
+
+        document.querySelectorAll('#admin-sidebar .admin-sidebar-item > .admin-sidebar-link').forEach((link) => {
+            if (link.dataset.sidebarToggleBound === 'true') {
+                return;
+            }
+
+            const item = link.closest('.admin-sidebar-item');
+            if (!item) {
+                return;
+            }
+
+            link.dataset.sidebarToggleBound = 'true';
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const shouldOpen = !item.classList.contains('is-open');
+                item.classList.toggle('is-open', shouldOpen);
+                link.setAttribute('aria-expanded', shouldOpen.toString());
+            });
+        });
+
+        const ownerCenterTree = document.getElementById('ownerCenterTree');
+        const ownerCenterToggle = document.getElementById('ownerCenterToggle');
+        const ownerCenterPanel = document.getElementById('ownerCenterPanel');
+        const ownerCenterClose = document.getElementById('ownerCenterClose');
+        const ownerCenterSearchInput = document.getElementById('ownerCenterSearchInput');
+        const ownerCenterRow = document.getElementById('ownerCenterRow');
+        const ownerBranchToggle = document.getElementById('ownerBranchToggle');
+        const ownerCenterChildren = document.getElementById('ownerCenterChildren');
+        const ownerCenterNoResult = document.getElementById('ownerCenterNoResult');
+        const ownerBranchForms = Array.from(document.querySelectorAll('.owner-branch-form'));
+
+        function setOwnerCenterTreeOpen(isOpen) {
+            ownerCenterPanel?.classList.toggle('hidden', !isOpen);
+            ownerCenterTree?.classList.toggle('is-open', isOpen);
+            ownerCenterToggle?.setAttribute('aria-expanded', isOpen.toString());
+            if (isOpen) {
+                requestAnimationFrame(() => ownerCenterSearchInput?.focus());
+            }
+        }
+
+        function setOwnerCenterChildrenOpen(isOpen) {
+            ownerCenterChildren?.classList.toggle('is-hidden', !isOpen);
+            ownerCenterRow?.classList.toggle('is-collapsed', !isOpen);
+            ownerBranchToggle?.setAttribute('aria-expanded', isOpen.toString());
+        }
+
+        function normalizeSearchText(value) {
+            return (value || '')
+                .toLocaleLowerCase('vi-VN')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd');
+        }
+
+        function filterOwnerCenterTree() {
+            const keyword = normalizeSearchText(ownerCenterSearchInput?.value || '').trim();
+            const centerText = normalizeSearchText(ownerCenterRow?.dataset.searchText || '');
+            const centerMatches = !keyword || centerText.includes(keyword);
+            let visibleBranchCount = 0;
+
+            ownerCenterRow?.classList.toggle('hidden', !centerMatches);
+
+            ownerBranchForms.forEach(form => {
+                const itemText = normalizeSearchText(form.dataset.searchText || '');
+                const isMatch = !keyword || itemText.includes(keyword);
+                form.classList.toggle('hidden', !isMatch);
+                if (isMatch) {
+                    visibleBranchCount += 1;
+                }
+            });
+
+            if (keyword) {
+                setOwnerCenterChildrenOpen(true);
+            }
+
+            ownerCenterNoResult?.classList.toggle('is-hidden', centerMatches || visibleBranchCount > 0);
+        }
+
+        ownerCenterToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setOwnerCenterTreeOpen(ownerCenterPanel?.classList.contains('hidden') ?? true);
+        });
+
+        ownerCenterClose?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setOwnerCenterTreeOpen(false);
+        });
+
+        ownerBranchToggle?.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOwnerCenterChildrenOpen(ownerCenterChildren?.classList.contains('is-hidden') ?? false);
+        });
+
+        ownerCenterSearchInput?.addEventListener('input', filterOwnerCenterTree);
+
+        document.addEventListener('click', (e) => {
+            if (ownerCenterTree && !ownerCenterTree.contains(e.target)) {
+                setOwnerCenterTreeOpen(false);
+            }
+        });
+
         const adminProfileBtn = document.getElementById('adminProfileBtn');
         const adminProfileMenu = document.getElementById('adminProfileMenu');
         
         if (adminProfileBtn && adminProfileMenu) {
             adminProfileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (document.body.classList.contains('admin-sidebar-collapsed')) {
-                    setAdminSidebarCollapsed(false);
-                    setTimeout(() => {
-                        adminProfileMenu.classList.toggle('hidden');
-                    }, 200);
-                } else {
-                    adminProfileMenu.classList.toggle('hidden');
-                }
+                adminProfileMenu.classList.toggle('hidden');
+                adminProfileBtn.setAttribute('aria-expanded', (!adminProfileMenu.classList.contains('hidden')).toString());
             });
             
             document.addEventListener('click', (e) => {
                 if (!adminProfileMenu.contains(e.target) && !adminProfileBtn.contains(e.target)) {
                     adminProfileMenu.classList.add('hidden');
+                    adminProfileBtn.setAttribute('aria-expanded', 'false');
                 }
             });
         }
