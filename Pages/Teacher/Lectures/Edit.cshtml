@@ -1,0 +1,90 @@
+@page
+@model EduBridge.Pages.Teacher.Lectures.EditModel
+@{
+    ViewData["Title"] = "Sửa ghi chú bài giảng";
+    Layout = "_TeacherLayout";
+    ViewData["ActivePage"] = "Lectures";
+}
+
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Sửa ghi chú bài giảng</h1>
+        <p class="mt-1 text-sm text-gray-500">Chỉnh sửa nội dung giảng dạy và trạng thái của bài học.</p>
+    </div>
+    <a href="/Teacher/Lectures" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-sm">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Quay lại
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left column: Lesson Info -->
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-lg font-bold text-gray-900 border-b border-slate-100 pb-3">Thông tin lớp học & buổi học</h3>
+        
+        <div>
+            <label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-1">Lớp học</label>
+            <p class="text-sm font-bold text-slate-800">@Model.DisplayLesson.Class.ClassName</p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-1">Khóa học</label>
+            <p class="text-sm font-semibold text-slate-700">@Model.DisplayLesson.Class.Course.CourseName</p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-1">Thời gian dạy</label>
+            <p class="text-sm font-semibold text-slate-700">
+                @Model.DisplayLesson.LessonDate.ToString("dd/MM/yyyy") 
+                <span class="text-slate-400 font-medium">(@(Model.DisplayLesson.StartTime?.ToString("HH:mm") ?? "-") - @(Model.DisplayLesson.EndTime?.ToString("HH:mm") ?? "-"))</span>
+            </p>
+        </div>
+
+        <div>
+            <label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-1">Mã buổi học</label>
+            <p class="text-sm font-mono font-bold text-slate-600">#@Model.DisplayLesson.LessonId</p>
+        </div>
+    </div>
+
+    <!-- Right column: Form Edit -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h3 class="text-lg font-bold text-gray-900 border-b border-slate-100 pb-3 mb-6">Nội dung ghi chú giảng dạy</h3>
+        
+        <form method="post" class="space-y-6">
+            <input type="hidden" asp-for="Input.LessonId" />
+            
+            <div asp-validation-summary="ModelOnly" class="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm font-semibold"></div>
+
+            <div>
+                <label asp-for="Input.Topic" class="block text-sm font-bold text-slate-750 mb-1.5">Chủ đề bài giảng <span class="text-rose-500">*</span></label>
+                <input type="text" asp-for="Input.Topic" class="block w-full rounded-xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" placeholder="Nhập chủ đề bài giảng chính..." required />
+                <span asp-validation-for="Input.Topic" class="text-xs text-rose-500 mt-1 font-semibold block"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.Content" class="block text-sm font-bold text-slate-750 mb-1.5">Nội dung ghi chú / Bài tập / Tài liệu <span class="text-rose-500">*</span></label>
+                <textarea asp-for="Input.Content" rows="6" class="block w-full rounded-xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm" placeholder="Nhập nội dung giảng dạy chi tiết, bài tập về nhà hoặc liên kết tài liệu..." required></textarea>
+                <span asp-validation-for="Input.Content" class="text-xs text-rose-500 mt-1 font-semibold block"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.Status" class="block text-sm font-bold text-slate-750 mb-1.5">Trạng thái buổi học <span class="text-rose-500">*</span></label>
+                <select asp-for="Input.Status" class="block w-full rounded-xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm">
+                    <option value="Scheduled">Chưa diễn ra (Scheduled)</option>
+                    <option value="Completed">Đã hoàn thành (Completed)</option>
+                    <option value="Cancelled">Đã hủy (Cancelled)</option>
+                </select>
+                <span asp-validation-for="Input.Status" class="text-xs text-rose-500 mt-1 font-semibold block"></span>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 border-t border-slate-100 pt-5">
+                <a href="/Teacher/Lectures" class="rounded-xl bg-white border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors">
+                    Hủy bỏ
+                </a>
+                <button type="submit" class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+                    Lưu thay đổi
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -23,7 +23,7 @@ public partial class Center
 
     public string? SettingsJson { get; set; }
 
-    public int? ProjectId { get; set; }
+    public int ProjectId { get; set; }
 
     public string? Logo { get; set; }
 
@@ -47,7 +47,7 @@ public partial class Center
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
-    public virtual Project? Project { get; set; }
+    public virtual Project Project { get; set; } = null!;
 
     public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
 
@@ -56,8 +56,6 @@ public partial class Center
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 
     public virtual ICollection<StudyShift> StudyShifts { get; set; } = new List<StudyShift>();
-
-    public virtual ICollection<SystemAuditLog> SystemAuditLogs { get; set; } = new List<SystemAuditLog>();
 
     public virtual TeacherCodeCounter? TeacherCodeCounter { get; set; }
 

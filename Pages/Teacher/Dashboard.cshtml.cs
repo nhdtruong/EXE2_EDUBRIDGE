@@ -8,9 +8,9 @@ namespace EduBridge.Pages.Teacher
 {
     public class DashboardModel : PageModel
     {
-        private readonly IDashboardService _dashboardService;
+        private readonly ITeacherDashboardService _dashboardService;
 
-        public DashboardModel(IDashboardService dashboardService)
+        public DashboardModel(ITeacherDashboardService dashboardService)
         {
             _dashboardService = dashboardService;
         }
@@ -34,43 +34,22 @@ namespace EduBridge.Pages.Teacher
             if (!int.TryParse(userIdStr, out int userId))
                 return RedirectToPage("/Login");
 
-            var result = await _dashboardService.GetTeacherDashboardDataAsync(userId);
+            var result = await _dashboardService.GetDashboardSummaryAsync(userId, cancellationToken);
+            
             if (!result.IsSuccess || result.Value == null)
             {
                 return RedirectToPage("/Login");
             }
 
-            var data = result.Value!;
-
-            TeacherName = data.TeacherName;
-            TotalClasses = data.TotalClasses;
-            TotalStudents = data.TotalStudents;
-            UngradedAssignments = data.UngradedAssignmentsCount;
-            UnreadMessages = data.UnreadMessagesCount;
-
-            TodaySchedules = data.TodaySchedules.Select(s => new TeacherDashboardScheduleDto(
-                s.ClassName,
-                s.Topic,
-                s.TimeRange,
-                s.Room
-            )).ToList();
-
-            RecentAssignments = data.RecentAssignments.Select(a => new TeacherDashboardAssignmentDto(
-                a.Title,
-                a.ClassName,
-                a.CreatedAt ?? DateTime.Now,
-                a.SubmittedCount,
-                a.TotalStudents,
-                a.TotalStudents > 0 ? (int)((double)a.SubmittedCount / a.TotalStudents * 100) : 0
-            )).ToList();
-
-            RecentMessages = data.RecentMessages.Select(m => new TeacherDashboardMessageDto(
-                m.SenderName,
-                m.SenderRole == "PARENT" ? "Phụ huynh" : m.SenderRole,
-                m.ShortContent,
-                CalculateTimeAgo(m.SentAt ?? DateTime.Now),
-                string.IsNullOrWhiteSpace(m.SenderName) ? "U" : m.SenderName.Substring(0, 1).ToUpper()
-            )).ToList();
+            var summary = result.Value;
+            TeacherName = summary.TeacherName;
+            TotalClasses = summary.TotalClasses;
+            TotalStudents = summary.TotalStudents;
+            UngradedAssignments = summary.UngradedAssignments;
+            UnreadMessages = summary.UnreadMessages;
+            TodaySchedules = summary.TodaySchedules;
+            RecentAssignments = summary.RecentAssignments;
+            RecentMessages = summary.RecentMessages;
 
             return Page();
         }

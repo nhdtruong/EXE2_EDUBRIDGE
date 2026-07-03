@@ -23,9 +23,9 @@ public partial class Invoice
 
     public DateTime CreatedAt { get; set; }
 
-    public int CenterId { get; set; }
+    public int? CenterId { get; set; }
 
-    public string InvoiceCode { get; set; } = null!;
+    public string? InvoiceCode { get; set; }
 
     public int? EnrollmentId { get; set; }
 
@@ -33,15 +33,15 @@ public partial class Invoice
 
     public string? DiscountNote { get; set; }
 
-    public int CreatedByUserId { get; set; }
+    public int? CreatedByUserId { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual Center Center { get; set; } = null!;
+    public virtual Center? Center { get; set; }
 
     public virtual Class Class { get; set; } = null!;
 
-    public virtual User CreatedByUser { get; set; } = null!;
+    public virtual User? CreatedByUser { get; set; }
 
     public virtual Enrollment? Enrollment { get; set; }
 

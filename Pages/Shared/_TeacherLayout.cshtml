@@ -232,15 +232,452 @@
         body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-avatar {
             margin-right: 0;
         }
+
+        .owner-shell {
+            background: #f5f7f9;
+            color: #2f3f4d;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .owner-topbar {
+            height: 52px;
+            flex-shrink: 0;
+            background: #3f96c4;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+            z-index: 30;
+        }
+
+        .owner-topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 46px;
+            min-width: 0;
+        }
+
+        .owner-topbar-title {
+            font-size: 19px;
+            font-weight: 800;
+            letter-spacing: 0;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .owner-topbar-toggle {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: #fff;
+            transition: background-color .15s ease;
+        }
+
+        .owner-topbar-toggle:hover {
+            background: rgba(255,255,255,.12);
+        }
+
+        .owner-topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .owner-profile-menu-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .owner-icon-btn {
+            width: 32px;
+            height: 32px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            background: transparent;
+            color: #fff;
+            border-radius: 50%;
+        }
+
+        .owner-topbar-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 999px;
+            border: 4px solid rgba(255,255,255,.65);
+            background: #edf6ff;
+            color: #2c4662;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            cursor: pointer;
+            transition: transform .15s ease, border-color .15s ease;
+        }
+
+        .owner-topbar-avatar:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255,255,255,.9);
+        }
+
+        .owner-profile-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 240px;
+            z-index: 60;
+        }
+
+        .owner-profile-menu-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(15, 23, 42, .18);
+            padding: 8px;
+        }
+
+        .owner-profile-menu::before {
+            content: "";
+            position: absolute;
+            top: -6px;
+            right: 14px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-left: 1px solid #e5e7eb;
+            border-top: 1px solid #e5e7eb;
+            transform: rotate(45deg);
+        }
+
+        .owner-workspace {
+            display: flex;
+            min-height: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #admin-sidebar {
+            width: 270px !important;
+            background: #1d2c33 !important;
+            border-right: 0 !important;
+            color: #fff;
+            justify-content: flex-start !important;
+            overflow-y: auto;
+            box-shadow: 4px 0 14px rgba(15, 23, 42, .12);
+        }
+
+        #admin-sidebar .admin-sidebar-logo-row {
+            display: none !important;
+        }
+
+        #admin-sidebar > div:first-child {
+            display: flex;
+            min-height: 0;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .owner-sidebar-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 30px 26px 22px;
+        }
+
+        .owner-sidebar-profile .owner-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 4px solid #d8efff;
+            background: #f3f8fc;
+            color: #2b4050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .owner-profile-name {
+            max-width: 160px;
+            font-size: 15px;
+            line-height: 1.25;
+            font-weight: 800;
+            color: #fff;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .owner-profile-status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-top: 4px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .owner-profile-status::before {
+            content: "";
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            background: #21c66f;
+            box-shadow: 0 0 0 2px rgba(33,198,111,.18);
+        }
+
+        .owner-sidebar-section {
+            padding: 8px 11px 20px;
+            position: relative;
+            z-index: 25;
+        }
+
+        .owner-sidebar-label {
+            margin: 8px 0 8px;
+            text-align: center;
+            color: #fff;
+            font-weight: 800;
+            font-size: 15px;
+        }
+
+        #admin-sidebar .admin-sidebar-nav {
+            position: relative;
+            z-index: 1;
+            margin-top: 0 !important;
+            padding: 0 0 24px !important;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        #admin-sidebar .admin-sidebar-link {
+            min-height: 45px;
+            border-radius: 0 !important;
+            color: #fff !important;
+            padding: 0 16px !important;
+            font-weight: 800 !important;
+            background: transparent !important;
+        }
+
+        #admin-sidebar .admin-sidebar-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #admin-sidebar .admin-sidebar-link:hover {
+            background: rgba(255,255,255,.08) !important;
+            color: #fff !important;
+        }
+
+        #admin-sidebar .admin-sidebar-link.bg-blue-50,
+        #admin-sidebar .admin-sidebar-link.text-blue-600 {
+            background: transparent !important;
+            color: #fff !important;
+        }
+
+        #admin-sidebar .admin-sidebar-link svg {
+            color: #fff;
+            width: 18px !important;
+            height: 18px !important;
+            margin-right: 8px !important;
+            flex-shrink: 0;
+        }
+
+        #admin-sidebar .admin-sidebar-label {
+            color: inherit;
+            font-size: 15px;
+            line-height: 1.2;
+        }
+
+        #admin-sidebar .admin-sidebar-link::after {
+            content: "⌄";
+            margin-left: auto;
+            color: rgba(255,255,255,.92);
+            font-size: 17px;
+            line-height: 1;
+            transition: transform .15s ease;
+        }
+
+        #admin-sidebar .admin-sidebar-link.bg-blue-50::after,
+        #admin-sidebar .admin-sidebar-link.text-blue-600::after {
+            content: "⌃";
+        }
+
+        #admin-sidebar .admin-sidebar-link.bg-blue-50:hover,
+        #admin-sidebar .admin-sidebar-link.text-blue-600:hover {
+            background: rgba(255,255,255,.08) !important;
+        }
+
+        #admin-sidebar .admin-sidebar-item.is-open > .admin-sidebar-link::after {
+            content: "⌃";
+        }
+
+        #admin-sidebar .admin-sidebar-submenu {
+            display: none;
+            flex-direction: column;
+            gap: 2px;
+            padding: 4px 0 7px;
+        }
+
+        #admin-sidebar .admin-sidebar-item.is-open > .admin-sidebar-submenu {
+            display: flex;
+        }
+
+        #admin-sidebar .admin-sidebar-submenu-link {
+            min-height: 37px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px 0 31px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        #admin-sidebar .admin-sidebar-submenu-link::before {
+            content: "›";
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        #admin-sidebar .admin-sidebar-submenu-link:hover,
+        #admin-sidebar .admin-sidebar-submenu-link.is-active {
+            background: #4298c7;
+            color: #fff;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar {
+            width: 5rem !important;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .owner-sidebar-profile,
+        body.admin-sidebar-collapsed #admin-sidebar .owner-sidebar-section {
+            display: none !important;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link::after {
+            display: none;
+        }
+
+        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-submenu {
+            display: none !important;
+        }
+
+        #admin-sidebar .admin-sidebar-profile {
+            color: #fff;
+        }
+
+        #admin-sidebar .admin-sidebar-avatar {
+            background: #e8f5ff !important;
+            color: #2e485e !important;
+            border: 3px solid #cdeaff;
+        }
+
+        #admin-sidebar .admin-sidebar-user-info div:first-child {
+            color: #fff !important;
+        }
+
+        #admin-sidebar .admin-sidebar-user-info div:last-child {
+            color: rgba(255,255,255,.7) !important;
+        }
+
+        .admin-main {
+            background: #f5f7f9;
+            flex: 1;
+            min-width: 0;
+        }
+
+        @@media (max-width: 768px) {
+            .owner-topbar {
+                padding: 0 16px;
+            }
+
+            .owner-topbar-brand {
+                gap: 18px;
+            }
+
+            .owner-topbar-title {
+                font-size: 17px;
+            }
+
+            #admin-sidebar {
+                width: 240px !important;
+            }
+        }
     </style>
 </head>
-<body class="text-gray-800 flex h-screen overflow-hidden">
+<body class="text-gray-800 h-screen overflow-hidden owner-shell">
     <div id="layout-toast-container" class="fixed right-6 top-6 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col gap-3"></div>
+
+    <header class="owner-topbar">
+        <div class="owner-topbar-brand">
+            <div class="owner-topbar-title">EDUBRIDGE</div>
+            <button id="admin-sidebar-toggle" type="button" class="owner-topbar-toggle" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 7h16M4 12h16M4 17h16"></path>
+                </svg>
+            </button>
+        </div>
+        <div class="owner-topbar-actions">
+            <button type="button" class="owner-icon-btn" aria-label="Thông báo">
+                <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 21h4"></path>
+                </svg>
+            </button>
+            <div class="owner-profile-menu-wrap">
+                <button type="button" id="adminProfileBtn" class="owner-topbar-avatar" aria-label="Tài khoản" aria-expanded="false">@initials</button>
+                <div id="adminProfileMenu" class="owner-profile-menu hidden">
+                    <div class="owner-profile-menu-panel space-y-1">
+                        @if (hasOwnerRole)
+                        {
+                            <form method="post" asp-page="/SwitchRole" class="w-full m-0">
+                                <input type="hidden" name="roleCode" value="OWNER" />
+                                <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
+                                    <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                                    <span>Giao diện Quản lý</span>
+                                </button>
+                            </form>
+                        }
+                        <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <span>Hồ sơ cá nhân</span>
+                        </a>
+                        <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                            <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <span>Đổi mật khẩu</span>
+                        </a>
+                        <form method="post" asp-page="/Logout" class="w-full m-0">
+                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
+                                <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="owner-workspace">
 
     <!-- Sidebar -->
     <aside id="admin-sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
         <div>
-            <!-- Logo -->
+            <!-- Logo (Hidden in desktop by CSS, but used for collapsed mode) -->
             <div class="admin-sidebar-logo-row h-20 flex items-center justify-between px-6 border-b border-gray-50">
                 <div class="flex min-w-0 items-center">
                     <div class="admin-sidebar-logo text-blue-600 mr-3 flex-shrink-0">
@@ -251,16 +688,23 @@
                     </div>
                     <div class="admin-sidebar-brand-text min-w-0">
                         <div class="font-bold text-xl text-gray-900 leading-tight">EduBridge</div>
-                        <div class="text-xs text-gray-500 font-medium">
-                            Giáo viên
-                        </div>
+                        <div class="text-xs text-gray-500 font-medium">Giáo viên</div>
                     </div>
                 </div>
-                <button id="admin-sidebar-toggle" type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                <button type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path>
                     </svg>
                 </button>
+            </div>
+
+            <!-- Profile Info in Sidebar -->
+            <div class="owner-sidebar-profile">
+                <div class="owner-avatar">@initials</div>
+                <div class="min-w-0">
+                    <div class="owner-profile-name">@fullName</div>
+                    <div class="owner-profile-status">Trực tuyến</div>
+                </div>
             </div>
 
             <!-- Navigation -->
@@ -268,6 +712,14 @@
                 <a href="/Teacher/Dashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Dashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                     <span class="admin-sidebar-label">Dashboard</span>
+                </a>
+                <a href="/Teacher/Schedule" title="Lịch dạy" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Schedule" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    <span class="admin-sidebar-label">Lịch dạy</span>
+                </a>
+                <a href="/Teacher/Classes" title="Lớp học" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Classes" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span class="admin-sidebar-label">Lớp học</span>
                 </a>
                 <a href="/Teacher/Lectures" title="Bài giảng" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Lectures" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                     <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path></svg>
@@ -290,50 +742,6 @@
                     <span class="admin-sidebar-label">Tin nhắn</span>
                 </a>
             </nav>
-        </div>
-
-        <!-- User Profile & Logout Dropdown -->
-        <div class="admin-sidebar-footer p-5 border-t border-gray-100 relative">
-            <button type="button" id="adminProfileBtn" class="admin-sidebar-profile flex items-center w-full focus:outline-none cursor-pointer">
-                <div class="admin-sidebar-avatar w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
-                    @initials
-                </div>
-                <div class="admin-sidebar-user-info min-w-0 text-left flex-1">
-                    <div class="font-bold text-sm text-gray-900 truncate">@fullName</div>
-                    <div class="text-xs text-gray-500 truncate">@email</div>
-                </div>
-                <svg class="admin-sidebar-dropdown-icon w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-            </button>
-            
-            <!-- Dropdown Menu -->
-            <div id="adminProfileMenu" class="hidden absolute bottom-[72px] left-4 w-[calc(100%-2rem)] min-w-[220px] z-50">
-                <div class="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.15)] border border-gray-100 p-2 space-y-1">
-                    @if (hasOwnerRole)
-                    {
-                        <form method="post" asp-page="/SwitchRole" class="w-full m-0">
-                            <input type="hidden" name="roleCode" value="OWNER" />
-                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
-                                <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                                <span>Giao diện Quản lý</span>
-                            </button>
-                        </form>
-                    }
-                    <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                          <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                          <span>Hồ sơ cá nhân</span>
-                      </a>
-                      <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                        <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        <span>Đổi mật khẩu</span>
-                    </a>
-                    <form method="post" asp-page="/Logout" class="w-full m-0">
-                        <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
-                            <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            <span>Đăng xuất</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
         </div>
     </aside>
 
@@ -379,6 +787,7 @@
         }
         @RenderBody()
     </main>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -397,25 +806,71 @@
             setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
         });
 
+        document.querySelectorAll('#admin-sidebar .admin-sidebar-nav > a.admin-sidebar-link').forEach((link) => {
+            const item = document.createElement('div');
+            item.className = 'admin-sidebar-item';
+            const label = link.querySelector('.admin-sidebar-label')?.textContent?.trim() || link.textContent.trim();
+            const href = link.getAttribute('href') || '#';
+            const isActive = link.classList.contains('bg-blue-50') || link.classList.contains('text-blue-600');
+
+            link.parentNode.insertBefore(item, link);
+            item.appendChild(link);
+            link.setAttribute('role', 'button');
+            link.setAttribute('aria-expanded', isActive.toString());
+
+            const submenu = document.createElement('div');
+            submenu.className = 'admin-sidebar-submenu';
+
+            const submenuLink = document.createElement('a');
+            submenuLink.href = href;
+            submenuLink.className = `admin-sidebar-submenu-link${isActive ? ' is-active' : ''}`;
+            submenuLink.textContent = label;
+            submenu.appendChild(submenuLink);
+            item.appendChild(submenu);
+
+            item.classList.toggle('is-open', isActive);
+            link.dataset.sidebarToggleBound = 'true';
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const shouldOpen = !item.classList.contains('is-open');
+                item.classList.toggle('is-open', shouldOpen);
+                link.setAttribute('aria-expanded', shouldOpen.toString());
+            });
+        });
+
+        document.querySelectorAll('#admin-sidebar .admin-sidebar-item > .admin-sidebar-link').forEach((link) => {
+            if (link.dataset.sidebarToggleBound === 'true') {
+                return;
+            }
+
+            const item = link.closest('.admin-sidebar-item');
+            if (!item) {
+                return;
+            }
+
+            link.dataset.sidebarToggleBound = 'true';
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const shouldOpen = !item.classList.contains('is-open');
+                item.classList.toggle('is-open', shouldOpen);
+                link.setAttribute('aria-expanded', shouldOpen.toString());
+            });
+        });
+
         const adminProfileBtn = document.getElementById('adminProfileBtn');
         const adminProfileMenu = document.getElementById('adminProfileMenu');
         
         if (adminProfileBtn && adminProfileMenu) {
             adminProfileBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (document.body.classList.contains('admin-sidebar-collapsed')) {
-                    setAdminSidebarCollapsed(false);
-                    setTimeout(() => {
-                        adminProfileMenu.classList.toggle('hidden');
-                    }, 200);
-                } else {
-                    adminProfileMenu.classList.toggle('hidden');
-                }
+                adminProfileMenu.classList.toggle('hidden');
+                adminProfileBtn.setAttribute('aria-expanded', (!adminProfileMenu.classList.contains('hidden')).toString());
             });
             
             document.addEventListener('click', (e) => {
                 if (!adminProfileMenu.contains(e.target) && !adminProfileBtn.contains(e.target)) {
                     adminProfileMenu.classList.add('hidden');
+                    adminProfileBtn.setAttribute('aria-expanded', 'false');
                 }
             });
         }

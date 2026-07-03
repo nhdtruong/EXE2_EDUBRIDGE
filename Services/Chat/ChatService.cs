@@ -36,10 +36,10 @@ namespace EduBridge.Services.Chat
             var studentsData = await _context.Enrollments
                 .Include(e => e.Student)
                 .ThenInclude(s => s.ParentUser)
-                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != null)
+                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != 0)
                 .Select(e => new
                 {
-                    ParentUserId = e.Student.ParentUserId!.Value,
+                    ParentUserId = e.Student.ParentUserId,
                     ParentName = e.Student.ParentUser != null ? e.Student.ParentUser.FullName : string.Empty,
                     StudentName = e.Student.FullName
                 })
@@ -80,6 +80,90 @@ namespace EduBridge.Services.Chat
                     ParentUserId = parentId,
                     ParentName = group.First().ParentName,
                     StudentNames = string.Join(", ", group.Select(s => s.StudentName).Distinct()),
+                    LastMessage = lastMsg?.Content,
+                    LastMessageSenderId = lastMsg?.SenderUserId,
+                    LastMsgAt = lastMsg?.SentAt,
+                    UnreadCount = unreadCount
+                };
+            })
+            .OrderByDescending(c => c.LastMsgAt.HasValue)
+            .ThenByDescending(c => c.LastMsgAt)
+            .ThenBy(c => c.ParentName)
+            .Select(c => new ConversationDto
+            {
+                ParentUserId = c.ParentUserId,
+                ParentName = c.ParentName,
+                StudentNames = c.StudentNames,
+                LastMessage = c.LastMessage,
+                LastMessageSenderId = c.LastMessageSenderId,
+                LastMessageTime = c.LastMsgAt?.ToString("dd/MM/yyyy HH:mm"),
+                UnreadCount = c.UnreadCount
+            })
+            .ToList();
+
+            return conversations;
+        }
+
+        public async Task<List<ConversationDto>> GetTeacherConversationsByClassAsync(int teacherUserId, int classId, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return new List<ConversationDto>();
+
+            // Kiểm tra xem lớp học có thuộc giáo viên phụ trách không
+            var isClassOwned = await _context.Classes
+                .AnyAsync(c => c.ClassId == classId && c.TeacherId == teacher.TeacherId && !c.IsDeleted, cancellationToken);
+
+            if (!isClassOwned) return new List<ConversationDto>();
+
+            // Lấy danh sách học sinh đang học của lớp và thông tin phụ huynh
+            var studentsData = await _context.Enrollments
+                .Include(e => e.Student)
+                .ThenInclude(s => s.ParentUser)
+                .Where(e => e.ClassId == classId && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != 0)
+                .Select(e => new
+                {
+                    ParentUserId = e.Student.ParentUserId,
+                    ParentName = e.Student.ParentUser != null ? e.Student.ParentUser.FullName : string.Empty,
+                    StudentName = e.Student.FullName,
+                    StudentCode = e.Student.StudentCode
+                })
+                .ToListAsync(cancellationToken);
+
+            // Nhóm theo phụ huynh
+            var groupedByParent = studentsData
+                .GroupBy(s => s.ParentUserId)
+                .ToList();
+
+            var parentUserIds = groupedByParent.Select(g => g.Key).ToList();
+
+            // Tải tất cả tin nhắn liên quan
+            var allMessages = await _context.Messages
+                .Where(m => (m.SenderUserId == teacherUserId && parentUserIds.Contains(m.ReceiverUserId)) ||
+                            (m.ReceiverUserId == teacherUserId && parentUserIds.Contains(m.SenderUserId)))
+                .OrderByDescending(m => m.SentAt)
+                .ToListAsync(cancellationToken);
+
+            var conversations = groupedByParent.Select(group =>
+            {
+                var parentId = group.Key;
+
+                // Lấy các tin nhắn giữa giáo viên và phụ huynh này
+                var parentMessages = allMessages
+                    .Where(m => (m.SenderUserId == teacherUserId && m.ReceiverUserId == parentId) ||
+                                (m.SenderUserId == parentId && m.ReceiverUserId == teacherUserId))
+                    .ToList();
+
+                var lastMsg = parentMessages.FirstOrDefault();
+
+                // Đếm tin nhắn chưa đọc
+                var unreadCount = parentMessages
+                    .Count(m => m.SenderUserId == parentId && m.ReceiverUserId == teacherUserId && !m.IsRead);
+
+                return new
+                {
+                    ParentUserId = parentId,
+                    ParentName = group.First().ParentName,
+                    StudentNames = string.Join(", ", group.Select(s => $"{s.StudentName} ({s.StudentCode})").Distinct()),
                     LastMessage = lastMsg?.Content,
                     LastMessageSenderId = lastMsg?.SenderUserId,
                     LastMsgAt = lastMsg?.SentAt,

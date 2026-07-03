@@ -48,6 +48,26 @@ namespace EduBridge.Controllers.Api
             }
         }
 
+        [HttpGet("class-parents")]
+        public async Task<ActionResult<ApiResponse<List<ConversationDto>>>> GetConversationsByClass([FromQuery] int classId)
+        {
+            try
+            {
+                var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdStr, out int userId))
+                {
+                    return Unauthorized(new ApiResponse<List<ConversationDto>>(false, "Chưa đăng nhập", null));
+                }
+
+                var conversations = await _chatService.GetTeacherConversationsByClassAsync(userId, classId);
+                return Ok(new ApiResponse<List<ConversationDto>>(true, "Success", conversations));
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new ApiResponse<List<ConversationDto>>(false, "Đã xảy ra lỗi hệ thống trong quá trình xử lý.", null));
+            }
+        }
+
         [HttpGet("history")]
         public async Task<ActionResult<ApiResponse<List<ChatMessageDto>>>> GetChatHistory([FromQuery] int contactUserId)
         {

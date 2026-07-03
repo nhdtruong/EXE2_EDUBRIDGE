@@ -36,7 +36,9 @@ try {
         Where-Object Name -ne 'AddDataProtectionKeys.sql' |
         Sort-Object Name |
         ForEach-Object { $_.FullName.Substring($repo.Length + 1).Replace('\', '/') }
-    $scripts += 'edubridge_database/seed/parent_app_mock.sql'
+    $scripts += Get-ChildItem 'edubridge_database/seed/*.sql' |
+        Sort-Object Name |
+        ForEach-Object { $_.FullName.Substring($repo.Length + 1).Replace('\', '/') }
 
     foreach ($script in $scripts) {
         Write-Host "Running $script"

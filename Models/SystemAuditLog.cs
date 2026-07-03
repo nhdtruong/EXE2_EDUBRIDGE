@@ -28,8 +28,4 @@ public partial class SystemAuditLog
     public string? IpAddress { get; set; }
 
     public virtual User ActorUser { get; set; } = null!;
-
-    public virtual Center? TargetCenter { get; set; }
-
-    public virtual Project? TargetProject { get; set; }
 }

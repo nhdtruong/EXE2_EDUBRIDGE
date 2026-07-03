@@ -53,7 +53,7 @@ public class SystemAdminCenterService : ISystemAdminCenterService
             Email = request.Email,
             PhoneNumber = request.PhoneNumber,
             Address = request.Address,
-            ProjectId = request.ProjectId,
+            ProjectId = request.ProjectId.Value,
             Logo = logoUrl,
             Status = string.IsNullOrEmpty(request.Status) ? "Active" : request.Status,
             CreatedAt = EduBridge.Helpers.TimeHelper.GetVietnamNow()

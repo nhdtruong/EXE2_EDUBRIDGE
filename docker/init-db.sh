@@ -89,7 +89,9 @@ main() {
   done < <(find "${ROOT_DIR}/migration" -maxdepth 1 -type f -name '*.sql' -print0 | sort -z)
 
   if [[ "${ENABLE_MOCK_SEED,,}" == "true" ]]; then
-    apply_script_once "${ROOT_DIR}/seed/parent_app_mock.sql"
+    while IFS= read -r -d '' file; do
+      apply_script_once "${file}"
+    done < <(find "${ROOT_DIR}/seed" -maxdepth 1 -type f -name '*.sql' -print0 | sort -z)
   else
     echo "Mock seed disabled."
   fi

@@ -330,7 +330,7 @@ else
                                     <div class="mt-2 w-full max-w-[120px] mx-auto bg-gray-200 rounded-full h-2">
                                         <div class="bg-blue-600 h-2 rounded-full" style="width: @submitPct%"></div>
                                     </div>
-                                </td>
+                                 </td>
                                 <td class="py-5 px-6 text-center border-r border-gray-200">
                                     <div class="font-semibold text-gray-900">@hw.GradedCount / @hw.SubmittedCount</div>
                                     <div class="mt-2 w-full max-w-[120px] mx-auto bg-gray-200 rounded-full h-2">
@@ -747,16 +747,12 @@ else
                                     const fileUrl = sub.submissionFileUrl || sub.SubmissionFileUrl;
                                     const content = sub.submissionContent || sub.SubmissionContent;
 
-<<<<<<< HEAD
-                                    let submissionContent = content || '<span class="text-muted italic">Chưa nộp bài</span>';
-                                    if (content && content.includes("Giáo viên chủ động chấm điểm trực tiếp")) {
-                                        submissionContent = '<span class="text-muted italic text-warning">Chưa nộp bài (Chấm trực tiếp)</span>';
-                                    }
-                                    const badgeClass = status === 'Graded' ? 'ds-badge-success' : (status === 'Submitted' ? 'ds-badge-warning' : 'ds-badge-danger');
-=======
+
                                     let submissionContent = content || '<span class="text-gray-400 italic">Chưa nộp bài</span>';
+                                    if (content && content.includes("Giáo viên chủ động chấm điểm trực tiếp")) {
+                                        submissionContent = '<span class="text-gray-400 italic">Chưa nộp bài (Chấm trực tiếp)</span>';
+                                    }
                                     const badgeClass = status === 'Graded' ? 'bg-green-100 text-green-700' : (status === 'Submitted' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700');
->>>>>>> fb97d6a5c49d06e0bf09b75599a0f43983c7258e
                                     const statusText = status === 'Graded' ? 'Đã chấm' : (status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
                                     
                                     // Xử lý an toàn cho Score (Điểm số)
