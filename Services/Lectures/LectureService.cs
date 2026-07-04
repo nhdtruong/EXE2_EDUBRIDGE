@@ -51,6 +51,7 @@ namespace EduBridge.Services.Lectures
 
             var lessons = await _context.Lessons
                 .Include(l => l.Class)
+                .Include(l => l.Homeworks)
                 .Where(l => classIds.Contains(l.ClassId))
                 .OrderByDescending(l => l.LessonDate)
                 .ThenByDescending(l => l.CreatedAt)
@@ -65,7 +66,18 @@ namespace EduBridge.Services.Lectures
                 Topic = l.LessonTitle,
                 Content = l.LessonContent ?? "Không có nội dung",
                 Status = l.Status, // Sử dụng giá trị thực từ DB
-                CreatedAt = l.CreatedAt
+                CreatedAt = l.CreatedAt,
+                SessionNumber = l.SessionNumber,
+                StartTime = l.StartTime?.ToString("HH:mm") ?? "",
+                EndTime = l.EndTime?.ToString("HH:mm") ?? "",
+                Homeworks = l.Homeworks.Select(h => new LessonHomeworkDto
+                {
+                    HomeworkId = h.HomeworkId,
+                    Title = h.Title,
+                    Description = h.Description ?? "",
+                    DueDateString = h.DueDate.HasValue ? h.DueDate.Value.ToString("dd/MM/yyyy HH:mm") : "",
+                    AttachmentUrl = h.AttachmentUrl ?? ""
+                }).ToList()
             }).ToList();
 
             return new LecturesResponseDto

@@ -1,0 +1,516 @@
+@page
+@model EduBridge.Pages.Teacher.Lectures.MaterialsModel
+@{
+    Layout = "_TeacherLayout";
+    ViewData["Title"] = "Quản lý Tài liệu & Học liệu";
+    ViewData["ActivePage"] = "Lectures";
+}
+
+<!-- Breadcrumbs -->
+<div class="mb-4 text-xs font-semibold text-slate-400 flex items-center gap-1">
+    <a href="/Teacher/Dashboard" class="hover:text-blue-600 transition-colors">Dashboard</a>
+    <span>/</span>
+    <a href="/Teacher/Lectures" class="hover:text-blue-600 transition-colors">Quản lý buổi học</a>
+    <span>/</span>
+    <span class="text-slate-650 font-bold">Học liệu</span>
+</div>
+
+<!-- Header Section -->
+<div class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div class="flex items-center gap-3">
+        <div class="h-12 w-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-emerald-200">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"></path>
+            </svg>
+        </div>
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Quản lý Tài liệu & Học liệu</h1>
+            <p class="text-slate-500 mt-0.5 text-sm font-semibold">
+                Buổi học: <span class="text-indigo-600 font-bold">@Model.DisplayLesson?.LessonTitle</span> | Lớp: <span class="text-slate-700 font-bold">@Model.DisplayLesson?.Class?.ClassName</span>
+            </p>
+        </div>
+    </div>
+    <a href="/Teacher/Lectures" class="inline-flex h-10 items-center justify-center rounded-full border border-slate-250 bg-white px-5 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"></path>
+        </svg>
+        Quay lại danh sách buổi học
+    </a>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left Column: Upload New Material -->
+    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm self-start space-y-5">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-50 text-emerald-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"></path>
+            </svg>
+            <h3 class="text-lg font-extrabold tracking-tight text-slate-800">Thêm học liệu mới</h3>
+        </div>
+
+        <form id="uploadMaterialForm" class="space-y-4">
+            <input type="hidden" id="materialLessonId" value="@Model.DisplayLesson?.LessonId" />
+            
+            <!-- Title -->
+            <div>
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Tên tài liệu / Tiêu đề <span class="text-rose-500">*</span></label>
+                <input type="text" id="materialTitle" class="block w-full rounded-2xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white" placeholder="Ví dụ: Slide bài giảng OOP" required />
+            </div>
+
+            <!-- Material Type -->
+            <div>
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Loại học liệu <span class="text-rose-500">*</span></label>
+                <select id="materialType" class="block w-full rounded-2xl border border-slate-200 py-2.5 px-3.5 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white">
+                    <option value="Document">Tài liệu (PDF, Word, Slide, Ảnh)</option>
+                    <option value="Video">Video (Youtube, Drive, Link video)</option>
+                    <option value="Homework">Bài tập về nhà</option>
+                </select>
+            </div>
+
+            <!-- Upload Type (File / Link) -->
+            <div id="uploadTypeContainer">
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-2">Hình thức tải lên</label>
+                <div class="flex items-center gap-6">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="uploadSource" value="File" checked class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-slate-300" />
+                        <span class="text-sm font-bold text-slate-650">Tải file từ máy tính</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" name="uploadSource" value="Link" class="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-slate-300" />
+                        <span class="text-sm font-bold text-slate-650">Dán liên kết (URL)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Select File (PDF, etc) -->
+            <div id="fileInputContainer">
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Chọn file tài liệu / ảnh <span class="text-rose-500">*</span></label>
+                <input type="file" id="materialFile" class="block w-full text-sm font-semibold text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-200 rounded-2xl py-2 px-3 focus:outline-none bg-white" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" />
+                <p class="mt-1 text-[10px] text-slate-400 font-semibold">Hỗ trợ PDF, Word, Excel, Slide, Ảnh. Tối đa 20MB.</p>
+            </div>
+
+            <!-- Paste Link (URL) -->
+            <div id="linkInputContainer" class="hidden">
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Dán liên kết tài liệu / video <span class="text-rose-500">*</span></label>
+                <input type="url" id="materialLink" class="block w-full rounded-2xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white" placeholder="https://youtube.com/watch?v=..." />
+            </div>
+
+            <!-- Due Date (Homework only) -->
+            <div id="dueDateContainer" class="hidden">
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Hạn nộp (Due Date) <span class="text-rose-500">*</span></label>
+                <input type="datetime-local" id="materialDueDate" class="block w-full rounded-2xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white" />
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-xs font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Mô tả / Yêu cầu chi tiết (tùy chọn)</label>
+                <textarea id="materialDesc" rows="3" class="block w-full rounded-2xl border border-slate-200 py-2.5 px-3.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all bg-white" placeholder="Nhập mô tả hoặc ghi chú yêu cầu..."></textarea>
+            </div>
+
+            <button type="submit" id="btnUploadMaterial" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-sm font-bold text-white rounded-2xl shadow-md shadow-emerald-100 hover:shadow transition-all duration-150 flex items-center justify-center gap-1.5 mt-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Upload học liệu
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Materials Gallery -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-5">
+        <div class="flex items-center justify-between border-b border-slate-50 pb-3">
+            <div class="flex items-center gap-2 text-indigo-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.008 1.24l.885 1.77a2.25 2.25 0 002.007 1.24h1.98a2.25 2.25 0 002.007-1.24l.885-1.77a2.25 2.25 0 012.007-1.24h3.86m-18 0h18a2.25 2.25 0 012.25 2.25v4.25A2.25 2.25 0 0118 21H6a2.25 2.25 0 01-2.25-2.25V15.75a2.25 2.25 0 012.25-2.25zm0-4.5h18A2.25 2.25 0 0021 9V4.75A2.25 2.25 0 0018.75 2.5H5.25A2.25 2.25 0 003 4.75V9a2.25 2.25 0 002.25 2.25z"></path>
+                </svg>
+                <h3 class="text-lg font-extrabold tracking-tight text-slate-800">Kho học liệu đã đăng</h3>
+            </div>
+            <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-extrabold border border-emerald-200" id="totalMaterialsCount">
+                0 tài liệu
+            </span>
+        </div>
+
+        <!-- Filter tabs -->
+        <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="filterGallery('All', this)" class="gallery-tab-btn active px-4 py-1.5 bg-blue-600 text-white rounded-full font-bold text-xs shadow-sm transition-all duration-150">Tất cả</button>
+            <button type="button" onclick="filterGallery('Document', this)" class="gallery-tab-btn px-4 py-1.5 bg-slate-100 text-slate-650 hover:bg-slate-200 rounded-full font-bold text-xs transition-all duration-150">Tài liệu</button>
+            <button type="button" onclick="filterGallery('Video', this)" class="gallery-tab-btn px-4 py-1.5 bg-slate-100 text-slate-650 hover:bg-slate-200 rounded-full font-bold text-xs transition-all duration-150">Video</button>
+            <button type="button" onclick="filterGallery('Homework', this)" class="gallery-tab-btn px-4 py-1.5 bg-slate-100 text-slate-650 hover:bg-slate-200 rounded-full font-bold text-xs transition-all duration-150">Bài tập</button>
+        </div>
+
+        <!-- Gallery Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="materialsGalleryContainer">
+            <!-- Nạp động -->
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa học liệu -->
+<div id="deleteConfirmModal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black bg-opacity-50 px-4 transition-opacity">
+    <div class="w-full max-w-md rounded-3xl bg-white shadow-2xl overflow-hidden p-6 space-y-4">
+        <div class="flex items-center gap-3 text-rose-600 border-b border-rose-50 pb-3">
+            <svg class="w-6 h-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+            </svg>
+            <h3 class="text-lg font-extrabold tracking-tight">Xóa học liệu</h3>
+        </div>
+        <p class="text-sm font-medium text-slate-650" id="deleteModalText">Bạn có chắc chắn muốn xóa học liệu này không? Hành động này sẽ xóa vĩnh viễn và không thể khôi phục.</p>
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" onclick="closeDeleteModal()" class="rounded-full bg-white border border-slate-200 px-5 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Bỏ qua</button>
+            <button type="button" id="btnConfirmDelete" class="rounded-full bg-rose-600 px-5 py-2 text-sm font-bold text-white shadow-md shadow-rose-100 hover:bg-rose-700 transition-colors">Đồng ý xóa</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const rawMaterials = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Materials));
+        let activeTab = "All";
+
+        // Phân loại học liệu từ C# sang Client
+        let materialsData = (rawMaterials || []).map(m => {
+            let type = "Document";
+            let realDesc = m.Description || "";
+            
+            if (realDesc.startsWith("[Document] ")) {
+                type = "Document";
+                realDesc = realDesc.substring(11);
+            } else if (realDesc.startsWith("[Video] ")) {
+                type = "Video";
+                realDesc = realDesc.substring(8);
+            } else if (realDesc.startsWith("[Homework] ")) {
+                type = "Homework";
+                realDesc = realDesc.substring(11);
+            } else if (m.DueDate !== null && m.DueDate !== undefined) {
+                type = "Homework";
+            } else if (m.AttachmentUrl && m.AttachmentUrl.match(/\.(mp4|avi|mov|webm)$/i) || (m.AttachmentUrl && (m.AttachmentUrl.includes("youtube.com") || m.AttachmentUrl.includes("youtu.be")))) {
+                type = "Video";
+            }
+
+            // Convert Date String
+            let dateObj = new Date(m.CreatedAt);
+            let day = String(dateObj.getDate()).padStart(2, '0');
+            let month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            let year = dateObj.getFullYear();
+            let dateStr = `${day}/${month}/${year}`;
+
+            return {
+                HomeworkId: m.HomeworkId,
+                Title: m.Title,
+                Description: realDesc,
+                AttachmentUrl: m.AttachmentUrl,
+                DueDate: m.DueDate,
+                Type: type,
+                DateStr: dateStr
+            };
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Lắng nghe sự thay đổi Loại học liệu
+            const mType = document.getElementById("materialType");
+            const mSourceFile = document.querySelector('input[name="uploadSource"][value="File"]');
+            const mSourceLink = document.querySelector('input[name="uploadSource"][value="Link"]');
+            const fileContainer = document.getElementById("fileInputContainer");
+            const linkContainer = document.getElementById("linkInputContainer");
+            const dateContainer = document.getElementById("dueDateContainer");
+            const uploadTypeContainer = document.getElementById("uploadTypeContainer");
+
+            mType.addEventListener("change", function() {
+                const type = this.value;
+                if (type === "Homework") {
+                    dateContainer.classList.remove("hidden");
+                    document.getElementById("materialDueDate").required = true;
+                    // Hiện lại hình thức tải lên
+                    uploadTypeContainer.classList.remove("hidden");
+                    if (mSourceFile.checked) {
+                        fileContainer.classList.remove("hidden");
+                        document.getElementById("materialFile").required = true;
+                        linkContainer.classList.add("hidden");
+                        document.getElementById("materialLink").required = false;
+                    } else {
+                        fileContainer.classList.add("hidden");
+                        document.getElementById("materialFile").required = false;
+                        linkContainer.classList.remove("hidden");
+                        document.getElementById("materialLink").required = true;
+                    }
+                } else if (type === "Video") {
+                    dateContainer.classList.add("hidden");
+                    document.getElementById("materialDueDate").required = false;
+                    // Video mặc định là Dán liên kết
+                    mSourceLink.checked = true;
+                    uploadTypeContainer.classList.add("hidden");
+                    fileContainer.classList.add("hidden");
+                    document.getElementById("materialFile").required = false;
+                    linkContainer.classList.remove("hidden");
+                    document.getElementById("materialLink").required = true;
+                } else { // Document
+                    dateContainer.classList.add("hidden");
+                    document.getElementById("materialDueDate").required = false;
+                    uploadTypeContainer.classList.remove("hidden");
+                    if (mSourceFile.checked) {
+                        fileContainer.classList.remove("hidden");
+                        document.getElementById("materialFile").required = true;
+                        linkContainer.classList.add("hidden");
+                        document.getElementById("materialLink").required = false;
+                    } else {
+                        fileContainer.classList.add("hidden");
+                        document.getElementById("materialFile").required = false;
+                        linkContainer.classList.remove("hidden");
+                        document.getElementById("materialLink").required = true;
+                    }
+                }
+            });
+
+            // Lắng nghe sự thay đổi hình thức tải lên
+            document.querySelectorAll('input[name="uploadSource"]').forEach(radio => {
+                radio.addEventListener("change", function() {
+                    if (this.value === "File") {
+                        fileContainer.classList.remove("hidden");
+                        document.getElementById("materialFile").required = true;
+                        linkContainer.classList.add("hidden");
+                        document.getElementById("materialLink").required = false;
+                    } else {
+                        fileContainer.classList.add("hidden");
+                        document.getElementById("materialFile").required = false;
+                        linkContainer.classList.remove("hidden");
+                        document.getElementById("materialLink").required = true;
+                    }
+                });
+            });
+
+            // Set required ban đầu cho File input
+            document.getElementById("materialFile").required = true;
+
+            renderGallery();
+        });
+
+        // Tải danh sách học liệu lên màn hình
+        function renderGallery() {
+            const container = document.getElementById("materialsGalleryContainer");
+            const totalCountEl = document.getElementById("totalMaterialsCount");
+            if (!container) return;
+
+            container.innerHTML = "";
+
+            const filtered = activeTab === "All" 
+                ? materialsData 
+                : materialsData.filter(m => m.Type === activeTab);
+
+            totalCountEl.textContent = `${filtered.length} tài liệu`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-slate-400 font-bold bg-slate-50 border border-dashed border-slate-200 rounded-3xl">
+                        Không tìm thấy học liệu nào phù hợp.
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(m => {
+                const card = document.createElement("div");
+                card.className = "bg-white border border-slate-100 rounded-3xl p-5 shadow-sm hover:shadow transition-all flex flex-col justify-between";
+
+                let badgeText = "Document";
+                let badgeClass = "bg-blue-50 text-blue-700 border-blue-100";
+                if (m.Type === "Video") {
+                    badgeText = "Video";
+                    badgeClass = "bg-rose-50 text-rose-700 border-rose-100";
+                } else if (m.Type === "Homework") {
+                    badgeText = "Homework";
+                    badgeClass = "bg-amber-50 text-amber-700 border-amber-100";
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border ${badgeClass}">${badgeText}</span>
+                            <span class="text-xs text-slate-400 font-semibold">${m.DateStr}</span>
+                        </div>
+                        <h4 class="text-base font-bold text-slate-800 leading-tight mb-2 truncate" title="${m.Title}">${m.Title}</h4>
+                        <p class="text-xs font-semibold text-slate-450 line-clamp-2 leading-relaxed mb-4">${m.Description || "Không có mô tả chi tiết."}</p>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2 border-t border-slate-50">
+                        <a href="${m.AttachmentUrl || '#'}" target="_blank" class="flex-grow h-9 inline-flex items-center justify-center rounded-full border border-indigo-200 bg-indigo-50/20 text-indigo-700 font-bold text-xs hover:bg-indigo-50 hover:text-indigo-800 transition-colors gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"></path>
+                            </svg>
+                            Xem / Tải về
+                        </a>
+                        <button type="button" onclick="openDeleteModal(${m.HomeworkId}, '${m.Title.replace(/'/g, "\\'")}')" class="h-9 w-9 shrink-0 inline-flex items-center justify-center rounded-full border border-rose-500/35 hover:bg-rose-50/50 text-rose-600 transition-colors" title="Xóa học liệu">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Lọc Kho học liệu theo tab
+        function filterGallery(tab, btn) {
+            activeTab = tab;
+            document.querySelectorAll(".gallery-tab-btn").forEach(b => {
+                b.className = "gallery-tab-btn px-4 py-1.5 bg-slate-100 text-slate-650 hover:bg-slate-200 rounded-full font-bold text-xs transition-all duration-150";
+            });
+            btn.className = "gallery-tab-btn active px-4 py-1.5 bg-blue-600 text-white rounded-full font-bold text-xs shadow-sm transition-all duration-150";
+            renderGallery();
+        }
+
+        // SUBMIT FORM THÊM HỌC LIỆU MỚI
+        document.getElementById("uploadMaterialForm").addEventListener("submit", async function(e) {
+            e.preventDefault();
+
+            const title = document.getElementById("materialTitle").value.trim();
+            const type = document.getElementById("materialType").value;
+            const uploadSource = document.querySelector('input[name="uploadSource"]:checked').value;
+            const desc = document.getElementById("materialDesc").value.trim();
+            const lessonId = parseInt(document.getElementById("materialLessonId").value);
+            const btn = document.getElementById("btnUploadMaterial");
+
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `Đang xử lý tải lên...`;
+
+            // Tạo chuỗi tiền tố cho Description để nhận diện loại
+            const prefixedDesc = `[${type}] ${desc}`;
+
+            let attachmentUrl = "";
+
+            try {
+                if (uploadSource === "File" && type !== "Video") {
+                    // Bước 1: Upload file lên server
+                    const fileInput = document.getElementById("materialFile");
+                    const file = fileInput.files[0];
+                    if (!file) {
+                        showToast("Vui lòng chọn tệp tải lên", false);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return;
+                    }
+
+                    if (file.size > 20 * 1024 * 1024) {
+                        showToast("File vượt quá kích thước cho phép (20MB)", false);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append("file", file);
+
+                    const uploadRes = await fetch('/api/v1/teacher/homework/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const uploadJson = await uploadRes.json();
+
+                    if (!uploadJson.success) {
+                        throw new Error(uploadJson.message || "Không thể tải tệp lên.");
+                    }
+                    attachmentUrl = uploadJson.data.fileUrl;
+                } else {
+                    // Dán liên kết (hoặc đối với Video)
+                    attachmentUrl = document.getElementById("materialLink").value.trim();
+                    if (!attachmentUrl) {
+                        showToast("Vui lòng dán liên kết tài liệu", false);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return;
+                    }
+                }
+
+                // Bước 2: Tạo học liệu trong CSDL thông qua API
+                let dueDate = null;
+                if (type === "Homework") {
+                    const rawDueDate = document.getElementById("materialDueDate").value;
+                    if (!rawDueDate) {
+                        showToast("Vui lòng điền hạn nộp bài tập", false);
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return;
+                    }
+                    dueDate = new Date(rawDueDate).toISOString();
+                }
+
+                const body = {
+                    lessonId: lessonId,
+                    title: title,
+                    description: prefixedDesc,
+                    dueDate: dueDate,
+                    attachmentUrl: attachmentUrl
+                };
+
+                const saveRes = await fetch('/api/v1/teacher/homework', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const saveJson = await saveRes.json();
+
+                if (saveJson.success) {
+                    showToast("Đã đăng tải học liệu mới thành công!");
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(saveJson.message || "Tạo học liệu thất bại.");
+                }
+            } catch (err) {
+                console.error(err);
+                showToast(err.message || "Có lỗi xảy ra trong quá trình xử lý.", false);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        // MODAL XÓA HỌC LIỆU
+        let deleteHomeworkId = 0;
+        function openDeleteModal(homeworkId, title) {
+            deleteHomeworkId = homeworkId;
+            document.getElementById("deleteModalText").innerHTML = `Bạn có chắc chắn muốn xóa học liệu <strong>"${title}"</strong> không? Hành động này sẽ xóa vĩnh viễn học liệu và toàn bộ bài làm học viên đã nộp.`;
+            toggleModal('deleteConfirmModal', true);
+        }
+
+        function closeDeleteModal() {
+            toggleModal('deleteConfirmModal', false);
+            deleteHomeworkId = 0;
+        }
+
+        // XỬ LÝ XÓA HỌC LIỆU
+        document.getElementById("btnConfirmDelete").addEventListener("click", function() {
+            if (deleteHomeworkId <= 0) return;
+
+            fetch(`/api/v1/teacher/homework/${deleteHomeworkId}`, {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    showToast("Xóa học liệu thành công!");
+                    closeDeleteModal();
+                    // Cập nhật lại client-side data
+                    materialsData = materialsData.filter(m => m.HomeworkId !== deleteHomeworkId);
+                    renderGallery();
+                } else {
+                    showToast(res.message || "Xóa học liệu thất bại.", false);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Lỗi kết nối máy chủ", false);
+            });
+        });
+
+        function toggleModal(modalId, show) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+    </script>
+}

@@ -21,5 +21,6 @@ namespace EduBridge.Services.Homeworks
         Task<List<ParentHomeworkItemDto>> GetParentHomeworksAsync(int parentUserId, CancellationToken cancellationToken = default);
 
         Task<bool> SubmitHomeworkAsync(int parentUserId, SubmitHomeworkRequestDto request, CancellationToken cancellationToken = default);
+        Task<bool> DeleteHomeworkAsync(int teacherUserId, int homeworkId, CancellationToken cancellationToken = default);
     }
 }

@@ -143,5 +143,21 @@ namespace EduBridge.Controllers.Api
                 return StatusCode(500, new ApiResponse<object>(false, ex.Message ?? "Lỗi tải lên file.", null));
             }
         }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult<ApiResponse<bool>>> DeleteHomework(int id)
+        {
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId))
+                return Unauthorized(new ApiResponse<bool>(false, "Chưa đăng nhập", false));
+
+            var result = await _homeworkService.DeleteHomeworkAsync(userId, id);
+            if (!result)
+            {
+                return BadRequest(new ApiResponse<bool>(false, "Không thể xóa học liệu này", false));
+            }
+
+            return Ok(new ApiResponse<bool>(true, "Xóa học liệu thành công", true));
+        }
     }
 }

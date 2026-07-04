@@ -393,5 +393,32 @@ namespace EduBridge.Services.Homeworks
             await _context.SaveChangesAsync(cancellationToken);
             return true;
         }
+
+        public async Task<bool> DeleteHomeworkAsync(int teacherUserId, int homeworkId, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers.FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return false;
+
+            var homework = await _context.Homeworks
+                .Include(h => h.Lesson)
+                    .ThenInclude(l => l.Class)
+                .FirstOrDefaultAsync(h => h.HomeworkId == homeworkId, cancellationToken);
+
+            if (homework == null || homework.Lesson.Class.TeacherId != teacher.TeacherId || homework.Lesson.Class.IsDeleted)
+            {
+                return false;
+            }
+
+            // Xóa các submission liên quan trước
+            var submissions = await _context.HomeworkSubmissions
+                .Where(s => s.HomeworkId == homeworkId)
+                .ToListAsync(cancellationToken);
+
+            _context.HomeworkSubmissions.RemoveRange(submissions);
+            _context.Homeworks.Remove(homework);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return true;
+        }
     }
 }

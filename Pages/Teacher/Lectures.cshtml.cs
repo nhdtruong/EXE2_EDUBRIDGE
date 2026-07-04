@@ -50,7 +50,18 @@ namespace EduBridge.Pages.Teacher
                 ClassName = lh.ClassName,
                 Topic = lh.Topic,
                 Content = lh.Content,
-                Status = lh.Status
+                Status = lh.Status,
+                SessionNumber = lh.SessionNumber,
+                StartTime = lh.StartTime,
+                EndTime = lh.EndTime,
+                Homeworks = lh.Homeworks.Select(h => new LessonHomeworkViewModel
+                {
+                    HomeworkId = h.HomeworkId,
+                    Title = h.Title,
+                    Description = h.Description,
+                    DueDateString = h.DueDateString,
+                    AttachmentUrl = h.AttachmentUrl
+                }).ToList()
             }).ToList();
 
             return Page();
@@ -149,6 +160,15 @@ namespace EduBridge.Pages.Teacher
         public int PercentComplete => TotalLessons == 0 ? 0 : (int)((double)CompletedLessons / TotalLessons * 100);
     }
 
+    public class LessonHomeworkViewModel
+    {
+        public int HomeworkId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string DueDateString { get; set; } = string.Empty;
+        public string AttachmentUrl { get; set; } = string.Empty;
+    }
+
     public class LectureHistoryViewModel
     {
         public int LessonId { get; set; }
@@ -158,6 +178,10 @@ namespace EduBridge.Pages.Teacher
         public string Topic { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public int? SessionNumber { get; set; }
+        public string StartTime { get; set; } = string.Empty;
+        public string EndTime { get; set; } = string.Empty;
+        public List<LessonHomeworkViewModel> Homeworks { get; set; } = new();
     }
 
     public class AddNoteInputModel

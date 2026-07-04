@@ -37,8 +37,7 @@ namespace EduBridge.Models.DTOs.TeacherHomework
 
         public string? Description { get; set; }
 
-        [Required(ErrorMessage = "Vui lòng chọn hạn nộp.")]
-        public DateTime DueDate { get; set; }
+        public DateTime? DueDate { get; set; }
 
         public string? AttachmentUrl { get; set; }
     }
