@@ -198,6 +198,38 @@ TEACHER
 }
 ```
 
+> **Lưu ý**: Trường `score` là **không bắt buộc** (nullable). Giáo viên có thể chỉ gửi nhận xét mà không cần điểm số.
+
+Ví dụ gửi không có điểm:
+```json
+{
+  "score": null,
+  "feedback": "Đã xem xét bài làm, cần cải thiện thêm."
+}
+```
+
+#### Validation Rules
+- `score`: Optional. Nếu được cung cấp, phải là số thực trong khoảng `[0, 10]`.
+- `feedback`: Optional. Chuỗi ký tự bình thường, không giới hạn.
+
+#### Response
+- **Mã phản hồi:** `200 OK`
+```json
+{
+  "success": true,
+  "message": "Chấm điểm thành công",
+  "data": true
+}
+```
+
+#### Error Cases
+```txt
+400 - Điểm số vượt ngoài khoảng [0, 10]
+400 - Học sinh không học trong lớp này
+403 - Giáo viên không phụ trách lớp chứa bài tập này
+401 - Chưa đăng nhập
+```
+
 ---
 
 ## II. DÀNH CHO PHỤ HUYNH (PARENT)

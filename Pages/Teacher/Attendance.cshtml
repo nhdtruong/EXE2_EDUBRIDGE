@@ -18,100 +18,136 @@
     var initialCanEdit = currentLesson?.CanEdit ?? true;
 }
 
-<div class="mb-6 rounded-2xl bg-gradient-to-br from-white to-blue-50 p-6 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)] border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="mb-6 rounded-2xl bg-gradient-to-br from-white to-blue-50 p-6 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
-        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">Điểm danh</h1>
-        <p class="mt-2 text-base text-gray-500">Ghi nhận tình trạng chuyên cần</p>
+        <h1 class="text-2xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">Điểm danh</h1>
+        <p class="mt-1 text-sm text-gray-500">Ghi nhận tình trạng chuyên cần và theo dõi lịch sử điểm danh của học sinh.</p>
     </div>
-    <button class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" id="btnExportReport">
-        <svg class="mr-2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+    <button class="inline-flex items-center justify-center rounded-xl border border-slate-250 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition-colors" id="btnExportReport">
+        <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Xuất báo cáo
     </button>
 </div>
 
 <!-- 4 Thẻ Thống kê -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex justify-between items-center">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex justify-between items-center">
         <div>
-            <div class="text-sm font-medium text-gray-500 mb-2">Có mặt</div>
-            <div class="text-3xl font-bold text-green-600" id="statPresent">0</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Có mặt</div>
+            <div class="text-3xl font-extrabold text-green-600" id="statPresent">0</div>
         </div>
-        <div class="text-green-600 bg-green-100 p-3 rounded-xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        <div class="text-green-600 bg-green-50 p-3.5 rounded-2xl border border-green-100">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex justify-between items-center">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex justify-between items-center">
         <div>
-            <div class="text-sm font-medium text-gray-500 mb-2">Vắng mặt</div>
-            <div class="text-3xl font-bold text-red-600" id="statAbsent">0</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Vắng mặt</div>
+            <div class="text-3xl font-extrabold text-red-650" id="statAbsent">0</div>
         </div>
-        <div class="text-red-600 bg-red-100 p-3 rounded-xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        <div class="text-red-600 bg-red-50 p-3.5 rounded-2xl border border-red-100">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex justify-between items-center">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex justify-between items-center">
         <div>
-            <div class="text-sm font-medium text-gray-500 mb-2">Đi muộn</div>
-            <div class="text-3xl font-bold text-orange-600" id="statLate">0</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Đi muộn</div>
+            <div class="text-3xl font-extrabold text-amber-600" id="statLate">0</div>
         </div>
-        <div class="text-orange-600 bg-orange-100 p-3 rounded-xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <div class="text-amber-600 bg-amber-50 p-3.5 rounded-2xl border border-amber-100">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         </div>
     </div>
     
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex justify-between items-center">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex justify-between items-center">
         <div>
-            <div class="text-sm font-medium text-gray-500 mb-2">Tỷ lệ chuyên cần</div>
-            <div class="text-3xl font-bold text-blue-600" id="statRate">0%</div>
+            <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Tỷ lệ chuyên cần</div>
+            <div class="text-3xl font-extrabold text-blue-600" id="statRate">0%</div>
         </div>
-        <div class="text-blue-600 bg-blue-100 p-3 rounded-xl">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+        <div class="text-blue-600 bg-blue-50 p-3.5 rounded-2xl border border-blue-100">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         </div>
     </div>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-        <h3 class="text-lg font-bold text-gray-900 m-0">Bảng điểm danh</h3>
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden mb-6">
+    <div class="px-6 py-4.5 border-b border-gray-200 bg-gray-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+        <h3 class="text-base font-extrabold text-slate-800 m-0">Bảng điểm danh</h3>
+        
         <div class="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-            <!-- Select Lớp học -->
-            <select class="block w-full sm:w-48 pl-3 pr-8 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border border-solid" id="classSelect">
-                @foreach(var c in Model.TeacherClasses)
-                {
-                    <!option value="@c.ClassId" @(c.ClassId == Model.SelectedClassId ? "selected" : "")>@c.ClassName</!option>
-                }
-            </select>
+            <!-- Select Lớp học (Owner Style Dropdown) -->
+            <div class="w-full sm:w-48">
+                <input type="hidden" id="classSelect" value="@Model.SelectedClassId" data-filter-value="classSelect" />
+                <div class="relative" data-search-dropdown id="classDropdown">
+                    <button type="button" data-dropdown-toggle class="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        <span data-dropdown-label id="classDropdownLabel">
+                            @(Model.TeacherClasses.FirstOrDefault(c => c.ClassId == Model.SelectedClassId)?.ClassName ?? "-- Chọn lớp học --")
+                        </span>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                        <div class="relative p-2 border-b border-slate-100 bg-slate-50/50">
+                            <input type="text" data-dropdown-search class="h-9 w-full rounded-lg border border-slate-200 px-3 pr-8 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 bg-white" placeholder="Tìm lớp...">
+                            <svg class="absolute right-4.5 top-5.5 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <div class="max-h-48 overflow-y-auto" id="classDropdownOptions">
+                            @foreach(var c in Model.TeacherClasses)
+                            {
+                                <button type="button" data-dropdown-option data-value="@c.ClassId" data-label="@c.ClassName" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">@c.ClassName</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <!-- Select Buổi học -->
-            <select class="block w-full sm:w-56 pl-3 pr-8 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border border-solid" id="lessonSelect">
-                @foreach(var l in Model.ClassLessons)
-                {
-                    <!option value="@l.LessonId" data-can-edit="@l.CanEdit.ToString().ToLower()" @(l.LessonId == Model.SelectedLessonId ? "selected" : "")>@l.LessonTitle (@l.DateString)</!option>
-                }
-            </select>
+            <!-- Select Buổi học (Owner Style Dropdown) -->
+            <div class="w-full sm:w-56">
+                <input type="hidden" id="lessonSelect" value="@Model.SelectedLessonId" data-filter-value="lessonSelect" />
+                <div class="relative" data-search-dropdown id="lessonDropdown">
+                    <button type="button" data-dropdown-toggle class="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        <span data-dropdown-label id="lessonDropdownLabel">
+                            @(currentLesson != null ? $"{currentLesson.LessonTitle} ({currentLesson.DateString})" : "-- Chọn buổi học --")
+                        </span>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                        <div class="relative p-2 border-b border-slate-100 bg-slate-50/50">
+                            <input type="text" data-dropdown-search class="h-9 w-full rounded-lg border border-slate-200 px-3 pr-8 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 bg-white" placeholder="Tìm buổi...">
+                            <svg class="absolute right-4.5 top-5.5 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <div class="max-h-48 overflow-y-auto" id="lessonDropdownOptions">
+                            @foreach(var l in Model.ClassLessons)
+                            {
+                                <button type="button" data-dropdown-option data-value="@l.LessonId" data-can-edit="@l.CanEdit.ToString().ToLower()" data-label="@l.LessonTitle (@l.DateString)" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">@l.LessonTitle (@l.DateString)</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Search input -->
             <div class="relative w-full sm:w-56">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                 </div>
-                <input type="text" id="studentSearchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Tìm học sinh...">
+                <input type="text" id="studentSearchInput" class="block w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-450 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 sm:text-sm font-medium transition-all" placeholder="Tìm học sinh...">
             </div>
         </div>
     </div>
     
     <div class="px-6 py-4">
-        <div id="attendanceAlert" class="rounded-lg bg-yellow-50 p-4 mb-2 @(initialCanEdit ? "hidden" : "flex")">
+        <div id="attendanceAlert" class="rounded-xl bg-yellow-50 p-4 border border-yellow-150 mb-2 @(initialCanEdit ? "hidden" : "flex")">
             <div class="flex">
                 <div class="flex-shrink-0">
-                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <svg class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                     </svg>
                 </div>
                 <div class="ml-3">
-                    <h3 class="text-sm font-medium text-yellow-800">Cảnh báo</h3>
-                    <div class="mt-2 text-sm text-yellow-700">
+                    <h3 class="text-sm font-bold text-yellow-800">Cảnh báo</h3>
+                    <div class="mt-1 text-sm text-yellow-700 font-semibold">
                         <p>Buổi học đã kết thúc quá 48h. Không thể chỉnh sửa thông tin điểm danh.</p>
                     </div>
                 </div>
@@ -119,41 +155,42 @@
         </div>
     </div>
 
+    <!-- Attendance table (table-fixed for strict column alignment) -->
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="w-full border-collapse text-slate-650 text-sm table-fixed min-w-[850px]">
+            <thead class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold uppercase text-[11px] tracking-wider">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">STT</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Học sinh</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Trạng thái</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ghi chú</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-64">Cập nhật</th>
+                    <th scope="col" class="py-4 px-4 text-center w-[8%] border-r border-slate-200">STT</th>
+                    <th scope="col" class="py-4 px-6 text-left w-[32%] border-r border-slate-200">Học sinh</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[18%] border-r border-slate-200">Trạng thái</th>
+                    <th scope="col" class="py-4 px-6 text-left w-[24%] border-r border-slate-200">Ghi chú</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[18%]">Cập nhật</th>
                 </tr>
             </thead>
-            <tbody id="attendanceTableBody" class="bg-white divide-y divide-gray-200">
+            <tbody id="attendanceTableBody" class="divide-y divide-slate-100 bg-white font-medium text-slate-800">
                 @if (Model.StudentAttendances.Any())
                 {
                     int idx = 1;
                     @foreach(var std in Model.StudentAttendances)
                     {
-                        <tr data-student-id="@std.StudentId">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">@(idx++)</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
+                        <tr data-student-id="@std.StudentId" class="group hover:bg-slate-50 transition-colors border-b border-gray-200">
+                            <td class="py-3.5 px-4 text-center font-bold text-slate-500 border-r border-gray-200">@(idx++)</td>
+                            <td class="py-3.5 px-6 border-r border-gray-200">
                                 <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                                    <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-50 text-blue-650 flex items-center justify-center font-extrabold text-sm border border-blue-100">
                                         @std.StudentName.Substring(0, Math.Min(2, std.StudentName.Length)).ToUpper()
                                     </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-bold text-gray-900">@std.StudentName</div>
-                                        <div class="text-sm text-gray-500">Mã: @std.StudentCode</div>
+                                    <div class="ml-3">
+                                        <div class="text-sm font-bold text-gray-900 leading-tight">@std.StudentName</div>
+                                        <div class="text-xs text-slate-400 font-semibold mt-0.5">Mã: @std.StudentCode</div>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                            <td class="py-3.5 px-6 text-center border-r border-gray-200">
                                 <span class="status-badge @GetBadgeClass(std.Status)" id="badge-@std.StudentId">
                                     @if (std.Status == "Present")
                                     {
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>@:Có mặt
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>@:Có mặt
                                     }
                                     else if (std.Status == "Late")
                                     {
@@ -169,12 +206,14 @@
                                     }
                                 </span>
                             </td>
-                            <td class="px-6 py-4"><input type="text" class="notes-input" id="note-@std.StudentId" value="@std.Note" placeholder="Nhập ghi chú..." @(initialCanEdit ? "" : "disabled") /></td>
-                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <div class="inline-flex rounded-md shadow-sm" role="group">
-                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-present-select @(std.Status == "Present" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Có mặt</button>
-                                    <button class="px-3 py-1 text-sm font-medium border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-late-select @(std.Status == "Late" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Muộn</button>
-                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-r-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-absent-select @(std.Status == "Absent" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Vắng</button>
+                            <td class="py-3.5 px-6 border-r border-gray-200">
+                                <input type="text" class="notes-input border-gray-300 rounded-md w-full focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 border" id="note-@std.StudentId" value="@std.Note" placeholder="Nhập ghi chú..." @(initialCanEdit ? "" : "disabled") />
+                            </td>
+                            <td class="py-3.5 px-6 text-center">
+                                <div class="inline-flex rounded-xl border border-slate-200 overflow-hidden shadow-sm" role="group">
+                                    <button class="px-3.5 py-2 text-xs font-bold transition-all btn-status btn-present-select @(std.Status == "Present" ? "bg-green-600 text-white" : "text-slate-700 bg-white hover:bg-slate-50")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Có mặt</button>
+                                    <button class="px-3.5 py-2 text-xs font-bold border-l border-r border-slate-200 transition-all btn-status btn-late-select @(std.Status == "Late" ? "bg-amber-500 text-white" : "text-slate-700 bg-white hover:bg-slate-50")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Muộn</button>
+                                    <button class="px-3.5 py-2 text-xs font-bold transition-all btn-status btn-absent-select @(std.Status == "Absent" ? "bg-red-500 text-white" : "text-slate-700 bg-white hover:bg-slate-50")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Vắng</button>
                                 </div>
                             </td>
                         </tr>
@@ -183,7 +222,7 @@
                 else
                 {
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-gray-500">
+                        <td colspan="5" class="px-6 py-10 text-center text-slate-400 font-bold">
                             Không có học sinh hoặc buổi học nào được chọn.
                         </td>
                     </tr>
@@ -192,36 +231,36 @@
         </table>
     </div>
     
-    <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
-        <button class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500" id="btnSaveAttendance" style="@(initialCanEdit ? "" : "display: none;")">Lưu điểm danh</button>
+    <div class="px-6 py-4.5 border-t border-gray-200 bg-gray-50 flex justify-end">
+        <button class="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 transition-colors" id="btnSaveAttendance" style="@(initialCanEdit ? "" : "display: none;")">Lưu điểm danh</button>
     </div>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50">
-        <h3 class="text-lg font-bold text-gray-900 m-0">Lịch sử điểm danh</h3>
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200/85 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h3 class="text-base font-extrabold text-slate-800 m-0">Lịch sử điểm danh</h3>
     </div>
     
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="w-full border-collapse text-slate-600 text-sm table-fixed min-w-[850px]">
+            <thead class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold uppercase text-[11px] tracking-wider">
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">STT</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Ngày</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Lớp</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Có mặt</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Vắng</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Muộn</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Tỷ lệ</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Thao tác</th>
+                    <th scope="col" class="py-4 px-4 text-center w-[6%] border-r border-slate-200">STT</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[16%] border-r border-slate-200">Ngày</th>
+                    <th scope="col" class="py-4 px-6 text-left w-[36%] border-r border-slate-200">Lớp</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[10%] border-r border-slate-200">Có mặt</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[10%] border-r border-slate-200">Vắng</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[10%] border-r border-slate-200">Muộn</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[12%] border-r border-slate-200">Tỷ lệ</th>
+                    <th scope="col" class="py-4 px-6 text-center w-[10%]">Thao tác</th>
                 </tr>
             </thead>
-            <tbody id="attendanceHistoryTableBody" class="text-sm divide-y divide-gray-100 bg-white">
+            <tbody id="attendanceHistoryTableBody" class="divide-y divide-slate-100 bg-white font-medium text-slate-800">
                 <!-- Nạp động bằng JavaScript -->
             </tbody>
         </table>
-        <div id="attendanceHistoryPagination"></div>
     </div>
+    <div id="attendanceHistoryPagination"></div>
 </div>
 
 @section Scripts {
@@ -231,8 +270,8 @@
             padding: 0.5rem 1rem;
             border: 1px solid #cbd5e1;
             background-color: #f8fafc;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
             color: #334155;
             outline: none;
             transition: all 0.2s;
@@ -241,66 +280,116 @@
             background-color: #ffffff;
             border-color: #94a3b8;
         }
-        .stat-circle-green {
-            background-color: #dcfce7;
-            color: #166534;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-block;
-            min-width: 32px;
-            text-align: center;
-        }
-        .stat-circle-red {
-            background-color: #fee2e2;
-            color: #991b1b;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-block;
-            min-width: 32px;
-            text-align: center;
-        }
-        .stat-circle-orange {
-            background-color: #ffedd5;
-            color: #9a3412;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            display: inline-block;
-            min-width: 32px;
-            text-align: center;
-        }
         .status-badge {
             display: inline-flex;
             align-items: center;
             padding: 0.25rem 0.75rem;
             border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.85rem;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-width: 1px;
+            border-style: solid;
         }
         .status-present {
             background-color: #dcfce7;
             color: #166534;
+            border-color: #bbf7d0;
         }
         .status-late {
             background-color: #ffedd5;
             color: #b45309;
+            border-color: #fed7aa;
         }
         .status-absent {
             background-color: #fee2e2;
             color: #b91c1c;
+            border-color: #fca5a5;
         }
         .status-empty {
             background-color: #f1f5f9;
             color: #64748b;
+            border-color: #e2e8f0;
         }
     </style>
 
     <script>
+        // component search dropdown (Owner style) cho Lớp và Buổi học
+        function initSearchDropdowns() {
+            document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+                const container = dropdown.parentElement;
+                const hiddenInput = container.querySelector('[data-filter-value]');
+                const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+                const panel = dropdown.querySelector('[data-dropdown-panel]');
+                const label = dropdown.querySelector('[data-dropdown-label]');
+                const searchInput = dropdown.querySelector('[data-dropdown-search]');
+
+                function close() {
+                    panel.classList.add('hidden');
+                }
+
+                function open() {
+                    document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                    panel.classList.remove('hidden');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        filterOptions('');
+                        searchInput.focus();
+                    }
+                }
+
+                function filterOptions(keyword) {
+                    const normalizedKeyword = keyword.trim().toLowerCase();
+                    const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+                    options.forEach(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        const optionLabelText = (option.dataset.label || '').toLowerCase();
+                        const visible = !normalizedKeyword ||
+                            text.includes(normalizedKeyword) ||
+                            optionLabelText.includes(normalizedKeyword);
+                        option.classList.toggle('hidden', !visible);
+                    });
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+                    if (panel.classList.contains('hidden')) {
+                        open();
+                    } else {
+                        close();
+                    }
+                });
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+                    searchInput.addEventListener('click', event => event.stopPropagation());
+                }
+
+                // Gán sự kiện click cho các option động/tĩnh
+                dropdown.addEventListener('click', event => {
+                    const option = event.target.closest('[data-dropdown-option]');
+                    if (option) {
+                        const oldVal = hiddenInput.value;
+                        const newVal = option.dataset.value || '';
+                        
+                        hiddenInput.value = newVal;
+                        label.textContent = option.dataset.label || option.textContent.trim();
+                        close();
+                        
+                        if (oldVal !== newVal) {
+                            hiddenInput.dispatchEvent(new Event('change'));
+                        }
+                    }
+                });
+
+                document.addEventListener('click', event => {
+                    if (!dropdown.contains(event.target)) {
+                        close();
+                    }
+                });
+            });
+        }
+
         // Dữ liệu học sinh điểm danh cục bộ
         let rawAttendancesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StudentAttendances));
         let studentAttendancesData = (rawAttendancesData || []).map(std => ({
@@ -324,17 +413,17 @@
         let historyPageSize = 10;
 
         document.addEventListener("DOMContentLoaded", function () {
-            // Thống kê lúc load trang ban đầu
+            initSearchDropdowns();
             updateStatistics();
             renderAttendanceHistoryTable();
 
-            // Lắng nghe đổi Lớp học
+            // Lắng nghe đổi Lớp học bằng dropdown custom
             document.getElementById("classSelect").addEventListener("change", function () {
                 const classId = this.value;
                 loadLessonsForClass(classId);
             });
 
-            // Lắng nghe đổi Buổi học
+            // Lắng nghe đổi Buổi học bằng dropdown custom
             document.getElementById("lessonSelect").addEventListener("change", function () {
                 const lessonId = this.value;
                 loadAttendanceForLesson(lessonId);
@@ -347,9 +436,14 @@
                     std.StudentName.toLowerCase().includes(query) || 
                     std.StudentCode.toLowerCase().includes(query)
                 );
-                const lessonSelect = document.getElementById("lessonSelect");
-                const selectedOption = lessonSelect.options[lessonSelect.selectedIndex];
-                const canEdit = selectedOption ? (selectedOption.getAttribute("data-can-edit") === "true") : true;
+                
+                // Đọc canEdit từ trạng thái hiện tại
+                const lessonInput = document.getElementById("lessonSelect");
+                const currentLessonId = parseInt(lessonInput.value);
+                const dropdownOptions = document.getElementById("lessonDropdownOptions");
+                const activeOpt = dropdownOptions.querySelector(`[data-value="${currentLessonId}"]`);
+                const canEdit = activeOpt ? (activeOpt.getAttribute("data-can-edit") === "true") : true;
+                
                 renderAttendanceTable(filtered, canEdit);
             });
 
@@ -378,13 +472,18 @@
             }
 
             const classSelect = document.getElementById("classSelect");
-            const className = classSelect.options[classSelect.selectedIndex].text;
+            const dropdownOptions = document.getElementById("classDropdownOptions");
+            const activeOpt = dropdownOptions.querySelector(`[data-value="${classSelect.value}"]`);
+            const className = activeOpt ? activeOpt.textContent.trim() : "Lớp học";
+            
             const lessonSelect = document.getElementById("lessonSelect");
             if (!lessonSelect || !lessonSelect.value) {
                 showToast("Vui lòng chọn một buổi học để xuất báo cáo.", false);
                 return;
             }
-            const lessonTitle = lessonSelect.options[lessonSelect.selectedIndex].text;
+            const lessonDropdownOptions = document.getElementById("lessonDropdownOptions");
+            const activeLessonOpt = lessonDropdownOptions.querySelector(`[data-value="${lessonSelect.value}"]`);
+            const lessonTitle = activeLessonOpt ? activeLessonOpt.textContent.trim() : "Buổi học";
 
             let csvContent = "\uFEFF"; // BOM để Excel nhận dạng UTF-8 tiếng Việt
             csvContent += `BÁO CÁO ĐIỂM DANH - LỚP: ${className}\r\n`;
@@ -419,24 +518,36 @@
             fetch(`/api/v1/teacher/attendance/lessons?classId=${classId}`)
                 .then(res => res.json())
                 .then(res => {
-                    const lessonSelect = document.getElementById("lessonSelect");
-                    lessonSelect.innerHTML = "";
+                    const lessonInput = document.getElementById("lessonSelect");
+                    const lessonDropdownLabel = document.getElementById("lessonDropdownLabel");
+                    const lessonDropdownOptions = document.getElementById("lessonDropdownOptions");
+                    
+                    lessonDropdownOptions.innerHTML = "";
+                    lessonInput.value = "";
                     
                     if (res.success && res.data.length > 0) {
                         res.data.forEach(l => {
-                            const opt = document.createElement("option");
-                            opt.value = l.lessonId;
-                            opt.textContent = `${l.lessonTitle} (${l.dateString})`;
-                            opt.setAttribute("data-can-edit", l.canEdit);
-                            lessonSelect.appendChild(opt);
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors";
+                            btn.setAttribute("data-dropdown-option", "");
+                            btn.setAttribute("data-value", l.lessonId);
+                            btn.setAttribute("data-can-edit", l.canEdit);
+                            btn.setAttribute("data-label", `${l.lessonTitle} (${l.dateString})`);
+                            btn.textContent = `${l.lessonTitle} (${l.dateString})`;
+                            lessonDropdownOptions.appendChild(btn);
                         });
                         
-                        // Tải bảng điểm danh buổi học đầu tiên
-                        loadAttendanceForLesson(res.data[0].lessonId);
+                        // Set giá trị buổi học đầu tiên làm mặc định
+                        const firstLesson = res.data[0];
+                        lessonInput.value = firstLesson.lessonId;
+                        lessonDropdownLabel.textContent = `${firstLesson.lessonTitle} (${firstLesson.dateString})`;
+                        
+                        loadAttendanceForLesson(firstLesson.lessonId);
                     } else {
-                        lessonSelect.innerHTML = `<option value="">-- Không có buổi học --</option>`;
+                        lessonDropdownLabel.textContent = "-- Không có buổi học --";
                         studentAttendancesData = [];
-                        renderAttendanceTable([]);
+                        renderAttendanceTable([], false);
                         updateStatistics();
                     }
                 })
@@ -485,18 +596,19 @@
                             Note: std.note
                         }));
 
-                        // Đọc canEdit từ option được chọn
-                        const lessonSelect = document.getElementById("lessonSelect");
-                        const selectedOption = lessonSelect.options[lessonSelect.selectedIndex];
-                        const canEdit = selectedOption ? (selectedOption.getAttribute("data-can-edit") === "true") : true;
+                        // Đọc canEdit từ dropdown buổi học
+                        const lessonInput = document.getElementById("lessonSelect");
+                        const dropdownOptions = document.getElementById("lessonDropdownOptions");
+                        const activeOpt = dropdownOptions.querySelector(`[data-value="${lessonId}"]`);
+                        const canEdit = activeOpt ? (activeOpt.getAttribute("data-can-edit") === "true") : true;
 
                         // Ẩn/Hiện alert
                         const alertEl = document.getElementById("attendanceAlert");
                         if (alertEl) {
                             if (canEdit) {
-                                alertEl.classList.add("d-none");
+                                alertEl.classList.add("hidden");
                             } else {
-                                alertEl.classList.remove("d-none");
+                                alertEl.classList.remove("hidden");
                             }
                         }
 
@@ -508,6 +620,7 @@
 
                         renderAttendanceTable(studentAttendancesData, canEdit);
                         updateStatistics();
+                        
                         // Reset tìm kiếm
                         document.getElementById("studentSearchInput").value = "";
                     } else {
@@ -539,7 +652,7 @@
             const pageItems = attendanceHistoryData.slice(start, end);
 
             if (pageItems.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-gray-500">Chưa có lịch sử điểm danh nào.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-slate-400 font-bold">Chưa có lịch sử điểm danh nào.</td></tr>`;
                 if (paginationEl) paginationEl.innerHTML = "";
                 return;
             }
@@ -547,21 +660,27 @@
             pageItems.forEach((h, index) => {
                 const indexGlobal = start + index + 1;
                 const tr = document.createElement("tr");
+                tr.className = "group hover:bg-slate-50 transition-colors border-b border-gray-200";
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${indexGlobal}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${h.dateString || h.DateString}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${h.className || h.ClassName}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center"><span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-800 font-bold text-sm">${h.presentCount ?? h.PresentCount}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center"><span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-100 text-red-800 font-bold text-sm">${h.absentCount ?? h.AbsentCount}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center"><span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-800 font-bold text-sm">${h.lateCount ?? h.LateCount}</span></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">${h.attendanceRate || h.AttendanceRate}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <button class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors view-history-detail" data-lesson-id="${h.lessonId || h.LessonId}" title="Xem chi tiết">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
-                                <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
-                            </svg>
-                        </button>
+                    <td class="py-3.5 px-4 text-center font-bold text-slate-500 border-r border-gray-200">${indexGlobal}</td>
+                    <td class="py-3.5 px-6 text-center border-r border-gray-200 font-semibold text-slate-700">${h.dateString || h.DateString}</td>
+                    <td class="py-3.5 px-6 border-r border-gray-200 truncate">
+                        <span class="inline-block px-2 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200 truncate max-w-full" title="${h.className || h.ClassName}">
+                            ${h.className || h.ClassName}
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-6 text-center border-r border-gray-200 font-bold text-green-600">${h.presentCount ?? h.PresentCount}</td>
+                    <td class="py-3.5 px-6 text-center border-r border-gray-200 font-bold text-red-500">${h.absentCount ?? h.AbsentCount}</td>
+                    <td class="py-3.5 px-6 text-center border-r border-gray-200 font-bold text-amber-500">${h.lateCount ?? h.LateCount}</td>
+                    <td class="py-3.5 px-6 text-center border-r border-gray-200 font-bold text-blue-700">${h.attendanceRate || h.AttendanceRate}</td>
+                    <td class="py-3.5 px-6 text-center">
+                        <div class="flex items-center justify-center">
+                            <button type="button" class="view-history-detail inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors shadow-sm" data-lesson-id="${h.lessonId || h.LessonId}" title="Xem chi tiết">
+                                <svg class="h-5 w-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -571,19 +690,21 @@
             renderHistoryPagination(totalPages, totalItems);
         }
 
+        // Render Pagination đồng bộ với Owner
         function renderHistoryPagination(totalPages, totalItems) {
             const container = document.getElementById("attendanceHistoryPagination");
             if (!container) return;
 
-            let html = `<div class="flex flex-wrap items-center justify-center gap-6 rounded-b-2xl border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">`;
+            let html = `<div class="flex flex-wrap items-center justify-center gap-6 border-t border-gray-200 bg-white px-6 py-4 text-sm text-gray-600">`;
             
+            // Cụm các trang
             html += `<div class="flex items-center gap-1">`;
             
             // Trang đầu
-            html += `<button class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600 page-link-btn" data-page="1" ${historyCurrentPage === 1 ? 'disabled' : ''}>«</button>`;
+            html += `<button type="button" class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 ${historyCurrentPage === 1 ? 'pointer-events-none opacity-40' : ''}" data-page="1" ${historyCurrentPage === 1 ? 'disabled' : ''} title="Trang đầu">&laquo;</button>`;
             
             // Trang trước
-            html += `<button class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-400 hover:bg-blue-50 hover:text-blue-600 page-link-btn" data-page="${Math.max(1, historyCurrentPage - 1)}" ${historyCurrentPage === 1 ? 'disabled' : ''}>‹</button>`;
+            html += `<button type="button" class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 ${historyCurrentPage === 1 ? 'pointer-events-none opacity-40' : ''}" data-page="${historyCurrentPage - 1}" ${historyCurrentPage === 1 ? 'disabled' : ''} title="Trang trước">&lsaquo;</button>`;
 
             let startPage = Math.max(1, historyCurrentPage - 2);
             let endPage = Math.min(totalPages, startPage + 4);
@@ -593,33 +714,30 @@
 
             for (let i = startPage; i <= endPage; i++) {
                 if (i === historyCurrentPage) {
-                    html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded bg-blue-100 text-blue-700 font-semibold" data-page="${i}">${i}</button>`;
+                    html += `<button type="button" class="page-link-btn inline-flex h-9 min-w-9 items-center justify-center rounded px-3 font-medium transition-colors bg-blue-100 text-blue-700" data-page="${i}">${i}</button>`;
                 } else {
-                    html += `<button class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition-colors" data-page="${i}">${i}</button>`;
+                    html += `<button type="button" class="page-link-btn inline-flex h-9 min-w-9 items-center justify-center rounded px-3 font-medium transition-colors text-gray-600 hover:bg-blue-50 hover:text-blue-600" data-page="${i}">${i}</button>`;
                 }
             }
 
             // Trang tiếp
-            html += `<button class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600 page-link-btn" data-page="${Math.min(totalPages, historyCurrentPage + 1)}" ${historyCurrentPage === totalPages ? 'disabled' : ''}>›</button>`;
+            html += `<button type="button" class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 ${historyCurrentPage === totalPages || totalPages === 0 ? 'pointer-events-none opacity-40' : ''}" data-page="${historyCurrentPage + 1}" ${historyCurrentPage === totalPages || totalPages === 0 ? 'disabled' : ''} title="Trang sau">&rsaquo;</button>`;
             
             // Trang cuối
-            html += `<button class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 hover:bg-blue-50 hover:text-blue-600 page-link-btn" data-page="${totalPages}" ${historyCurrentPage === totalPages ? 'disabled' : ''}>»</button>`;
+            html += `<button type="button" class="page-link-btn inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600 ${historyCurrentPage === totalPages || totalPages === 0 ? 'pointer-events-none opacity-40' : ''}" data-page="${totalPages}" ${historyCurrentPage === totalPages || totalPages === 0 ? 'disabled' : ''} title="Trang cuối">&raquo;</button>`;
             html += `</div>`;
 
             // Tổng số bản ghi
-            html += `<div class="font-medium text-gray-600">Tổng số: ${totalItems} bản ghi</div>`;
-
+            html += `<div class="flex items-center gap-4">`;
+            html += `<span>Tổng số: ${totalItems} bản ghi</span>`;
+            
             // Chọn số lượng hiển thị
-            html += `<div class="flex items-center">
-                        <select class="page-size-select h-10 rounded border border-blue-300 bg-white px-3 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                            <option value="10" ${historyPageSize === 10 ? 'selected' : ''}>10</option>
-                            <option value="20" ${historyPageSize === 20 ? 'selected' : ''}>20</option>
-                            <option value="50" ${historyPageSize === 50 ? 'selected' : ''}>50</option>
-                            <option value="100" ${historyPageSize === 100 ? 'selected' : ''}>100</option>
-                            <option value="200" ${historyPageSize === 200 ? 'selected' : ''}>200</option>
-                            <option value="500" ${historyPageSize === 500 ? 'selected' : ''}>500</option>
-                        </select>
-                     </div>`;
+            html += `<select class="page-size-select h-10 rounded border border-blue-400 bg-white px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100">
+                        <option value="10" ${historyPageSize === 10 ? 'selected' : ''}>10</option>
+                        <option value="20" ${historyPageSize === 20 ? 'selected' : ''}>20</option>
+                        <option value="50" ${historyPageSize === 50 ? 'selected' : ''}>50</option>
+                     </select>`;
+            html += `</div>`;
             html += `</div>`;
 
             container.innerHTML = html;
@@ -648,7 +766,7 @@
             tbody.innerHTML = "";
 
             if (studentsList.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-10 text-center text-gray-500">Không tìm thấy học sinh nào.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="py-12 text-center text-slate-400 font-bold">Không tìm thấy học sinh nào.</td></tr>`;
                 return;
             }
 
@@ -657,30 +775,35 @@
             studentsList.forEach((std, index) => {
                 const tr = document.createElement("tr");
                 tr.setAttribute("data-student-id", std.StudentId);
+                tr.className = "group hover:bg-slate-50 transition-colors border-b border-gray-200";
+                
                 const stdName = std.StudentName || "";
-                const avatarText = stdName.substring(0, Math.min(2, stdName.length)).toUpperCase() || "??";
+                const avatarText = stdName.substring(0, Math.Min(2, stdName.length)).toUpperCase() || "??";
+                
                 tr.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${index + 1}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
+                    <td class="py-3.5 px-4 text-center font-bold text-slate-500 border-r border-gray-200">${index + 1}</td>
+                    <td class="py-3.5 px-6 border-r border-gray-200">
                         <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">${avatarText}</div>
-                            <div class="ml-4">
-                                <div class="text-sm font-bold text-gray-900">${stdName}</div>
-                                <div class="text-sm text-gray-500">Mã: ${std.StudentCode || ""}</div>
+                            <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-50 text-blue-650 flex items-center justify-center font-extrabold text-sm border border-blue-100">${avatarText}</div>
+                            <div class="ml-3">
+                                <div class="text-sm font-bold text-gray-900 leading-tight">${stdName}</div>
+                                <div class="text-xs text-slate-400 font-semibold mt-0.5">Mã: ${std.StudentCode || ""}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <td class="py-3.5 px-6 text-center border-r border-gray-200">
                         <span class="status-badge ${getBadgeClass(std.Status)}" id="badge-${std.StudentId}">
                             ${getBadgeText(std.Status)}
                         </span>
                     </td>
-                    <td class="px-6 py-4"><input type="text" class="notes-input border-gray-300 rounded-md w-full focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 border" id="note-${std.StudentId}" value="${std.Note || ''}" placeholder="Nhập ghi chú..." ${disabledAttr} /></td>
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <div class="inline-flex rounded-md shadow-sm" role="group">
-                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-present-select ${std.Status === 'Present' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Có mặt</button>
-                            <button class="px-3 py-1 text-sm font-medium border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-late-select ${std.Status === 'Late' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Muộn</button>
-                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-r-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-absent-select ${std.Status === 'Absent' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Vắng</button>
+                    <td class="py-3.5 px-6 border-r border-gray-200">
+                        <input type="text" class="notes-input" id="note-${std.StudentId}" value="${std.Note || ''}" placeholder="Nhập ghi chú..." ${disabledAttr} />
+                    </td>
+                    <td class="py-3.5 px-6 text-center">
+                        <div class="inline-flex rounded-xl border border-slate-200 overflow-hidden shadow-sm" role="group">
+                            <button type="button" class="px-3.5 py-2 text-xs font-bold transition-all btn-status btn-present-select ${std.Status === 'Present' ? 'bg-green-600 text-white' : 'text-slate-700 bg-white hover:bg-slate-50'}" ${disabledAttr} data-id="${std.StudentId}">Có mặt</button>
+                            <button type="button" class="px-3.5 py-2 text-xs font-bold border-l border-r border-slate-200 transition-all btn-status btn-late-select ${std.Status === 'Late' ? 'bg-amber-500 text-white' : 'text-slate-700 bg-white hover:bg-slate-50'}" ${disabledAttr} data-id="${std.StudentId}">Muộn</button>
+                            <button type="button" class="px-3.5 py-2 text-xs font-bold transition-all btn-status btn-absent-select ${std.Status === 'Absent' ? 'bg-red-500 text-white' : 'text-slate-700 bg-white hover:bg-slate-50'}" ${disabledAttr} data-id="${std.StudentId}">Vắng</button>
                         </div>
                     </td>
                 `;
@@ -741,11 +864,18 @@
             // Cập nhật giao diện nút bấm trong dòng tương ứng
             const row = clickedBtn.closest("tr");
             row.querySelectorAll(".btn-status").forEach(btn => {
-                btn.classList.remove("btn-status-active", "text-blue-700", "bg-gray-100", "ring-2", "ring-blue-700");
-                btn.classList.add("text-gray-900", "bg-white");
+                btn.className = "px-3.5 py-2 text-xs font-bold transition-all btn-status text-slate-700 bg-white hover:bg-slate-50";
             });
-            clickedBtn.classList.add("btn-status-active", "text-blue-700", "bg-gray-100", "ring-2", "ring-blue-700");
-            clickedBtn.classList.remove("text-gray-900", "bg-white");
+            
+            // Thêm border-l, border-r cho nút ở giữa
+            const btnLate = row.querySelector(".btn-late-select");
+            if (btnLate) {
+                btnLate.classList.add("border-l", "border-r", "border-slate-200");
+            }
+            
+            const activeBgClass = status === "Present" ? "bg-green-600" :
+                                  status === "Late" ? "bg-amber-500" : "bg-red-500";
+            clickedBtn.className = `px-3.5 py-2 text-xs font-bold transition-all btn-status ${activeBgClass} text-white`;
 
             // Cập nhật badge
             const badge = document.getElementById(`badge-${studentId}`);
@@ -761,9 +891,17 @@
             document.querySelectorAll(".view-history-detail").forEach(btn => {
                 btn.addEventListener("click", function () {
                     const lessonId = parseInt(this.getAttribute("data-lesson-id"));
-                    const lessonSelect = document.getElementById("lessonSelect");
                     
-                    lessonSelect.value = lessonId;
+                    const lessonInput = document.getElementById("lessonSelect");
+                    const lessonDropdownLabel = document.getElementById("lessonDropdownLabel");
+                    const dropdownOptions = document.getElementById("lessonDropdownOptions");
+                    const activeOpt = dropdownOptions.querySelector(`[data-value="${lessonId}"]`);
+                    
+                    lessonInput.value = lessonId;
+                    if (activeOpt) {
+                        lessonDropdownLabel.textContent = activeOpt.textContent.trim();
+                    }
+                    
                     loadAttendanceForLesson(lessonId);
                     
                     // Cuộn trang lên trên để xem bảng
@@ -853,7 +991,6 @@
                 if (std.Status === "Present") present++;
                 else if (std.Status === "Absent") absent++;
                 else if (std.Status === "Late") late++;
-                // Nếu chưa điểm danh, ta có thể mặc định là Có mặt trong thống kê hoặc bỏ qua
                 else total--; // Không tính vào tổng nếu chưa điểm danh
             });
 
@@ -879,7 +1016,7 @@
         // Hàm helper lấy text kèm icon của Badge
         function getBadgeText(status) {
             if (status === "Present") {
-                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Có mặt`;
+                return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>Có mặt`;
             } else if (status === "Late") {
                 return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>Muộn`;
             } else if (status === "Absent") {

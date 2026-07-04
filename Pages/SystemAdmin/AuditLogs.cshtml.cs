@@ -17,7 +17,7 @@ public class AuditLogsModel : PageModel
         _context = context;
     }
 
-    public List<SystemAuditLog> Logs { get; set; } = new();
+    public List<AuditLogRow> Logs { get; set; } = new();
 
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
@@ -41,9 +41,8 @@ public class AuditLogsModel : PageModel
         ViewData["ActivePage"] = "SystemAuditLogs";
         
         var query = _context.SystemAuditLogs
+            .AsNoTracking()
             .Include(l => l.ActorUser)
-            .Include(l => l.TargetCenter)
-            .Include(l => l.TargetProject)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(Search))
@@ -77,7 +76,39 @@ public class AuditLogsModel : PageModel
             .OrderByDescending(l => l.CreatedAt)
             .Skip((PageNumber - 1) * PageSize)
             .Take(PageSize)
-            .AsNoTracking()
+            .Select(l => new AuditLogRow
+            {
+                CreatedAt = l.CreatedAt,
+                Action = l.Action,
+                ActorUserId = l.ActorUserId,
+                ActorFullName = l.ActorUser != null ? l.ActorUser.FullName : null,
+                EntityName = l.EntityName,
+                EntityId = l.EntityId,
+                TargetCenterName = l.TargetCenterId == null
+                    ? null
+                    : _context.Centers
+                        .Where(c => c.CenterId == l.TargetCenterId.Value)
+                        .Select(c => c.CenterName)
+                        .FirstOrDefault(),
+                TargetProjectName = l.TargetProjectId == null
+                    ? null
+                    : _context.Projects
+                        .Where(p => p.ProjectId == l.TargetProjectId.Value)
+                        .Select(p => p.ProjectName)
+                        .FirstOrDefault()
+            })
             .ToListAsync();
+    }
+
+    public sealed class AuditLogRow
+    {
+        public DateTime CreatedAt { get; set; }
+        public string Action { get; set; } = string.Empty;
+        public int ActorUserId { get; set; }
+        public string? ActorFullName { get; set; }
+        public string EntityName { get; set; } = string.Empty;
+        public string EntityId { get; set; } = string.Empty;
+        public string? TargetCenterName { get; set; }
+        public string? TargetProjectName { get; set; }
     }
 }

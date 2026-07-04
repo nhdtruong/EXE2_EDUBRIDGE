@@ -34,6 +34,31 @@
     <div class="w-full md:w-80 lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
         <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
             <h3 class="text-lg font-bold text-gray-900 mb-3">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
+            
+            @if (!User.IsInRole("PARENT"))
+            {
+                <!-- Class Selection for Teacher (Owner Dropdown Style) -->
+                <div class="mb-4">
+                    <label class="block text-[10px] font-extrabold text-slate-450 uppercase tracking-wider mb-1.5">Chọn lớp học</label>
+                    <input type="hidden" id="chatClassFilter" value="" data-filter-value="chat-class" />
+                    <div class="relative" data-search-dropdown id="chatClassDropdown">
+                        <button type="button" data-dropdown-toggle class="flex h-10 w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                            <span data-dropdown-label id="chatClassDropdownLabel">-- Chọn lớp học --</span>
+                            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                            <div class="relative p-2 border-b border-slate-100 bg-slate-50/50">
+                                <input type="text" data-dropdown-search class="h-9 w-full rounded-lg border border-slate-200 px-3 pr-8 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 bg-white" placeholder="Tìm lớp...">
+                                <svg class="absolute right-4.5 top-5.5 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <div class="max-h-48 overflow-y-auto" id="chatClassDropdownOptions">
+                                <!-- Loaded dynamically via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
             <div class="relative">
                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center" style="padding-left: 0.75rem;">
                     <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -43,14 +68,23 @@
         </div>
 
         <div class="flex-1 overflow-y-auto p-3" id="conversationsContainer">
-            <div class="text-center py-8 text-gray-500">
-                <svg class="mx-auto h-8 w-8 text-gray-300 mb-2 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                Đang tải...
-            </div>
+            @if (User.IsInRole("PARENT"))
+            {
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="mx-auto h-8 w-8 text-gray-300 mb-2 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Đang tải danh sách giáo viên...
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-8 text-slate-450 font-bold text-sm px-4">
+                    Vui lòng chọn lớp học phía trên để xem danh sách phụ huynh học sinh của lớp đó.
+                </div>
+            }
         </div>
     </div>
 
-    <!-- Right: Chat -->
+    <!-- Right: Chat Area -->
     <div class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="chatAreaContainer" style="display: none;">
         <!-- Header -->
         <div class="px-6 py-4 border-b border-gray-200 bg-white flex items-center shadow-sm z-10">
@@ -137,10 +171,6 @@
     <!-- Nhúng thư viện SignalR Client -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
 
-    <style>
-        /* Add any custom styles here if needed */
-    </style>
-
     <script>
         function closeBroadcastModal() {
             const modal = document.getElementById('broadcastModal');
@@ -150,12 +180,107 @@
         const currentUserId = @Model.CurrentUserId;
         const isParent = @(User.IsInRole("PARENT") ? "true" : "false");
         let selectedParentUserId = null;
+        let selectedClassId = null; // ID lớp học được giáo viên chọn
         let conversationsData = [];
         let connection = null;
 
+        // Custom search dropdown logic (Owner style)
+        function initSearchDropdowns() {
+            document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+                const container = dropdown.parentElement;
+                const hiddenInput = container.querySelector('[data-filter-value]');
+                const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+                const panel = dropdown.querySelector('[data-dropdown-panel]');
+                const label = dropdown.querySelector('[data-dropdown-label]');
+                const searchInput = dropdown.querySelector('[data-dropdown-search]');
+
+                function close() {
+                    panel.classList.add('hidden');
+                }
+
+                function open() {
+                    document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                    panel.classList.remove('hidden');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        filterOptions('');
+                        searchInput.focus();
+                    }
+                }
+
+                function filterOptions(keyword) {
+                    const normalizedKeyword = keyword.trim().toLowerCase();
+                    const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+                    options.forEach(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        const optionLabelText = (option.dataset.label || '').toLowerCase();
+                        const visible = !normalizedKeyword ||
+                            text.includes(normalizedKeyword) ||
+                            optionLabelText.includes(normalizedKeyword);
+                        option.classList.toggle('hidden', !visible);
+                    });
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+                    if (panel.classList.contains('hidden')) {
+                        open();
+                    } else {
+                        close();
+                    }
+                });
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+                    searchInput.addEventListener('click', event => event.stopPropagation());
+                }
+
+                // Gán sự kiện click cho các option động
+                dropdown.addEventListener('click', event => {
+                    const option = event.target.closest('[data-dropdown-option]');
+                    if (option) {
+                        hiddenInput.value = option.dataset.value || '';
+                        label.textContent = option.dataset.label || option.textContent.trim();
+                        close();
+                        
+                        hiddenInput.dispatchEvent(new Event('change'));
+                    }
+                });
+
+                document.addEventListener('click', event => {
+                    if (!dropdown.contains(event.target)) {
+                        close();
+                    }
+                });
+            });
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
-            // 1. Tải danh sách cuộc hội thoại ban đầu
-            loadConversations();
+            initSearchDropdowns();
+
+            if (isParent) {
+                // 1. Tải danh sách cuộc hội thoại ban đầu của phụ huynh
+                loadConversations();
+            } else {
+                // Tải danh sách các lớp học của giáo viên để nạp vào dropdown
+                loadTeacherClasses();
+                
+                // Đăng ký sự kiện thay đổi Lớp học để tải danh sách phụ huynh tương ứng
+                document.getElementById("chatClassFilter").addEventListener("change", function () {
+                    const classId = this.value;
+                    selectedClassId = classId ? parseInt(classId) : null;
+                    if (selectedClassId) {
+                        loadConversationsForClass(selectedClassId);
+                    } else {
+                        conversationsData = [];
+                        document.getElementById("conversationsContainer").innerHTML = `
+                            <div class="text-center py-8 text-slate-450 font-bold text-sm px-4">
+                                Vui lòng chọn lớp học phía trên để xem danh sách phụ huynh học sinh của lớp đó.
+                            </div>
+                        `;
+                    }
+                });
+            }
 
             // 2. Thiết lập kết nối SignalR realtime chat
             setupSignalR();
@@ -179,7 +304,7 @@
                     c.parentName.toLowerCase().includes(query) || 
                     c.studentNames.toLowerCase().includes(query)
                 );
-                renderConversations(filtered);
+                renderConversations(filtered, selectedParentUserId);
             });
 
             // 5. Mở Modal gửi thông báo chung (chỉ dành cho giáo viên)
@@ -316,7 +441,6 @@
                 .then(res => {
                     btn.disabled = false;
                     btn.innerHTML = originalSvg;
-                    // Reset input file
                     document.getElementById("chatFileInput").value = "";
 
                     const isSuccess = res.success || res.Success;
@@ -355,6 +479,64 @@
             });
         });
 
+        // Tải danh sách lớp học của Giáo viên và nạp vào dropdown
+        function loadTeacherClasses() {
+            const dropdownOptions = document.getElementById("chatClassDropdownOptions");
+            if (!dropdownOptions) return;
+
+            dropdownOptions.innerHTML = `<div class="text-center py-2 text-xs text-slate-400">Đang tải danh sách lớp...</div>`;
+
+            fetch('/api/v1/teacher/notifications/classes')
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        dropdownOptions.innerHTML = "";
+                        res.data.forEach(c => {
+                            const btn = document.createElement("button");
+                            btn.type = "button";
+                            btn.className = "block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors";
+                            btn.setAttribute("data-dropdown-option", "");
+                            btn.setAttribute("data-value", c.classId);
+                            btn.setAttribute("data-label", c.className);
+                            btn.textContent = c.className;
+                            dropdownOptions.appendChild(btn);
+                        });
+                    } else {
+                        dropdownOptions.innerHTML = `<div class="text-center py-2 text-xs text-rose-500">${res.message}</div>`;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    dropdownOptions.innerHTML = `<div class="text-center py-2 text-xs text-rose-500">Lỗi tải dữ liệu.</div>`;
+                });
+        }
+
+        // Tải danh sách phụ huynh theo Lớp học được chọn
+        function loadConversationsForClass(classId, activeUserId = null) {
+            const container = document.getElementById("conversationsContainer");
+            container.innerHTML = `
+                <div class="text-center py-8 text-gray-500">
+                    <svg class="mx-auto h-8 w-8 text-gray-300 mb-2 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Đang tải phụ huynh...
+                </div>
+            `;
+
+            fetch(`/api/v1/teacher/chat/class-parents?classId=${classId}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        conversationsData = res.data;
+                        renderConversations(conversationsData, activeUserId);
+                    } else {
+                        showToast(res.message, false);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    container.innerHTML = `<div class="text-center py-4 text-rose-500">Lỗi tải danh sách phụ huynh.</div>`;
+                });
+        }
+
         // Thiết lập kết nối SignalR
         function setupSignalR() {
             connection = new signalR.HubConnectionBuilder()
@@ -363,11 +545,8 @@
                 .build();
 
             connection.on("ReceiveMessage", function (payload) {
-                // payload: { messageId, senderUserId, receiverUserId, content, sentAt (string), isRead }
                 const senderId = payload.senderUserId;
                 const receiverId = payload.receiverUserId;
-
-                // Xác định đối tượng chat liên quan (không phải là chính mình)
                 const contactId = (senderId === currentUserId) ? receiverId : senderId;
 
                 // Nếu tin nhắn thuộc về cuộc trò chuyện đang mở
@@ -386,14 +565,18 @@
                     const messagesContainer = document.getElementById("messagesBodyContainer");
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-                    // Nếu là tin nhắn gửi đến, tự động đánh dấu đã đọc
+                    // Đánh dấu đã đọc
                     if (senderId === selectedParentUserId) {
                         markConversationAsRead(selectedParentUserId);
                     }
                 }
 
-                // Cập nhật lại Sidebar để làm mới tin nhắn cuối cùng và số lượng tin chưa đọc
-                loadConversations(selectedParentUserId);
+                // Cập nhật lại Sidebar tin nhắn
+                if (isParent) {
+                    loadConversations(selectedParentUserId);
+                } else if (selectedClassId) {
+                    loadConversationsForClass(selectedClassId, selectedParentUserId);
+                }
             });
 
             connection.start()
@@ -404,10 +587,9 @@
                 });
         }
 
-        // Tải danh sách cuộc hội thoại
+        // Tải danh sách cuộc hội thoại (Parent)
         function loadConversations(activeUserId = null) {
-            const conversationsUrl = isParent ? '/api/v1/parent/chat/conversations' : '/api/v1/teacher/chat/conversations';
-            fetch(conversationsUrl)
+            fetch('/api/v1/parent/chat/conversations')
                 .then(res => res.json())
                 .then(res => {
                     if (res.success) {
@@ -420,7 +602,7 @@
                 .catch(err => {
                     console.error(err);
                     document.getElementById("conversationsContainer").innerHTML = 
-                        `<div class="text-center py-4 text-danger">Lỗi tải danh sách cuộc hội thoại.</div>`;
+                        `<div class="text-center py-4 text-rose-500">Lỗi tải danh sách cuộc hội thoại.</div>`;
                 });
         }
 
@@ -430,7 +612,7 @@
             container.innerHTML = "";
 
             if (list.length === 0) {
-                container.innerHTML = `<div class="text-center py-4 text-gray-500">Không tìm thấy cuộc hội thoại nào.</div>`;
+                container.innerHTML = `<div class="text-center py-8 text-gray-500 font-bold text-sm">Không tìm thấy cuộc hội thoại nào phù hợp.</div>`;
                 return;
             }
 
@@ -459,7 +641,7 @@
                         rawLastMsg = "Đã gửi 1 hình ảnh";
                     }
                 }
-                const lastMsgPreview = rawLastMsg.length > 40 ? rawLastMsg.substring(0, 37) + "..." : rawLastMsg;
+                const lastMsgPreview = rawLastMsg.length > 35 ? rawLastMsg.substring(0, 32) + "..." : rawLastMsg;
                 const timeText = c.lastMessageTime ? c.lastMessageTime.split(" ")[1] || c.lastMessageTime : "";
 
                 const item = document.createElement("div");
@@ -473,7 +655,7 @@
                 item.className = itemClass;
                 item.setAttribute("data-contact-id", contactId);
                 
-                const studentLabel = isParent ? "" : `PH: ${studentNamesText}`;
+                const studentLabel = isParent ? "" : `HS: ${studentNamesText}`;
 
                 item.innerHTML = `
                     <div class="${avatarClass}">
@@ -482,12 +664,12 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex justify-between items-baseline mb-0.5">
-                            <h4 class="text-[15px] font-bold text-gray-900 truncate">${contactName}</h4>
-                            ${c.unreadCount > 0 ? `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${c.unreadCount}</span>` : ''}
+                            <h4 class="text-[14px] font-bold text-gray-900 truncate">${contactName}</h4>
+                            ${c.unreadCount > 0 ? `<span class="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">${c.unreadCount}</span>` : ''}
                         </div>
-                        ${studentLabel ? `<p class="text-[13px] text-gray-500 mb-1 truncate">${studentLabel}</p>` : ''}
-                        <p class="text-[13px] text-gray-600 truncate">${lastMsgPreview}</p>
-                        <p class="text-[11px] text-gray-400 mt-1">${timeText}</p>
+                        ${studentLabel ? `<p class="text-[11px] text-slate-500 mb-1 truncate leading-tight font-semibold">${studentLabel}</p>` : ''}
+                        <p class="text-[12px] text-gray-650 truncate">${lastMsgPreview}</p>
+                        <p class="text-[10px] text-gray-400 mt-1 font-semibold">${timeText}</p>
                     </div>
                 `;
 
@@ -509,7 +691,7 @@
 
             // Cập nhật Header
             document.getElementById("activeChatUsername").textContent = contactName;
-            document.getElementById("activeChatStudentInfo").textContent = isParent ? `Giáo viên` : `Phụ huynh: ${studentNames}`;
+            document.getElementById("activeChatStudentInfo").textContent = isParent ? `Giáo viên` : `Học sinh: ${studentNames}`;
             document.getElementById("activeChatAvatar").innerHTML = `
                 ${contactName ? contactName.charAt(0).toUpperCase() : "U"}
             `;
@@ -518,7 +700,7 @@
             renderConversations(conversationsData, contactId);
 
             // Tải lịch sử tin nhắn
-            document.getElementById("messagesBodyContainer").innerHTML = `<div class="text-center py-4 text-gray-500">Đang tải lịch sử tin nhắn...</div>`;
+            document.getElementById("messagesBodyContainer").innerHTML = `<div class="text-center py-4 text-gray-500 font-bold text-sm">Đang tải lịch sử tin nhắn...</div>`;
             
             const historyUrl = isParent ? `/api/v1/parent/chat/history?contactUserId=${contactId}` : `/api/v1/teacher/chat/history?contactUserId=${contactId}`;
 
@@ -527,8 +709,6 @@
                 .then(res => {
                     if (res.success) {
                         renderChatHistory(res.data);
-                        
-                        // Đánh dấu đã đọc trên DB
                         markConversationAsRead(contactId);
                     } else {
                         showToast(res.message, false);
@@ -555,7 +735,6 @@
                 appendMessageBubble(m);
             });
 
-            // Cuộn xuống dưới cùng
             container.scrollTop = container.scrollHeight;
         }
 
@@ -563,7 +742,6 @@
         function appendMessageBubble(m) {
             const container = document.getElementById("messagesBodyContainer");
             
-            // Xóa thông báo trống nếu có
             if (container.querySelector(".text-center.py-4")) {
                 container.innerHTML = "";
             }
@@ -573,7 +751,6 @@
             let isOut = m.isOutgoing;
             bubbleWrapper.className = `flex w-full mb-4 ${isOut ? 'justify-end' : 'justify-start'}`;
             
-            // Format time từ dd/MM/yyyy HH:mm chỉ lấy HH:mm
             const timeParts = m.sentAtString.split(" ");
             const timeOnly = timeParts[1] || m.sentAtString;
 
@@ -649,11 +826,10 @@
                 </div>
             `;
 
-
             container.appendChild(bubbleWrapper);
         }
 
-        // Gửi tin nhắn qua SignalR Hub
+        // Gửi tin nhắn
         function sendMessage() {
             if (!selectedParentUserId) return;
 
@@ -676,7 +852,7 @@
             }
         }
 
-        // Đánh dấu đã đọc cuộc hội thoại
+        // Đánh dấu đã đọc
         function markConversationAsRead(contactId) {
             const readUrl = isParent ? `/api/v1/parent/chat/read?contactUserId=${contactId}` : `/api/v1/teacher/chat/read?contactUserId=${contactId}`;
             fetch(readUrl, {
@@ -685,7 +861,6 @@
             .then(res => res.json())
             .then(res => {
                 if (res.success) {
-                    // Cập nhật lại số chưa đọc in-memory cho sidebar
                     const conv = conversationsData.find(c => (isParent ? c.teacherUserId : c.parentUserId) === contactId);
                     if (conv) {
                         conv.unreadCount = 0;

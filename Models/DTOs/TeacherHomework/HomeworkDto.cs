@@ -23,6 +23,7 @@ namespace EduBridge.Models.DTOs.TeacherHomework
         public int TotalStudents { get; set; }
         public int GradedCount { get; set; }
         public int PendingCount { get; set; }
+        public bool IsOverdue { get; set; }
     }
 
     public class CreateHomeworkRequest
@@ -58,9 +59,8 @@ namespace EduBridge.Models.DTOs.TeacherHomework
 
     public class GradeSubmissionRequest
     {
-        [Required(ErrorMessage = "Vui lòng nhập điểm số.")]
         [Range(0, 10, ErrorMessage = "Điểm số phải từ 0 đến 10.")]
-        public decimal Score { get; set; }
+        public decimal? Score { get; set; }
 
         public string? Feedback { get; set; }
     }

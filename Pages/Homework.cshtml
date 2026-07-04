@@ -330,7 +330,7 @@ else
                                     <div class="mt-2 w-full max-w-[120px] mx-auto bg-gray-200 rounded-full h-2">
                                         <div class="bg-blue-600 h-2 rounded-full" style="width: @submitPct%"></div>
                                     </div>
-                                </td>
+                                 </td>
                                 <td class="py-5 px-6 text-center border-r border-gray-200">
                                     <div class="font-semibold text-gray-900">@hw.GradedCount / @hw.SubmittedCount</div>
                                     <div class="mt-2 w-full max-w-[120px] mx-auto bg-gray-200 rounded-full h-2">
@@ -747,16 +747,22 @@ else
                                     const fileUrl = sub.submissionFileUrl || sub.SubmissionFileUrl;
                                     const content = sub.submissionContent || sub.SubmissionContent;
 
+
                                     let submissionContent = content || '<span class="text-gray-400 italic">Chưa nộp bài</span>';
+                                    if (content && content.includes("Giáo viên chủ động chấm điểm trực tiếp")) {
+                                        submissionContent = '<span class="text-gray-400 italic">Chưa nộp bài (Chấm trực tiếp)</span>';
+                                    }
                                     const badgeClass = status === 'Graded' ? 'bg-green-100 text-green-700' : (status === 'Submitted' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700');
                                     const statusText = status === 'Graded' ? 'Đã chấm' : (status === 'Submitted' ? 'Chờ chấm' : 'Chưa nộp');
                                     
                                     // Xử lý an toàn cho Score (Điểm số)
                                     let scoreValue = '';
-                                    if (sub.score !== undefined && sub.score !== null) {
-                                        scoreValue = sub.score;
-                                    } else if (sub.Score !== undefined && sub.Score !== null) {
-                                        scoreValue = sub.Score;
+                                    const rawScore = sub.score !== undefined && sub.score !== null ? sub.score
+                                                   : (sub.Score !== undefined && sub.Score !== null ? sub.Score : null);
+                                    if (rawScore !== null && rawScore !== undefined) {
+                                        // Chuẩn hóa: thay dấu phẩy thành dấu chấm, parse về số thực
+                                        const parsed = parseFloat(String(rawScore).replace(',', '.'));
+                                        if (!isNaN(parsed)) scoreValue = parsed;
                                     }
 
                                     // Xử lý an toàn cho Feedback (Nhận xét)
@@ -835,8 +841,9 @@ else
                                         const score = scoreInput.value;
                                         const feedback = feedbackInput.value;
 
-                                        if (score === "" || isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10) {
-                                            window.showToast("Vui lòng nhập điểm số hợp lệ từ 0 đến 10.", false);
+                                        // Điểm số không bắt buộc; chỉ validate khoảng nếu có nhập
+                                        if (score !== "" && (isNaN(score) || parseFloat(score) < 0 || parseFloat(score) > 10)) {
+                                            window.showToast("Điểm số không hợp lệ. Vui lòng nhập số từ 0 đến 10.", false);
                                             return;
                                         }
 

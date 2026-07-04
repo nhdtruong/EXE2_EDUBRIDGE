@@ -1,0 +1,670 @@
+@page
+@model EduBridge.Pages.Teacher.ClassesModel
+@{
+    Layout = "_TeacherLayout";
+    ViewData["Title"] = Model.SelectedClass != null ? $"Chi tiết lớp {Model.SelectedClass.ClassName}" : "Lớp học đang dạy";
+}
+
+@if (Model.SelectedClass == null)
+{
+    <!-- Master View: Danh sách lớp học -->
+    <div class="mb-6 p-6 rounded-3xl bg-gradient-to-br from-white to-blue-50 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-blue-700">Lớp học phụ trách</h1>
+            <p class="text-slate-500 mt-1 text-sm font-medium">Danh sách các lớp học bạn đang trực tiếp giảng dạy</p>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm flex items-center gap-2 shadow-sm font-medium">
+            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <!-- Filter/Search Section for Classes -->
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Search Input -->
+            <div class="relative">
+                <input type="text" id="classSearchInput" class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white" placeholder="Tìm mã lớp, tên lớp, môn học...">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+            
+            <!-- Status Dropdown (Owner Search Dropdown Component) -->
+            <div>
+                <input type="hidden" id="statusFilter" value="" data-filter-value="status" />
+                <div class="relative" data-search-dropdown>
+                    <button type="button" data-dropdown-toggle class="flex h-[38px] w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 text-left text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        <span data-dropdown-label>Trạng thái: Tất cả</span>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                        <div class="relative p-2 border-b border-slate-100 bg-slate-50/50">
+                            <input type="text" data-dropdown-search class="h-9 w-full rounded-lg border border-slate-200 px-3 pr-8 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 bg-white" placeholder="Tìm trạng thái...">
+                            <svg class="absolute right-4.5 top-5.5 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <div class="max-h-48 overflow-y-auto">
+                            <button type="button" data-dropdown-option data-value="" data-label="Trạng thái: Tất cả" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Tất cả</button>
+                            <button type="button" data-dropdown-option data-value="ACTIVE" data-label="Trạng thái: Đang dạy" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Đang dạy</button>
+                            <button type="button" data-dropdown-option data-value="UPCOMING" data-label="Trạng thái: Sắp mở" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Sắp mở</button>
+                            <button type="button" data-dropdown-option data-value="COMPLETED" data-label="Trạng thái: Đã kết thúc" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Đã kết thúc</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center">
+                <button type="button" id="btnResetFilters" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold rounded-xl transition-all shadow-sm border border-slate-200 flex items-center justify-center gap-1.5 h-[38px] w-full md:w-auto">
+                    Làm mới bộ lọc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classes Table Block (table-fixed for strict column alignment) -->
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden mb-8">
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-slate-600 text-sm table-fixed min-w-[850px]">
+                <thead class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold uppercase text-[11px] tracking-wider">
+                    <tr>
+                        <th scope="col" class="px-4 py-4 text-center w-[6%] border-r border-slate-200">STT</th>
+                        <th scope="col" onclick="sortClasses('ClassCode')" class="px-4 py-4 text-left w-[14%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-between">
+                                <span>Mã lớp</span>
+                                <span id="sort-icon-ClassCode" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" onclick="sortClasses('ClassName')" class="px-4 py-4 text-left w-[24%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-between">
+                                <span>Tên lớp</span>
+                                <span id="sort-icon-ClassName" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" onclick="sortClasses('CourseName')" class="px-4 py-4 text-left w-[20%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-between">
+                                <span>Môn học</span>
+                                <span id="sort-icon-CourseName" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" class="px-4 py-4 text-center w-[10%] border-r border-slate-200">Phòng</th>
+                        <th scope="col" onclick="sortClasses('StartDate')" class="px-4 py-4 text-center w-[12%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-center gap-1">
+                                <span class="text-center">Khai giảng</span>
+                                <span id="sort-icon-StartDate" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" onclick="sortClasses('StudentCount')" class="px-4 py-4 text-center w-[10%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-center gap-1">
+                                <span class="text-center">Sĩ số</span>
+                                <span id="sort-icon-StudentCount" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" class="px-4 py-4 text-center w-[10%] border-r border-slate-200">Trạng thái</th>
+                        <th scope="col" class="px-4 py-4 text-center w-[10%]">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="classesTableBody" class="divide-y divide-slate-100 bg-white font-medium text-slate-800">
+                    <!-- Loaded dynamically via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Detail View: Thông tin lớp và Danh sách học sinh -->
+    <div class="mb-6 flex items-center justify-between">
+        <a href="/Teacher/Classes" class="inline-flex items-center px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-bold border border-slate-200 rounded-xl text-sm transition-all shadow-sm gap-2">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            Quay lại danh sách
+        </a>
+    </div>
+
+    <!-- Class Info Block -->
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-6 mb-6">
+        <div class="border-b border-slate-100 pb-4 mb-4 flex items-center space-x-2">
+            <div class="p-2 bg-blue-100 rounded-xl text-blue-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"></path></svg>
+            </div>
+            <div>
+                <h2 class="text-xl font-extrabold text-slate-900">@Model.SelectedClass.ClassCode - @Model.SelectedClass.ClassName</h2>
+                <p class="text-slate-500 text-xs font-semibold">Chương trình học: @Model.SelectedClass.CourseName</p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Phòng học</span>
+                <span class="text-sm font-extrabold text-slate-800">@Model.SelectedClass.Room</span>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Lịch học hàng tuần</span>
+                <span class="text-sm font-extrabold text-slate-800">@Model.SelectedClass.ScheduleText</span>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Thời gian học</span>
+                <span class="text-sm font-extrabold text-slate-800">@Model.SelectedClass.StartDate.ToString("dd/MM/yyyy") - @Model.SelectedClass.EndDate.ToString("dd/MM/yyyy")</span>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sĩ số lớp</span>
+                <span class="text-sm font-extrabold text-blue-700">👥 @Model.SelectedClass.Students.Count học sinh</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter/Search Section for Students -->
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-5 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Student Search -->
+            <div class="relative">
+                <input type="text" id="studentSearchInput" class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white" placeholder="Tìm mã học sinh, họ tên, điện thoại, email...">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </div>
+            
+            <!-- Gender Dropdown -->
+            <div>
+                <input type="hidden" id="genderFilter" value="" data-filter-value="gender" />
+                <div class="relative" data-search-dropdown>
+                    <button type="button" data-dropdown-toggle class="flex h-[38px] w-full items-center justify-between rounded-xl border border-slate-200 bg-white px-3.5 text-left text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+                        <span data-dropdown-label>Giới tính: Tất cả</span>
+                        <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden w-full rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                        <div class="relative p-2 border-b border-slate-100 bg-slate-50/50">
+                            <input type="text" data-dropdown-search class="h-9 w-full rounded-lg border border-slate-200 px-3 pr-8 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-slate-400 bg-white" placeholder="Tìm giới tính...">
+                            <svg class="absolute right-4.5 top-5.5 h-3.5 w-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <div class="max-h-48 overflow-y-auto">
+                            <button type="button" data-dropdown-option data-value="" data-label="Giới tính: Tất cả" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Tất cả</button>
+                            <button type="button" data-dropdown-option data-value="Nam" data-label="Giới tính: Nam" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Nam</button>
+                            <button type="button" data-dropdown-option data-value="Nữ" data-label="Giới tính: Nữ" class="block w-full px-4 py-2 text-left text-sm font-semibold text-slate-755 hover:bg-blue-50/60 transition-colors">Nữ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-center">
+                <button type="button" id="btnResetStudentFilters" class="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-650 text-xs font-bold rounded-xl transition-all shadow-sm border border-slate-200 flex items-center justify-center gap-1.5 h-[38px] w-full md:w-auto">
+                    Làm mới bộ lọc
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Students Table Block (table-fixed for strict column alignment) -->
+    <div class="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden mb-8">
+        <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                Danh sách học sinh
+            </h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-slate-600 text-sm table-fixed min-w-[950px]">
+                <thead class="bg-slate-100 border-b border-slate-200 text-slate-800 font-bold uppercase text-[11px] tracking-wider">
+                    <tr>
+                        <th scope="col" class="px-4 py-4 text-center w-[6%] border-r border-slate-200">STT</th>
+                        <th scope="col" onclick="sortStudents('StudentCode')" class="px-4 py-4 text-left w-[14%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-between">
+                                <span>Mã học sinh</span>
+                                <span id="sort-icon-StudentCode" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" onclick="sortStudents('FullName')" class="px-4 py-4 text-left w-[24%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-between">
+                                <span>Họ và tên</span>
+                                <span id="sort-icon-FullName" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" onclick="sortStudents('DateOfBirth')" class="px-4 py-4 text-center w-[12%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-center gap-1">
+                                <span class="text-center">Ngày sinh</span>
+                                <span id="sort-icon-DateOfBirth" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" onclick="sortStudents('Gender')" class="px-4 py-4 text-center w-[10%] border-r border-slate-200 cursor-pointer hover:bg-slate-150 transition-colors select-none">
+                            <div class="flex items-center justify-center gap-1">
+                                <span class="text-center">Giới tính</span>
+                                <span id="sort-icon-Gender" class="text-slate-400 font-bold text-[10px]">↕</span>
+                            </div>
+                        </th>
+                        <th scope="col" class="px-4 py-4 text-center w-[14%] border-r border-slate-200">Số điện thoại</th>
+                        <th scope="col" class="px-4 py-4 text-left w-[20%] border-r border-slate-200">Email</th>
+                        <th scope="col" class="px-4 py-4 text-center w-[10%]">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody" class="divide-y divide-slate-100 bg-white font-medium text-slate-800">
+                    <!-- Loaded dynamically via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // component search dropdown (Owner style) cho cả Master và Detail
+        function initSearchDropdowns() {
+            document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+                const container = dropdown.parentElement;
+                const hiddenInput = container.querySelector('[data-filter-value]');
+                const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+                const panel = dropdown.querySelector('[data-dropdown-panel]');
+                const label = dropdown.querySelector('[data-dropdown-label]');
+                const searchInput = dropdown.querySelector('[data-dropdown-search]');
+                const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+                function close() {
+                    panel.classList.add('hidden');
+                }
+
+                function open() {
+                    document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                    panel.classList.remove('hidden');
+                    if (searchInput) {
+                        searchInput.value = '';
+                        filterOptions('');
+                        searchInput.focus();
+                    }
+                }
+
+                // Sửa lỗi hàm lọc các option dropdown
+                function filterOptions(keyword) {
+                    const normalizedKeyword = keyword.trim().toLowerCase();
+                    options.forEach(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        const optionLabelText = (option.dataset.label || '').toLowerCase();
+                        const visible = !normalizedKeyword ||
+                            text.includes(normalizedKeyword) ||
+                            optionLabelText.includes(normalizedKeyword);
+                        option.classList.toggle('hidden', !visible);
+                    });
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+                    if (panel.classList.contains('hidden')) {
+                        open();
+                    } else {
+                        close();
+                    }
+                });
+
+                if (searchInput) {
+                    searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+                    searchInput.addEventListener('click', event => event.stopPropagation());
+                }
+
+                options.forEach(option => {
+                    option.addEventListener('click', () => {
+                        hiddenInput.value = option.dataset.value || '';
+                        label.textContent = option.dataset.label || option.textContent.trim();
+                        close();
+                        
+                        // Kích hoạt sự kiện thay đổi bộ lọc
+                        hiddenInput.dispatchEvent(new Event('change'));
+                    });
+                });
+
+                document.addEventListener('click', event => {
+                    if (!dropdown.contains(event.target)) {
+                        close();
+                    }
+                });
+            });
+        }
+
+        // ================= MASTER CLASSES VIEW LOGIC =================
+        @if (Model.SelectedClass == null)
+        {
+            <text>
+            const classesData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Classes));
+            let filteredClasses = [...classesData];
+            let sortField = '';
+            let sortDirection = 'ASC'; // 'ASC' hoặc 'DESC'
+
+            document.addEventListener('DOMContentLoaded', () => {
+                initSearchDropdowns();
+                renderClassesTable();
+
+                // Lọc khi gõ ô tìm kiếm
+                document.getElementById('classSearchInput').addEventListener('input', filterClasses);
+                
+                // Lọc khi đổi trạng thái dropdown
+                document.getElementById('statusFilter').addEventListener('change', filterClasses);
+
+                // Nút Reset
+                document.getElementById('btnResetFilters').addEventListener('click', () => {
+                    document.getElementById('classSearchInput').value = '';
+                    
+                    const hiddenInput = document.getElementById('statusFilter');
+                    hiddenInput.value = '';
+                    
+                    const label = hiddenInput.parentElement.querySelector('[data-dropdown-label]');
+                    if (label) label.textContent = 'Trạng thái: Tất cả';
+                    
+                    // Reset sort
+                    sortField = '';
+                    sortDirection = 'ASC';
+                    updateSortIcons();
+
+                    filterClasses();
+                });
+            });
+
+            function filterClasses() {
+                const keyword = document.getElementById('classSearchInput').value.trim().toLowerCase();
+                const status = document.getElementById('statusFilter').value.trim().toUpperCase();
+
+                filteredClasses = classesData.filter(cls => {
+                    const matchKeyword = !keyword || 
+                        cls.ClassName.toLowerCase().includes(keyword) || 
+                        cls.ClassCode.toLowerCase().includes(keyword) || 
+                        cls.CourseName.toLowerCase().includes(keyword);
+                        
+                    const matchStatus = !status || cls.Status.toUpperCase() === status;
+
+                    return matchKeyword && matchStatus;
+                });
+
+                if (sortField) {
+                    applySortClasses();
+                }
+
+                renderClassesTable();
+            }
+
+            function sortClasses(field) {
+                if (sortField === field) {
+                    sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    sortField = field;
+                    sortDirection = 'ASC';
+                }
+
+                updateSortIcons();
+                applySortClasses();
+                renderClassesTable();
+            }
+
+            function updateSortIcons() {
+                const fields = ['ClassCode', 'ClassName', 'CourseName', 'StartDate', 'StudentCount'];
+                fields.forEach(f => {
+                    const iconSpan = document.getElementById(`sort-icon-${f}`);
+                    if (!iconSpan) return;
+                    if (f === sortField) {
+                        iconSpan.textContent = sortDirection === 'ASC' ? '▲' : '▼';
+                        iconSpan.className = 'text-blue-600 font-extrabold text-[10px]';
+                    } else {
+                        iconSpan.textContent = '↕';
+                        iconSpan.className = 'text-slate-400 font-bold text-[10px]';
+                    }
+                });
+            }
+
+            function applySortClasses() {
+                filteredClasses.sort((a, b) => {
+                    let valA = a[sortField];
+                    let valB = b[sortField];
+
+                    // Xử lý null/undefined
+                    if (valA === null || valA === undefined) valA = '';
+                    if (valB === null || valB === undefined) valB = '';
+
+                    // Sắp xếp
+                    if (typeof valA === 'string') {
+                        return sortDirection === 'ASC' 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    } else {
+                        return sortDirection === 'ASC' 
+                            ? valA - valB 
+                            : valB - valA;
+                    }
+                });
+            }
+
+            function renderClassesTable() {
+                const tbody = document.getElementById('classesTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                if (filteredClasses.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="9" class="text-center py-16 text-slate-400 font-bold">Không tìm thấy lớp học nào phù hợp.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                filteredClasses.forEach((cls, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'group hover:bg-slate-50 transition-colors border-b border-gray-200';
+                    
+                    let statusBadge = '';
+                    const statusUpper = cls.Status.toUpperCase();
+                    if (statusUpper === 'ACTIVE') {
+                        statusBadge = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200">Đang dạy</span>`;
+                    } else if (statusUpper === 'UPCOMING') {
+                        statusBadge = `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg border border-blue-200">Sắp mở</span>`;
+                    } else {
+                        statusBadge = `<span class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg border border-slate-200">Đã kết thúc</span>`;
+                    }
+
+                    // Xử lý ngày khai giảng định dạng DD/MM/YYYY
+                    let startDateFormatted = '';
+                    if (cls.StartDate) {
+                        const parts = cls.StartDate.split('-');
+                        if (parts.length === 3) {
+                            startDateFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                        } else {
+                            startDateFormatted = cls.StartDate;
+                        }
+                    }
+
+                    tr.innerHTML = `
+                        <td class="px-4 py-3.5 text-center text-slate-500 font-bold border-r border-gray-200">${idx + 1}</td>
+                        <td class="px-4 py-3.5 text-left border-r border-gray-200 truncate"><span class="px-2 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">${cls.ClassCode}</span></td>
+                        <td class="px-4 py-3.5 text-left border-r border-gray-200 truncate font-bold text-slate-900" title="${cls.ClassName}">${cls.ClassName}</td>
+                        <td class="px-4 py-3.5 text-left border-r border-gray-200 truncate text-slate-600" title="${cls.CourseName}">${cls.CourseName}</td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200 font-bold text-slate-700 truncate">${cls.Room}</td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200 font-semibold text-slate-600">${startDateFormatted}</td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200">
+                            <span class="inline-flex items-center text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                                👥 ${cls.StudentCount} học sinh
+                            </span>
+                        </td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200">${statusBadge}</td>
+                        <td class="px-4 py-3.5 text-center">
+                            <a href="?classId=${cls.ClassId}" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors" title="Xem chi tiết lớp học">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            </a>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            </text>
+        }
+        else // ================= DETAIL STUDENTS VIEW LOGIC =================
+        {
+            <text>
+            const studentsData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SelectedClass.Students));
+            let filteredStudents = [...studentsData];
+            let sortField = '';
+            let sortDirection = 'ASC';
+
+            document.addEventListener('DOMContentLoaded', () => {
+                initSearchDropdowns();
+                renderStudentsTable();
+
+                // Lọc khi gõ ô tìm kiếm
+                document.getElementById('studentSearchInput').addEventListener('input', filterStudents);
+                
+                // Lọc khi đổi giới tính dropdown
+                document.getElementById('genderFilter').addEventListener('change', filterStudents);
+
+                // Nút Reset
+                document.getElementById('btnResetStudentFilters').addEventListener('click', () => {
+                    document.getElementById('studentSearchInput').value = '';
+                    
+                    const hiddenInput = document.getElementById('genderFilter');
+                    hiddenInput.value = '';
+                    
+                    const label = hiddenInput.parentElement.querySelector('[data-dropdown-label]');
+                    if (label) label.textContent = 'Giới tính: Tất cả';
+                    
+                    // Reset sort
+                    sortField = '';
+                    sortDirection = 'ASC';
+                    updateSortIcons();
+
+                    filterStudents();
+                });
+            });
+
+            function filterStudents() {
+                const keyword = document.getElementById('studentSearchInput').value.trim().toLowerCase();
+                const gender = document.getElementById('genderFilter').value.trim().toLowerCase();
+
+                filteredStudents = studentsData.filter(student => {
+                    const matchKeyword = !keyword || 
+                        student.FullName.toLowerCase().includes(keyword) || 
+                        student.StudentCode.toLowerCase().includes(keyword) || 
+                        (student.PhoneNumber && student.PhoneNumber.includes(keyword)) ||
+                        (student.Email && student.Email.toLowerCase().includes(keyword));
+                        
+                    const matchGender = !gender || student.Gender.toLowerCase() === gender;
+
+                    return matchKeyword && matchGender;
+                });
+
+                if (sortField) {
+                    applySortStudents();
+                }
+
+                renderStudentsTable();
+            }
+
+            function sortStudents(field) {
+                if (sortField === field) {
+                    sortDirection = sortDirection === 'ASC' ? 'DESC' : 'ASC';
+                } else {
+                    sortField = field;
+                    sortDirection = 'ASC';
+                }
+
+                updateSortIcons();
+                applySortStudents();
+                renderStudentsTable();
+            }
+
+            function updateSortIcons() {
+                const fields = ['StudentCode', 'FullName', 'DateOfBirth', 'Gender'];
+                fields.forEach(f => {
+                    const iconSpan = document.getElementById(`sort-icon-${f}`);
+                    if (!iconSpan) return;
+                    if (f === sortField) {
+                        iconSpan.textContent = sortDirection === 'ASC' ? '▲' : '▼';
+                        iconSpan.className = 'text-blue-600 font-extrabold text-[10px]';
+                    } else {
+                        iconSpan.textContent = '↕';
+                        iconSpan.className = 'text-slate-400 font-bold text-[10px]';
+                    }
+                });
+            }
+
+            function applySortStudents() {
+                filteredStudents.sort((a, b) => {
+                    let valA = a[sortField];
+                    let valB = b[sortField];
+
+                    if (valA === null || valA === undefined) valA = '';
+                    if (valB === null || valB === undefined) valB = '';
+
+                    // Sắp xếp
+                    if (typeof valA === 'string') {
+                        return sortDirection === 'ASC' 
+                            ? valA.localeCompare(valB) 
+                            : valB.localeCompare(valA);
+                    } else {
+                        return sortDirection === 'ASC' 
+                            ? valA - valB 
+                            : valB - valA;
+                    }
+                });
+            }
+
+            function renderStudentsTable() {
+                const tbody = document.getElementById('studentsTableBody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+
+                if (filteredStudents.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="8" class="text-center py-12 text-slate-400 font-bold">Không tìm thấy học sinh nào phù hợp.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                filteredStudents.forEach((student, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'group hover:bg-slate-50 transition-colors border-b border-gray-200';
+                    
+                    let genderBadge = '';
+                    if (student.Gender === 'Nam') {
+                        genderBadge = `<span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-full border border-blue-100">Nam</span>`;
+                    } else if (student.Gender === 'Nữ') {
+                        genderBadge = `<span class="px-2 py-0.5 bg-pink-50 text-pink-600 text-xs font-bold rounded-full border border-pink-100">Nữ</span>`;
+                    } else {
+                        genderBadge = `<span class="text-slate-400">-</span>`;
+                    }
+
+                    let statusBadge = '';
+                    if (student.EnrollStatus === 'Đang học') {
+                        statusBadge = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-md border border-emerald-200 uppercase tracking-wide">Đang học</span>`;
+                    } else {
+                        statusBadge = `<span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-extrabold rounded-md border border-amber-200 uppercase tracking-wide">${student.EnrollStatus}</span>`;
+                    }
+
+                    // Định dạng ngày sinh DD/MM/YYYY
+                    let dobFormatted = '';
+                    if (student.DateOfBirth) {
+                        const parts = student.DateOfBirth.split('T')[0].split('-');
+                        if (parts.length === 3) {
+                            dobFormatted = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                        } else {
+                            dobFormatted = student.DateOfBirth;
+                        }
+                    } else {
+                        dobFormatted = '-';
+                    }
+
+                    tr.innerHTML = `
+                        <td class="px-4 py-3.5 text-center text-slate-500 font-bold border-r border-gray-200">${idx + 1}</td>
+                        <td class="px-4 py-3.5 text-left border-r border-gray-200"><span class="px-2 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200">${student.StudentCode}</span></td>
+                        <td class="px-4 py-3.5 text-left border-r border-gray-200 font-bold text-slate-900 truncate" title="${student.FullName}">${student.FullName}</td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200 font-semibold text-slate-600">${dobFormatted}</td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200">${genderBadge}</td>
+                        <td class="px-4 py-3.5 text-center border-r border-gray-200 font-bold text-slate-700">${student.PhoneNumber || '-'}</td>
+                        <td class="px-4 py-3.5 text-left border-r border-gray-200 font-semibold text-slate-600 truncate" title="${student.Email || '-'}">${student.Email || '-'}</td>
+                        <td class="px-4 py-3.5 text-center">${statusBadge}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            </text>
+        }
+    </script>
+}

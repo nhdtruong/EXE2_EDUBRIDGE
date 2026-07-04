@@ -1,8 +1,8 @@
 @page
 @model EduBridge.Pages.SystemAdmin.AuditLogsModel
 @{
-ViewData["Title"] = "Nhật ký Hệ thống";
-Layout = "_AdminLayout";
+    ViewData["Title"] = "Nhật ký Hệ thống";
+    Layout = "_AdminLayout";
 }
 
 <div class="space-y-6 pb-20">
@@ -70,12 +70,12 @@ Layout = "_AdminLayout";
                             <td class="py-4 px-6 text-sm font-semibold border-r border-slate-100">
                                 <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded border border-gray-200 text-xs">@log.Action</span>
                             </td>
-                            <td class="py-4 px-6 text-sm text-slate-900 border-r border-slate-100">@(log.ActorUser?.FullName ?? $"User {log.ActorUserId}")</td>
+                            <td class="py-4 px-6 text-sm text-slate-900 border-r border-slate-100">@(log.ActorFullName ?? $"User {log.ActorUserId}")</td>
                             <td class="py-4 px-6 text-sm text-slate-600 border-r border-slate-100">
                                 @log.EntityName - <span class="font-mono text-xs">@log.EntityId</span>
                             </td>
-                            <td class="py-4 px-6 text-sm text-slate-600 border-r border-slate-100">@(log.TargetCenter?.CenterName ?? "-")</td>
-                            <td class="py-4 px-6 text-sm text-slate-600">@(log.TargetProject?.ProjectName ?? "-")</td>
+                            <td class="py-4 px-6 text-sm text-slate-600 border-r border-slate-100">@(log.TargetCenterName ?? "-")</td>
+                            <td class="py-4 px-6 text-sm text-slate-600">@(log.TargetProjectName ?? "-")</td>
                         </tr>
                     }
                     @if (Model.Logs.Count == 0)
@@ -96,57 +96,57 @@ Layout = "_AdminLayout";
                     <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber - 1))" class="ds-page-link @(Model.PageNumber <= 1 ? "ds-page-link-disabled" : "")">‹</a>
 
                     @{
-                    int startPage = Math.Max(1, Model.PageNumber - 2);
-                    int endPage = Math.Min(Model.TotalPages, startPage + 4);
-                    if (endPage - startPage < 4)
-                    {
-                        startPage = Math.Max(1, endPage - 4);
-                    }
-                }
-
-                @for (int i = startPage; i <= endPage; i++)
-                {
-                    if (i == Model.PageNumber)
-                    {
-                        <a href="javascript:void(0)" class="ds-page-link ds-page-link-active">@i</a>
-                    }
-                    else
-                    {
-                        <a href="javascript:void(0)" onclick="setPageAndSubmit(@i)" class="ds-page-link">@i</a>
-                    }
-                }
-
-                <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber + 1))" class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">›</a>
-                <a href="javascript:void(0)" onclick="setPageAndSubmit(@Model.TotalPages)" class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">»</a>
-            </div>
-            <div class="ds-pagination-meta">
-                <span>Tổng số: @Model.TotalItems bản ghi</span>
-                <select class="ds-page-size" form="filterForm" name="PageSize" onchange="document.getElementById('PageNumber').value=1; this.form.submit()">
-                    @foreach (var size in Model.PageSizeOptions)
-                    {
-                        if (size == Model.PageSize)
+                        int startPage = Math.Max(1, Model.PageNumber - 2);
+                        int endPage = Math.Min(Model.TotalPages, startPage + 4);
+                        if (endPage - startPage < 4)
                         {
-                            <option value="@size" selected>@size</option>
+                            startPage = Math.Max(1, endPage - 4);
+                        }
+                    }
+
+                    @for (int i = startPage; i <= endPage; i++)
+                    {
+                        if (i == Model.PageNumber)
+                        {
+                            <a href="javascript:void(0)" class="ds-page-link ds-page-link-active">@i</a>
                         }
                         else
                         {
-                            <option value="@size">@size</option>
+                            <a href="javascript:void(0)" onclick="setPageAndSubmit(@i)" class="ds-page-link">@i</a>
                         }
                     }
-                </select>
+
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@(Model.PageNumber + 1))" class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">›</a>
+                    <a href="javascript:void(0)" onclick="setPageAndSubmit(@Model.TotalPages)" class="ds-page-link @(Model.PageNumber >= Model.TotalPages ? "ds-page-link-disabled" : "")">»</a>
+                </div>
+                <div class="ds-pagination-meta">
+                    <span>Tổng số: @Model.TotalItems bản ghi</span>
+                    <select class="ds-page-size" form="filterForm" name="PageSize" onchange="document.getElementById('PageNumber').value=1; this.form.submit()">
+                        @foreach (var size in Model.PageSizeOptions)
+                        {
+                            if (size == Model.PageSize)
+                            {
+                                <option value="@size" selected>@size</option>
+                            }
+                            else
+                            {
+                                <option value="@size">@size</option>
+                            }
+                        }
+                    </select>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-@section Scripts {
-<link rel="stylesheet" href="~/css/design-system/datepicker.css" asp-append-version="true" />
-<link rel="stylesheet" href="~/css/design-system/pagination.css" asp-append-version="true" />
-<script src="~/js/design-system/datepicker.js" asp-append-version="true"></script>
-<script>
-    function setPageAndSubmit(pageNum) {
-    document.getElementById('PageNumber').value = pageNum;
-    document.getElementById('filterForm').submit();
-}
-</script>
-}
+    @section Scripts {
+        <link rel="stylesheet" href="~/css/design-system/datepicker.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/css/design-system/pagination.css" asp-append-version="true" />
+        <script src="~/js/design-system/datepicker.js" asp-append-version="true"></script>
+        <script>
+            function setPageAndSubmit(pageNum) {
+            document.getElementById('PageNumber').value = pageNum;
+            document.getElementById('filterForm').submit();
+            }
+        </script>
+    }
