@@ -1,4 +1,4 @@
-﻿USE EduBridgeDB;
+USE EduBridgeDB;
 GO
 -- =============================================
 -- IMPACT ANALYSIS:

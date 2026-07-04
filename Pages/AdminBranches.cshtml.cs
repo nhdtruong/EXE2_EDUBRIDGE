@@ -22,6 +22,8 @@ public class AdminBranchesModel : PageModel
 
     public List<Branch> Branches { get; set; } = new();
 
+    public string CurrentCenterName { get; private set; } = "Trung tâm";
+
     [BindProperty(SupportsGet = true)]
     public string? SearchKeyword { get; set; }
 
@@ -51,6 +53,12 @@ public class AdminBranchesModel : PageModel
         {
             return RedirectToPage("/Login");
         }
+
+        CurrentCenterName = await _context.Centers
+            .AsNoTracking()
+            .Where(c => c.CenterId == centerId.Value)
+            .Select(c => c.CenterName)
+            .FirstOrDefaultAsync(cancellationToken) ?? CurrentCenterName;
 
         var query = _context.Branches
             .Include(b => b.Center)
