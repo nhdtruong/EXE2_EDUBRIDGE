@@ -15,3 +15,5 @@ artifacts/
 Test-Migrations.ps1
 
 edubridge_database/seed/
+# Ignore uploaded files
+wwwroot/uploads/

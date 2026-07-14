@@ -44,13 +44,20 @@ JOIN DuplicateTeachers d ON t.TeacherId = d.TeacherId
 WHERE d.rn > 1;
 GO
 
-;WITH NumberedTeachers AS
+;WITH MaxExisting AS (
+    SELECT CenterId, ISNULL(MAX(TRY_CAST(RIGHT(TeacherCode, 4) AS INT)), 0) as MaxNum
+    FROM dbo.Teachers
+    WHERE TeacherCode LIKE N'GV-%-[0-9][0-9][0-9][0-9]'
+    GROUP BY CenterId
+), NumberedTeachers AS
 (
     SELECT
-        TeacherId,
-        ROW_NUMBER() OVER (PARTITION BY CenterId ORDER BY TeacherId) AS RowNum
-    FROM dbo.Teachers
-    WHERE TeacherCode IS NULL OR LTRIM(RTRIM(TeacherCode)) = N''
+        t.TeacherId,
+        t.CenterId,
+        ROW_NUMBER() OVER (PARTITION BY t.CenterId ORDER BY t.TeacherId) + ISNULL(m.MaxNum, 0) AS RowNum
+    FROM dbo.Teachers t
+    LEFT JOIN MaxExisting m ON t.CenterId = m.CenterId
+    WHERE t.TeacherCode IS NULL OR LTRIM(RTRIM(t.TeacherCode)) = N''
 )
 UPDATE t
 SET TeacherCode = CONCAT(N'GV-', t.CenterId, N'-', RIGHT(CONCAT(N'0000', n.RowNum), 4))
@@ -189,6 +196,21 @@ GO
 
 ALTER TABLE dbo.Users
 ALTER COLUMN Email NVARCHAR(150) NULL;
+GO
+
+;WITH DuplicateEmails AS (
+    SELECT 
+        UserId,
+        Email,
+        ROW_NUMBER() OVER(PARTITION BY Email ORDER BY UserId) as rn
+    FROM dbo.Users
+    WHERE Email IS NOT NULL AND LTRIM(RTRIM(Email)) <> N''
+)
+UPDATE u
+SET Email = REPLACE(u.Email, N'@', CONCAT(N'-DUP-', u.UserId, N'@'))
+FROM dbo.Users u
+JOIN DuplicateEmails d ON u.UserId = d.UserId
+WHERE d.rn > 1;
 GO
 
 IF NOT EXISTS (

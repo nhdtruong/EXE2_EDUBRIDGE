@@ -13,4 +13,5 @@ public interface IStudentManagementService
     Task<ClassOperationResult<StudentMutationResponse>> ToggleStudentStatusAsync(int ownerUserId, int studentId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<bool>> DeleteStudentAsync(int ownerUserId, int studentId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<List<ParentSearchResultResponse>>> SearchParentsAsync(int ownerUserId, string keyword, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<ImportResultResponse>> ImportStudentsFromExcelAsync(int ownerUserId, Microsoft.AspNetCore.Http.IFormFile importFile, CancellationToken cancellationToken = default);
 }

@@ -108,3 +108,11 @@ public sealed record ParentMutationResponse(int UserId, bool CreatedNewUser, str
 public sealed record LinkableStudentResponse(int StudentId, string StudentCode, string FullName, string CurrentParentName);
 
 public sealed record ResetParentPasswordResponse(int UserId, string TemporaryPassword);
+
+public class ParentImportResultResponse
+{
+    public int TotalRows { get; set; }
+    public int SuccessCount { get; set; }
+    public int ErrorCount { get; set; }
+    public List<string> Errors { get; set; } = new();
+}

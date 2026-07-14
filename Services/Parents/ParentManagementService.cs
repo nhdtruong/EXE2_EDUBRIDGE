@@ -7,6 +7,7 @@ using EduBridge.Models;
 using EduBridge.Services.Classes;
 using Microsoft.EntityFrameworkCore;
 using EduBridge.Services.Auth;
+using ClosedXML.Excel;
 
 namespace EduBridge.Services.Parents;
 
@@ -16,12 +17,16 @@ public sealed class ParentManagementService : IParentManagementService
     private readonly AppDbContext _context;
     private readonly ILogger<ParentManagementService> _logger;
     private readonly ICurrentCenterService _currentCenterService;
+    private readonly EduBridge.Services.ImportExportHistories.IImportExportHistoryService _historyService;
+    private readonly EduBridge.Services.Storage.IFileStorageService _storageService;
 
-    public ParentManagementService(AppDbContext context, ILogger<ParentManagementService> logger, ICurrentCenterService currentCenterService)
+    public ParentManagementService(AppDbContext context, ILogger<ParentManagementService> logger, ICurrentCenterService currentCenterService, EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, EduBridge.Services.Storage.IFileStorageService storageService)
     {
         _context = context;
         _logger = logger;
         _currentCenterService = currentCenterService;
+        _historyService = historyService;
+        _storageService = storageService;
     }
 
     public async Task<ClassOperationResult<ParentPagedResponse>> GetParentsAsync(
@@ -351,6 +356,328 @@ public sealed class ParentManagementService : IParentManagementService
         return null;
     }
 
+    public async Task<ClassOperationResult<ParentImportResultResponse>> ImportParentsAsync(int ownerUserId, Microsoft.AspNetCore.Http.IFormFile importFile, CancellationToken cancellationToken = default)
+    {
+        var centerId = await GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
+        if (centerId == null) return Fail<ParentImportResultResponse>("Không tìm thấy trung tâm đang hoạt động.");
+
+        var parentRoleId = await _context.Roles.Where(r => r.RoleCode == "PARENT").Select(r => (int?)r.RoleId).FirstOrDefaultAsync(cancellationToken);
+        if (parentRoleId == null) return Fail<ParentImportResultResponse>("Hệ thống chưa cấu hình role PARENT.");
+
+        // 1. Lưu file đầu vào
+        var inputFileUrl = await _storageService.SaveFileAsync(importFile, "imports", cancellationToken);
+
+        // 2. Tạo lịch sử Import
+        var history = await _historyService.CreateHistoryAsync(new EduBridge.Contracts.ImportExportHistories.CreateImportExportHistoryRequest
+        {
+            CenterId = centerId.Value,
+            UserId = ownerUserId,
+            Title = $"Import phụ huynh {DateTime.Now:dd/MM/yyyy HH:mm:ss}",
+            ActionType = "Import",
+            EntityName = "Parents",
+            InputFileUrl = inputFileUrl,
+            Status = "Processing"
+        }, cancellationToken);
+
+        var result = new ParentImportResultResponse();
+        try
+        {
+            using var stream = importFile.OpenReadStream();
+            using var workbook = new XLWorkbook(stream);
+            var worksheet = workbook.Worksheet(1);
+            
+            // Add header for result
+            worksheet.Cell(1, 9).Value = "Trạng thái";
+            worksheet.Cell(1, 10).Value = "Lý do lỗi";
+            worksheet.Cell(1, 9).Style = worksheet.Cell(1, 8).Style;
+            worksheet.Cell(1, 10).Style = worksheet.Cell(1, 8).Style;
+
+            var rows = worksheet.RangeUsed().RowsUsed().Skip(1).ToList();
+
+            var emailsInExcel = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var phonesInExcel = new HashSet<string>();
+
+            foreach (var row in rows)
+            {
+                var idStr = row.Cell(2).GetString().Trim();
+                var phone = row.Cell(4).GetString().Trim();
+                var email = row.Cell(5).GetString().Trim();
+
+                if (string.IsNullOrWhiteSpace(idStr))
+                {
+                    if (!string.IsNullOrWhiteSpace(phone)) phonesInExcel.Add(NormalizePhone(phone));
+                    if (!string.IsNullOrWhiteSpace(email)) emailsInExcel.Add(email.ToLowerInvariant());
+                }
+                else if (int.TryParse(idStr, out _))
+                {
+                    if (!string.IsNullOrWhiteSpace(phone)) phonesInExcel.Add(NormalizePhone(phone));
+                    if (!string.IsNullOrWhiteSpace(email)) emailsInExcel.Add(email.ToLowerInvariant());
+                }
+            }
+
+            var emailsList = emailsInExcel.ToList();
+            var existingEmailsSet = new HashSet<string>(await _context.Users
+                .Where(u => !u.IsDeleted && u.Email != null && emailsList.Contains(u.Email))
+                .Select(u => u.Email!)
+                .ToListAsync(cancellationToken), StringComparer.OrdinalIgnoreCase);
+
+            var phonesList = phonesInExcel.ToList();
+            var existingPhonesSet = new HashSet<string>(await _context.Users
+                .Where(u => !u.IsDeleted && u.NormalizedPhoneNumber != null && phonesList.Contains(u.NormalizedPhoneNumber))
+                .Select(u => u.NormalizedPhoneNumber!)
+                .ToListAsync(cancellationToken));
+
+            var userIdsList = rows.Select(r => r.Cell(2).GetString().Trim())
+                                  .Where(id => !string.IsNullOrWhiteSpace(id) && int.TryParse(id, out _))
+                                  .Select(int.Parse).ToList();
+
+            var existingIdsSet = new HashSet<int>(await _context.CenterUsers
+                .Where(cu => cu.CenterId == centerId && cu.UserType == "PARENT" && userIdsList.Contains(cu.UserId) && !cu.User.IsDeleted)
+                .Select(cu => cu.UserId)
+                .ToListAsync(cancellationToken));
+
+            int stt = 0;
+            int lastDataRow = 1;
+            foreach (var row in rows)
+            {
+                var idStr = row.Cell(2).GetString().Trim();
+                var fullName = row.Cell(3).GetString().Trim();
+                var phone = row.Cell(4).GetString().Trim();
+                var email = row.Cell(5).GetString().Trim();
+                var genderCode = row.Cell(6).GetString().Trim();
+                var dobStr = row.Cell(7).GetString().Trim();
+                var address = row.Cell(8).GetString().Trim();
+
+                if (string.IsNullOrWhiteSpace(idStr) && string.IsNullOrWhiteSpace(fullName) && string.IsNullOrWhiteSpace(phone) && string.IsNullOrWhiteSpace(email))
+                {
+                    continue; 
+                }
+
+                stt++;
+                lastDataRow = Math.Max(lastDataRow, row.RowNumber());
+
+                bool isUpdate = false;
+                int existingUserId = 0;
+
+                if (!string.IsNullOrWhiteSpace(idStr))
+                {
+                    if (int.TryParse(idStr, out var id))
+                    {
+                        if (!existingIdsSet.Contains(id))
+                        {
+                            row.Cell(9).Value = "Thất bại";
+                            row.Cell(10).Value = "ID không tồn tại trong trung tâm.";
+                            result.Errors.Add($"STT {stt}: ID không tồn tại.");
+                            result.ErrorCount++;
+                            continue;
+                        }
+                        isUpdate = true;
+                        existingUserId = id;
+                    }
+                    else
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "ID không hợp lệ.";
+                        result.Errors.Add($"STT {stt}: ID không hợp lệ.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+                }
+
+                if (!isUpdate)
+                {
+                    if (string.IsNullOrWhiteSpace(fullName) || string.IsNullOrWhiteSpace(phone))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "Họ tên và SĐT là bắt buộc.";
+                        result.Errors.Add($"STT {stt}: Họ tên và SĐT là bắt buộc.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+                }
+
+                string? normPhone = null;
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    if (phone.Length < 10 || phone.Length > 12 || !phone.StartsWith('0'))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "Số điện thoại không hợp lệ.";
+                        result.Errors.Add($"STT {stt}: Số điện thoại không hợp lệ.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+                    normPhone = NormalizePhone(phone);
+
+                    if (!isUpdate && existingPhonesSet.Contains(normPhone))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "SĐT đã được sử dụng.";
+                        result.Errors.Add($"STT {stt}: SĐT đã được sử dụng.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    if (!isUpdate && existingEmailsSet.Contains(email.ToLowerInvariant()))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "Email đã được sử dụng.";
+                        result.Errors.Add($"STT {stt}: Email đã được sử dụng.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+                }
+
+                DateOnly? parsedDob = null;
+                if (!string.IsNullOrWhiteSpace(dobStr))
+                {
+                    if (!DateTime.TryParseExact(dobStr, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var dobVal))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "Ngày sinh không đúng định dạng (dd/MM/yyyy).";
+                        result.Errors.Add($"STT {stt}: Ngày sinh không đúng định dạng.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+                    parsedDob = DateOnly.FromDateTime(dobVal);
+                }
+
+                if (isUpdate)
+                {
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == existingUserId, cancellationToken);
+                    
+                    if (normPhone != null && user.NormalizedPhoneNumber != normPhone && existingPhonesSet.Contains(normPhone))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "SĐT đã được sử dụng bởi người khác.";
+                        result.Errors.Add($"STT {stt}: SĐT đã được sử dụng.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+
+                    var lowerEmail = email?.ToLowerInvariant();
+                    if (!string.IsNullOrWhiteSpace(lowerEmail) && user.Email?.ToLowerInvariant() != lowerEmail && existingEmailsSet.Contains(lowerEmail))
+                    {
+                        row.Cell(9).Value = "Thất bại";
+                        row.Cell(10).Value = "Email đã được sử dụng bởi người khác.";
+                        result.Errors.Add($"STT {stt}: Email đã được sử dụng.");
+                        result.ErrorCount++;
+                        continue;
+                    }
+
+                    if (user.NormalizedPhoneNumber != null) existingPhonesSet.Remove(user.NormalizedPhoneNumber);
+                    if (user.Email != null) existingEmailsSet.Remove(user.Email.ToLowerInvariant());
+
+                    if (!string.IsNullOrWhiteSpace(fullName)) user.FullName = fullName;
+                    if (!string.IsNullOrWhiteSpace(phone)) user.PhoneNumber = phone;
+                    if (normPhone != null) user.NormalizedPhoneNumber = normPhone;
+                    if (!string.IsNullOrWhiteSpace(email)) user.Email = email;
+                    if (!string.IsNullOrWhiteSpace(genderCode)) user.Gender = genderCode == "1" ? "Nam" : (genderCode == "2" ? "Nữ" : "Nam");
+                    if (parsedDob != null) user.DateOfBirth = parsedDob;
+                    if (!string.IsNullOrWhiteSpace(address)) user.CurrentAddress = address;
+
+                    if (user.NormalizedPhoneNumber != null) existingPhonesSet.Add(user.NormalizedPhoneNumber);
+                    if (!string.IsNullOrWhiteSpace(user.Email)) existingEmailsSet.Add(user.Email.ToLowerInvariant());
+
+                    row.Cell(9).Value = "Thành công";
+                    row.Cell(10).Value = "";
+                    result.SuccessCount++;
+                }
+                else
+                {
+                    var newUser = new User
+                    {
+                        FullName = fullName,
+                        PhoneNumber = phone,
+                        NormalizedPhoneNumber = normPhone,
+                        Email = string.IsNullOrWhiteSpace(email) ? null : email,
+                        Gender = genderCode == "1" ? "Nam" : (genderCode == "2" ? "Nữ" : "Nam"),
+                        DateOfBirth = parsedDob,
+                        CurrentAddress = string.IsNullOrWhiteSpace(address) ? null : address,
+                        RoleId = parentRoleId.Value,
+                        PasswordHash = "edubridge2026",
+                        EmailConfirmed = true,
+                        Status = "Active",
+                        IsDeleted = false,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    _context.Users.Add(newUser);
+                    _context.CenterUsers.Add(new CenterUser
+                    {
+                        CenterId = centerId.Value,
+                        User = newUser,
+                        UserType = "PARENT",
+                        Status = "Active",
+                        CreatedAt = DateTime.UtcNow
+                    });
+
+                    existingPhonesSet.Add(normPhone);
+                    if (!string.IsNullOrWhiteSpace(email)) existingEmailsSet.Add(email.ToLowerInvariant());
+
+                    row.Cell(9).Value = "Thành công";
+                    row.Cell(10).Value = "";
+                    result.SuccessCount++;
+                }
+            }
+
+            if (result.SuccessCount > 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            // 3. Ghi file kết quả
+            // Xóa các ghi chú và mô tả (nếu có) ngoài vùng dữ liệu
+            int lastCol = worksheet.LastColumnUsed()?.ColumnNumber() ?? 10;
+            if (lastCol > 10)
+            {
+                worksheet.Columns(11, lastCol).Delete();
+            }
+            
+            if (lastDataRow > 0)
+            {
+                int maxRow = worksheet.LastRowUsed()?.RowNumber() ?? lastDataRow;
+                if (maxRow > lastDataRow)
+                {
+                    worksheet.Rows(lastDataRow + 1, maxRow).Delete();
+                }
+            }
+
+            var resultRange = worksheet.Range(1, 1, lastDataRow, 10);
+            resultRange.Style.Font.FontName = "Times New Roman";
+            resultRange.Style.Font.FontSize = 12;
+            resultRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            resultRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Columns(1, 10).AdjustToContents();
+            for (int i = 1; i <= 10; i++)
+            {
+                worksheet.Column(i).Width += 2;
+            }
+
+            using var resultStream = new System.IO.MemoryStream();
+            workbook.SaveAs(resultStream);
+            resultStream.Position = 0;
+            var resultFileName = $"result_{importFile.FileName}";
+            var resultFileUrl = await _storageService.SaveFileAsync(resultStream, resultFileName, "imports/results", cancellationToken);
+
+            // 4. Cập nhật lịch sử
+            await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Completed", resultFileUrl, cancellationToken);
+
+            return ClassOperationResult<ParentImportResultResponse>.Success(result, "Import hoàn tất.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi khi import phụ huynh");
+            if (history != null) {
+                await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Failed", null, cancellationToken);
+            }
+            return Fail<ParentImportResultResponse>($"Đã xảy ra lỗi khi đọc file Excel: {ex.Message}{(ex.InnerException != null ? " - " + ex.InnerException.Message : "")}");
+        }
+    }
+
     private static string NormalizePhone(string value)
     {
         var digits = new string((value ?? "").Where(char.IsDigit).ToArray());
@@ -360,3 +687,5 @@ public sealed class ParentManagementService : IParentManagementService
     private static ClassOperationResult<T> Fail<T>(string message, string key = "") =>
         ClassOperationResult<T>.Failure(message, new Dictionary<string, string[]> { [key] = [message] });
 }
+
+

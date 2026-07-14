@@ -69,5 +69,64 @@ public sealed class AdminParentsModel : PageModel
         return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
     }
 
+    public async Task<IActionResult> OnPostImportExcelAsync(IFormFile importFile, CancellationToken cancellationToken)
+    {
+        if (importFile == null || importFile.Length == 0)
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Lỗi";
+            TempData["ToastMessage"] = "Vui lòng chọn file Excel.";
+            return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+        }
+
+        var result = await _service.ImportParentsAsync(GetUserId(), importFile, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            TempData["ToastType"] = "success";
+            TempData["ToastTitle"] = "Import thành công";
+            var data = result.Value!;
+            var msg = $"Xử lý thành công: {data.SuccessCount}. Lỗi: {data.ErrorCount}.";
+            TempData["ToastMessage"] = msg;
+        }
+        else
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Import thất bại";
+            TempData["ToastMessage"] = result.Message;
+        }
+
+        return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+    }
+
+    public IActionResult OnGetDownloadTemplate()
+    {
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "docs", "import", "Parent_Import_Template.xlsx");
+        if (!System.IO.File.Exists(filePath))
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = "Không tìm thấy file mẫu trên server.";
+            return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+        }
+
+        byte[] content;
+        using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            using (var ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                content = ms.ToArray();
+            }
+        }
+        return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Parent_Import_Template.xlsx");
+    }
+
+    public async Task<IActionResult> OnGetHistoryAsync([FromServices] EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        var result = await historyService.GetHistoriesAsync(GetUserId(), new EduBridge.Contracts.ImportExportHistories.ImportExportHistoryQuery { Page = page, PageSize = pageSize, EntityName = "Parents" }, cancellationToken);
+        return new JsonResult(result);
+    }
+
     private int GetUserId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
 }

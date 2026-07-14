@@ -14,4 +14,6 @@ public interface IStaffManagementService
     Task<ClassOperationResult<bool>> DeleteStaffAsync(int ownerUserId, int staffUserId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<string?>> UpdateAvatarAsync(int ownerUserId, int staffUserId, Stream fileStream, string fileName, string contentType, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<bool>> RemoveAvatarAsync(int ownerUserId, int staffUserId, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>> ImportStaffsFromExcelAsync(int ownerUserId, Microsoft.AspNetCore.Http.IFormFile importFile, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<byte[]>> ExportStaffsAsync(int ownerUserId, StaffQuery query, CancellationToken cancellationToken = default);
 }

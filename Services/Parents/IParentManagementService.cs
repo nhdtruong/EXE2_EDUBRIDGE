@@ -14,4 +14,5 @@ public interface IParentManagementService
     Task<ClassOperationResult<bool>> LinkStudentAsync(int ownerUserId, int parentUserId, int studentId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<ResetParentPasswordResponse>> ResetPasswordAsync(int ownerUserId, int parentUserId, CancellationToken cancellationToken = default);
     Task<ClassOperationResult<bool>> DeleteParentAsync(int ownerUserId, int parentUserId, CancellationToken cancellationToken = default);
+    Task<ClassOperationResult<ParentImportResultResponse>> ImportParentsAsync(int ownerUserId, Microsoft.AspNetCore.Http.IFormFile importFile, CancellationToken cancellationToken = default);
 }

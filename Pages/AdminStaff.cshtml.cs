@@ -41,7 +41,7 @@ public class AdminStaffModel : PageModel
         var ownerUserId = GetCurrentUserId();
         if (ownerUserId == null) return RedirectToPage("/Login");
 
-        if (!PageSizeOptions.Contains(PageSize)) PageSize = 20;
+        if (PageSize <= 0) PageSize = 20;
         if (PageNumber < 1) PageNumber = 1;
 
         var query = new StaffQuery
@@ -130,6 +130,112 @@ public class AdminStaffModel : PageModel
         TempData["ToastMessage"] = result.Message;
 
         return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+    }
+
+    public async Task<IActionResult> OnPostImportExcelAsync(IFormFile importFile, CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetCurrentUserId();
+        if (ownerUserId == null) return RedirectToPage("/Login");
+
+        if (importFile == null || importFile.Length == 0)
+        {
+            TempData["ToastTitle"] = "Lỗi";
+            TempData["ToastType"] = "error";
+            TempData["ToastMessage"] = "Vui lòng chọn file Excel.";
+            return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+        }
+
+        var ext = Path.GetExtension(importFile.FileName).ToLower();
+        if (ext != ".xlsx" && ext != ".xls")
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = "Chỉ chấp nhận file định dạng .xlsx hoặc .xls";
+            return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+        }
+
+        var result = await _service.ImportStaffsFromExcelAsync(ownerUserId.Value, importFile, cancellationToken);
+        
+        if (!result.IsSuccess || result.Value == null)
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = result.Message;
+            return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+        }
+
+        if (result.Value.ErrorCount > 0)
+        {
+            TempData["ToastType"] = "warning";
+            TempData["ToastTitle"] = "Import hoàn tất với một số lỗi";
+            TempData["ToastMessage"] = $"Thành công: {result.Value.SuccessCount}. Lỗi: {result.Value.ErrorCount} dòng. Vui lòng tải file kết quả trong lịch sử để xem chi tiết.";
+        }
+        else
+        {
+            TempData["ToastType"] = "success";
+            TempData["ToastTitle"] = "Thành công";
+            TempData["ToastMessage"] = $"Đã import thành công {result.Value.SuccessCount} nhân sự.";
+        }
+
+        return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+    }
+
+    public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetCurrentUserId();
+        if (ownerUserId == null) return RedirectToPage("/Login");
+
+        var query = new EduBridge.Contracts.Staffs.StaffQuery
+        {
+            Keyword = Search,
+            ContactKeyword = ContactSearch,
+            Status = StatusFilter,
+            Role = RoleFilter,
+            Page = PageNumber,
+            PageSize = PageSize
+        };
+
+        var result = await _service.ExportStaffsAsync(ownerUserId.Value, query, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Lỗi";
+            TempData["ToastMessage"] = result.Message;
+            return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+        }
+
+        var fileName = $"Staffs_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        return File(result.Value!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    public IActionResult OnGetDownloadTemplate()
+    {
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "docs", "import", "Staff_Import_Template.xlsx");
+        if (!System.IO.File.Exists(filePath))
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = "Không tìm thấy file mẫu trên server.";
+            return RedirectToPage(new { Search, ContactSearch, StatusFilter, RoleFilter, PageNumber, PageSize });
+        }
+
+        byte[] content;
+        using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            using (var ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                content = ms.ToArray();
+            }
+        }
+        return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Staff_Import_Template.xlsx");
+    }
+
+    public async Task<IActionResult> OnGetHistoryAsync([FromServices] EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        var ownerUserId = GetCurrentUserId() ?? 0;
+        var result = await historyService.GetHistoriesAsync(ownerUserId, new EduBridge.Contracts.ImportExportHistories.ImportExportHistoryQuery { Page = page, PageSize = pageSize, EntityName = "Staffs" }, cancellationToken);
+        return new JsonResult(result);
     }
 
     private int? GetCurrentUserId()

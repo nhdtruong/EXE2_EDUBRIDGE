@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using EduBridge.Models;
 using Microsoft.EntityFrameworkCore;
@@ -43,6 +43,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Homework> Homeworks { get; set; }
 
     public virtual DbSet<HomeworkSubmission> HomeworkSubmissions { get; set; }
+
+    public virtual DbSet<ImportExportHistory> ImportExportHistories { get; set; }
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
@@ -465,6 +467,31 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.StudentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_HomeworkSubmissions_Students");
+        });
+
+        modelBuilder.Entity<ImportExportHistory>(entity =>
+        {
+            entity.HasKey(e => e.HistoryId);
+
+            entity.ToTable("ImportExportHistories");
+
+            entity.Property(e => e.ActionType).HasMaxLength(50);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.EntityName).HasMaxLength(100);
+            entity.Property(e => e.InputFileUrl).HasMaxLength(500);
+            entity.Property(e => e.ResultFileUrl).HasMaxLength(500);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Title).HasMaxLength(255);
+
+            entity.HasOne(d => d.Center).WithMany(p => p.ImportExportHistories)
+                .HasForeignKey(d => d.CenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ImportExportHistories_Centers");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ImportExportHistories)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ImportExportHistories_Users");
         });
 
         modelBuilder.Entity<Invoice>(entity =>
@@ -1061,3 +1088,4 @@ public partial class AppDbContext : DbContext
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
 }
+
