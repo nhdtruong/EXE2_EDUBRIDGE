@@ -9,8 +9,9 @@ namespace EduBridge.Pages
     public class ErrorModel : PageModel
     {
         public string? RequestId { get; set; }
-
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
+        public string? ExceptionMessage { get; set; }
+        public string? StackTrace { get; set; }
 
         private readonly ILogger<ErrorModel> _logger;
 
@@ -22,6 +23,12 @@ namespace EduBridge.Pages
         public void OnGet()
         {
             RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier;
+            var exceptionHandlerPathFeature = HttpContext.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+            if (exceptionHandlerPathFeature?.Error != null)
+            {
+                ExceptionMessage = exceptionHandlerPathFeature.Error.Message;
+                StackTrace = exceptionHandlerPathFeature.Error.StackTrace;
+            }
         }
     }
 
