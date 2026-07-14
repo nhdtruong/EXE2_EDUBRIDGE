@@ -24,11 +24,19 @@
 
         @if (Model.ShowRequestId)
         {
-            <div class="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3">
+            <div class="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3 text-left w-full">
                 <p class="text-sm text-gray-600">
                     <span class="font-semibold">Mã lỗi (Request ID):</span>
                     <code class="ml-1 text-xs font-mono text-red-600 break-all">@Model.RequestId</code>
                 </p>
+                @if (!string.IsNullOrEmpty(Model.ExceptionMessage))
+                {
+                    <div class="mt-2 pt-2 border-t border-gray-200">
+                        <p class="text-sm font-semibold text-red-600">Chi tiết lỗi:</p>
+                        <p class="text-xs text-gray-800 break-all mt-1">@Model.ExceptionMessage</p>
+                        <pre class="text-[10px] text-gray-500 overflow-x-auto mt-2 bg-gray-100 p-2 rounded">@Model.StackTrace</pre>
+                    </div>
+                }
             </div>
             <p class="text-xs text-gray-400">
                 Vui lòng cung cấp mã lỗi này cho bộ phận hỗ trợ kỹ thuật để được trợ giúp.
