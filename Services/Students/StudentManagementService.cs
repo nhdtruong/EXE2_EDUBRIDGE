@@ -34,6 +34,131 @@ public class StudentManagementService : IStudentManagementService
         _storageService = storageService;
     }
 
+    public async Task<ClassOperationResult<byte[]>> ExportStudentsAsync(int ownerUserId, StudentQuery query, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var centerId = await GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
+            if (centerId == null) return ClassOperationResult<byte[]>.Failure("Không tìm thấy trung tâm hoặc bạn không có quyền.");
+
+            query.Normalize();
+
+            var dbQuery = _context.Students
+                .AsNoTracking()
+                .Include(s => s.ParentUser)
+                .Where(s => s.CenterId == centerId.Value && !s.IsDeleted && s.ParentUser != null && !s.ParentUser.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            {
+                dbQuery = dbQuery.Where(s => s.StudentCode.Contains(query.Keyword) || s.FullName.Contains(query.Keyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.ParentKeyword))
+            {
+                dbQuery = dbQuery.Where(s => s.ParentUser != null && s.ParentUser.FullName.Contains(query.ParentKeyword));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.ContactKeyword))
+            {
+                var normalizedKeyword = NormalizePhoneNumber(query.ContactKeyword);
+                var hasPhoneKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+                dbQuery = dbQuery.Where(s =>
+                    (s.PhoneNumber != null && s.PhoneNumber.Contains(query.ContactKeyword)) ||
+                    (s.Email != null && s.Email.Contains(query.ContactKeyword)) ||
+                    (hasPhoneKeyword && s.NormalizedPhoneNumber != null && s.NormalizedPhoneNumber.Contains(normalizedKeyword)) ||
+                    (s.ParentUser != null && s.ParentUser.PhoneNumber != null && s.ParentUser.PhoneNumber.Contains(query.ContactKeyword)) ||
+                    (hasPhoneKeyword && s.ParentUser != null && s.ParentUser.NormalizedPhoneNumber != null && s.ParentUser.NormalizedPhoneNumber.Contains(normalizedKeyword)) ||
+                    (s.ParentUser != null && s.ParentUser.Email != null && s.ParentUser.Email.Contains(query.ContactKeyword)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Gender))
+            {
+                dbQuery = dbQuery.Where(s => s.Gender == query.Gender);
+            }
+
+            if (query.ClassId != null)
+            {
+                dbQuery = dbQuery.Where(s => s.Enrollments.Any(e => e.ClassId == query.ClassId.Value && e.Status == "Đang học"));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Status))
+            {
+                dbQuery = dbQuery.Where(s => s.Status == query.Status);
+            }
+
+            dbQuery = dbQuery.OrderByDescending(s => s.StudentId);
+
+            var items = await dbQuery.Take(10000).ToListAsync(cancellationToken);
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Danh sách học sinh");
+
+            var headers = new string[] { "STT", "ID", "Mã học sinh", "Họ và tên", "Ngày sinh", "Giới tính", "SĐT", "Email", "Phụ huynh", "SĐT phụ huynh", "Email phụ huynh", "Trạng thái" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(1, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.LightGray;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            }
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                var student = items[i];
+                var status = student.Status == "Active" ? "Đang học" : "Đã nghỉ";
+
+                int row = i + 2;
+                worksheet.Cell(row, 1).Value = i + 1;
+                worksheet.Cell(row, 2).Value = student.StudentId;
+                worksheet.Cell(row, 3).Value = student.StudentCode;
+                worksheet.Cell(row, 4).Value = student.FullName;
+                worksheet.Cell(row, 5).Value = student.DateOfBirth?.ToString("dd/MM/yyyy") ?? "";
+                worksheet.Cell(row, 6).Value = student.Gender ?? "";
+                worksheet.Cell(row, 7).Value = student.PhoneNumber ?? "";
+                worksheet.Cell(row, 8).Value = student.Email ?? "";
+                worksheet.Cell(row, 9).Value = student.ParentUser?.FullName ?? "";
+                worksheet.Cell(row, 10).Value = student.ParentUser?.PhoneNumber ?? "";
+                worksheet.Cell(row, 11).Value = student.ParentUser?.Email ?? "";
+                worksheet.Cell(row, 12).Value = status;
+            }
+
+            var range = worksheet.Range(1, 1, items.Count + 1, headers.Length);
+            range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+
+            worksheet.Column(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // STT
+            worksheet.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // ID
+            worksheet.Column(6).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center; // Giới tính
+
+            worksheet.Columns().AdjustToContents();
+            foreach (var col in worksheet.ColumnsUsed())
+            {
+                col.Width += 2;
+            }
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            
+            var history = await _historyService.CreateHistoryAsync(new EduBridge.Contracts.ImportExportHistories.CreateImportExportHistoryRequest
+            {
+                CenterId = centerId.Value,
+                UserId = ownerUserId,
+                Title = "Xuất danh sách học sinh",
+                ActionType = "Export",
+                EntityName = "Students"
+            }, cancellationToken);
+            await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Completed", null, cancellationToken);
+            
+            return ClassOperationResult<byte[]>.Success(stream.ToArray(), "Xuất dữ liệu thành công");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error exporting students.");
+            return ClassOperationResult<byte[]>.Failure("Đã xảy ra lỗi hệ thống khi xuất dữ liệu.");
+        }
+    }
+
     private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken) =>
         await _currentCenterService.GetCenterIdAsync(cancellationToken);
 
