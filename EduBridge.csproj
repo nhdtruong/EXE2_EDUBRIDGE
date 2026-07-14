@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="docs\**">
+    <Content Include="docs/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
