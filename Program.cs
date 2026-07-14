@@ -265,37 +265,7 @@ namespace EduBridge
 
             if (!app.Environment.IsDevelopment())
             {
-                app.UseExceptionHandler(errorApp =>
-                {
-                    errorApp.Run(async context =>
-                    {
-                        var exceptionFeature = context.Features.Get<IExceptionHandlerFeature>();
-                        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-
-                        if (exceptionFeature?.Error != null)
-                        {
-                            logger.LogError(
-                                exceptionFeature.Error,
-                                "Unhandled exception for request {Method} {Path}",
-                                context.Request.Method,
-                                context.Request.Path);
-                        }
-
-                        if (context.Request.Path.StartsWithSegments("/api"))
-                        {
-                            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                            context.Response.ContentType = "application/json";
-                            await context.Response.WriteAsJsonAsync(new
-                            {
-                                message = "Internal server error",
-                                traceId = context.TraceIdentifier
-                            });
-                            return;
-                        }
-
-                        context.Response.Redirect("/Error");
-                    });
-                });
+                app.UseExceptionHandler("/Error");
                 app.UseHsts();
             }
             else
