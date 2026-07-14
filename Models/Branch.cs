@@ -25,6 +25,14 @@ public partial class Branch
 
     public DateTime? UpdatedAt { get; set; }
 
+    public string? Description { get; set; }
+
+    public int? HeadUserId { get; set; }
+
+    public string? LogoUrl { get; set; }
+
+    public string? ImageUrl { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
@@ -35,3 +43,4 @@ public partial class Branch
 
     public virtual ICollection<Teacher> Teachers { get; set; } = new List<Teacher>();
 }
+

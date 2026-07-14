@@ -1,6 +1,7 @@
 using System.Data;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using ClosedXML.Excel;
 using EduBridge.Contracts.Staffs;
 using EduBridge.Data;
 using EduBridge.Models;
@@ -18,13 +19,20 @@ public sealed class StaffManagementService : IStaffManagementService
     private readonly ILogger<StaffManagementService> _logger;
     private readonly IFileStorageService _storageService;
     private readonly ICurrentCenterService _currentCenterService;
+    private readonly EduBridge.Services.ImportExportHistories.IImportExportHistoryService _historyService;
 
-    public StaffManagementService(AppDbContext context, ILogger<StaffManagementService> logger, IFileStorageService storageService, ICurrentCenterService currentCenterService)
+    public StaffManagementService(
+        AppDbContext context, 
+        ILogger<StaffManagementService> logger, 
+        IFileStorageService storageService, 
+        ICurrentCenterService currentCenterService,
+        EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService)
     {
         _context = context;
         _logger = logger;
         _storageService = storageService;
         _currentCenterService = currentCenterService;
+        _historyService = historyService;
     }
 
     public async Task<ClassOperationResult<StaffPagedResponse>> GetStaffsAsync(
@@ -648,4 +656,609 @@ public sealed class StaffManagementService : IStaffManagementService
     
     private static ClassOperationResult<T> Fail<T>(string message, string key = "") =>
         ClassOperationResult<T>.Failure(message, new Dictionary<string, string[]> { [key] = [message] });
+
+    public async Task<ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>> ImportStaffsFromExcelAsync(int ownerUserId, Microsoft.AspNetCore.Http.IFormFile importFile, CancellationToken cancellationToken = default)
+    {
+        var centerId = await GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
+        if (centerId == null) return ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>.Failure("Không tìm thấy trung tâm.");
+
+        var response = new EduBridge.Contracts.Students.ImportResultResponse();
+        var now = DateTime.UtcNow;
+        var teacherRoleId = await _context.Roles.Where(r => r.RoleCode == "TEACHER").Select(r => (int?)r.RoleId).FirstOrDefaultAsync(cancellationToken);
+        if (teacherRoleId == null) return ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>.Failure("Hệ thống chưa cấu hình role TEACHER.");
+
+        var inputFileUrl = await _storageService.SaveFileAsync(importFile, "imports", cancellationToken);
+
+        var history = await _historyService.CreateHistoryAsync(new EduBridge.Contracts.ImportExportHistories.CreateImportExportHistoryRequest
+        {
+            CenterId = centerId.Value,
+            UserId = ownerUserId,
+            Title = $"Import nhân sự {DateTime.Now:dd/MM/yyyy HH:mm:ss}",
+            ActionType = "Import",
+            EntityName = "Staffs",
+            InputFileUrl = inputFileUrl,
+            Status = "Processing"
+        }, cancellationToken);
+
+        string? resultFileUrl = null;
+        try
+        {
+            using var excelStream = importFile.OpenReadStream();
+            using var excelMemoryStream = new MemoryStream();
+            await excelStream.CopyToAsync(excelMemoryStream, cancellationToken);
+            excelMemoryStream.Position = 0;
+            
+            using var workbook = new XLWorkbook(excelMemoryStream);
+            var worksheet = workbook.Worksheet(1);
+            
+            var rangeUsed = worksheet.RangeUsed();
+            if (rangeUsed == null)
+            {
+                return ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>.Failure("File Excel không có dữ liệu.");
+            }
+            var rows = rangeUsed.RowsUsed().Skip(1).ToList();
+
+            var phoneNumbersInExcel = new HashSet<string>();
+            var emailsInExcel = new HashSet<string>();
+            foreach (var row in rows)
+            {
+                var phone = row.Cell(8).GetString().Trim();
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    var normPhone = string.Concat(phone.Where(char.IsDigit));
+                    if (normPhone.StartsWith("84")) normPhone = "0" + normPhone.Substring(2);
+                    if (normPhone.StartsWith("+84")) normPhone = "0" + normPhone.Substring(3);
+                    phoneNumbersInExcel.Add(normPhone);
+                }
+
+                var email = row.Cell(9).GetString().Trim();
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    emailsInExcel.Add(email.ToLower());
+                }
+            }
+
+            var phoneNumbersList = phoneNumbersInExcel.ToList();
+            var existingUsersByPhone = await _context.Users
+                .Include(u => u.CenterUsers)
+                .Where(u => !u.IsDeleted && u.NormalizedPhoneNumber != null && phoneNumbersList.Contains(u.NormalizedPhoneNumber))
+                .ToListAsync(cancellationToken);
+
+            var emailsList = emailsInExcel.ToList();
+            var existingUsersByEmail = await _context.Users
+                .Include(u => u.CenterUsers)
+                .Where(u => !u.IsDeleted && u.Email != null && emailsList.Contains(u.Email))
+                .ToListAsync(cancellationToken);
+
+            var existingUserPhones = existingUsersByPhone
+                .Where(u => !string.IsNullOrEmpty(u.NormalizedPhoneNumber))
+                .GroupBy(u => u.NormalizedPhoneNumber!)
+                .ToDictionary(g => g.Key, g => g.First());
+                
+            var existingUserEmails = existingUsersByEmail
+                .Where(u => !string.IsNullOrEmpty(u.Email))
+                .GroupBy(u => u.Email!.ToLower())
+                .ToDictionary(g => g.Key, g => g.First());
+
+            var existingCenterUsers = await _context.CenterUsers
+                .Where(cu => cu.CenterId == centerId)
+                .ToListAsync(cancellationToken);
+                
+            var existingCenterUsersByStaffCode = existingCenterUsers
+                .Where(cu => !string.IsNullOrEmpty(cu.StaffCode))
+                .GroupBy(cu => cu.StaffCode!.ToLower())
+                .ToDictionary(g => g.Key, g => g.First());
+
+            int actualLastRow = 1;
+            foreach (var row in rows)
+            {
+                response.TotalRows++;
+                var rowIndex = row.RowNumber();
+                bool isEmptyRow = false;
+                int initialErrorCount = response.ErrorCount;
+                
+                try
+                {
+                    var sttStr = row.Cell(1).GetString().Trim();
+                    var idStr = row.Cell(2).GetString().Trim();
+                    var staffCode = row.Cell(3).GetString().Trim();
+                    var fullName = row.Cell(4).GetString().Trim();
+                    var dobStr = row.Cell(5).GetString().Trim();
+                    var genderStr = row.Cell(6).GetString().Trim();
+                    var identityStr = row.Cell(7).GetString().Trim();
+                    var phoneStr = row.Cell(8).GetString().Trim();
+                    var emailStr = row.Cell(9).GetString().Trim();
+                    var specStr = row.Cell(10).GetString().Trim();
+                    var expStr = row.Cell(11).GetString().Trim();
+
+                    var rowPrefix = string.IsNullOrWhiteSpace(sttStr) ? $"Dòng {rowIndex}" : $"STT {sttStr}";
+
+                    if (string.IsNullOrWhiteSpace(sttStr) && string.IsNullOrWhiteSpace(staffCode) && 
+                        string.IsNullOrWhiteSpace(fullName) && string.IsNullOrWhiteSpace(phoneStr))
+                    {
+                        isEmptyRow = true;
+                        response.TotalRows--;
+                        continue;
+                    }
+                    
+                    int updateUserId = 0;
+                    bool isUpdate = false;
+                    if (!string.IsNullOrWhiteSpace(idStr))
+                    {
+                        if (int.TryParse(idStr, out updateUserId) && updateUserId > 0)
+                        {
+                            isUpdate = true;
+                        }
+                        else
+                        {
+                            response.Errors.Add($"{rowPrefix}: ID không hợp lệ.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    if (!isUpdate)
+                    {
+                        var missingFields = new List<string>();
+                        if (string.IsNullOrWhiteSpace(sttStr)) missingFields.Add("STT");
+                        if (string.IsNullOrWhiteSpace(staffCode)) missingFields.Add("Mã nhân sự");
+                        if (string.IsNullOrWhiteSpace(fullName)) missingFields.Add("Họ và tên");
+                        if (string.IsNullOrWhiteSpace(dobStr)) missingFields.Add("Ngày sinh");
+                        if (string.IsNullOrWhiteSpace(genderStr)) missingFields.Add("Giới tính");
+                        if (string.IsNullOrWhiteSpace(phoneStr)) missingFields.Add("SĐT");
+
+                        if (missingFields.Any())
+                        {
+                            response.Errors.Add($"{rowPrefix}: Thiếu thông tin bắt buộc ({string.Join(", ", missingFields)}).");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(staffCode) && !Regex.IsMatch(staffCode, @"^[A-Za-z0-9][A-Za-z0-9\-_]{1,29}$"))
+                    {
+                        response.Errors.Add($"{rowPrefix}: Mã nhân sự không hợp lệ.");
+                        response.ErrorCount++;
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(staffCode) && existingCenterUsersByStaffCode.TryGetValue(staffCode.ToLower(), out var cuCode) && (!isUpdate || cuCode.UserId != updateUserId))
+                    {
+                        response.Errors.Add($"{rowPrefix}: Mã nhân sự đã tồn tại trong trung tâm.");
+                        response.ErrorCount++;
+                        continue;
+                    }
+
+                    string? gender = null;
+                    if (!string.IsNullOrWhiteSpace(genderStr))
+                    {
+                        if (genderStr.Equals("1") || genderStr.Equals("Nam", StringComparison.OrdinalIgnoreCase)) gender = "Nam";
+                        else if (genderStr.Equals("2") || genderStr.Equals("Nữ", StringComparison.OrdinalIgnoreCase)) gender = "Nữ";
+                        else
+                        {
+                            response.Errors.Add($"{rowPrefix}: Giới tính không hợp lệ (1/Nam hoặc 2/Nữ).");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    DateOnly? dateOfBirth = null;
+                    if (!string.IsNullOrWhiteSpace(dobStr))
+                    {
+                        if (!DateOnly.TryParseExact(dobStr, new[] { "dd/MM/yyyy", "d/M/yyyy" }, null, System.Globalization.DateTimeStyles.None, out var dob))
+                        {
+                            response.Errors.Add($"{rowPrefix}: Ngày sinh không hợp lệ (dd/MM/yyyy).");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                        dateOfBirth = dob;
+                    }
+
+                    string? normalizedPhone = null;
+                    if (!string.IsNullOrWhiteSpace(phoneStr))
+                    {
+                        normalizedPhone = NormalizePhone(phoneStr);
+                        if (normalizedPhone.Length is < 10 or > 12 || !normalizedPhone.StartsWith('0'))
+                        {
+                            response.Errors.Add($"{rowPrefix}: SĐT không hợp lệ.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+
+                        if (existingUserPhones.TryGetValue(normalizedPhone, out var uPhone) && (!isUpdate || uPhone.UserId != updateUserId))
+                        {
+                            response.Errors.Add($"{rowPrefix}: Số điện thoại đã tồn tại trong hệ thống.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(emailStr))
+                    {
+                        if (existingUserEmails.TryGetValue(emailStr.ToLower(), out var uEmail) && (!isUpdate || uEmail.UserId != updateUserId))
+                        {
+                            response.Errors.Add($"{rowPrefix}: Email đã tồn tại trong hệ thống.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    int? experienceYears = null;
+                    if (!string.IsNullOrWhiteSpace(expStr))
+                    {
+                        if (int.TryParse(expStr, out var exp)) experienceYears = exp;
+                        else
+                        {
+                            response.Errors.Add($"{rowPrefix}: Năm kinh nghiệm không hợp lệ.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    User? userToUpdate = null;
+                    if (isUpdate)
+                    {
+                        userToUpdate = await _context.Users.Include(u => u.CenterUsers).FirstOrDefaultAsync(u => u.UserId == updateUserId, cancellationToken);
+                        if (userToUpdate == null)
+                        {
+                            response.Errors.Add($"{rowPrefix}: Không tìm thấy User có ID {updateUserId}.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                        
+                        if (!string.IsNullOrWhiteSpace(fullName)) userToUpdate.FullName = fullName;
+                        if (!string.IsNullOrWhiteSpace(phoneStr)) userToUpdate.PhoneNumber = phoneStr;
+                        if (!string.IsNullOrWhiteSpace(normalizedPhone)) userToUpdate.NormalizedPhoneNumber = normalizedPhone;
+                        if (!string.IsNullOrWhiteSpace(identityStr)) userToUpdate.IdentityNumber = identityStr;
+                        if (!string.IsNullOrWhiteSpace(emailStr)) userToUpdate.Email = emailStr.ToLower();
+                        if (dateOfBirth != null) userToUpdate.DateOfBirth = dateOfBirth.Value;
+                        if (!string.IsNullOrWhiteSpace(gender)) userToUpdate.Gender = gender;
+
+                        var membership = userToUpdate.CenterUsers.FirstOrDefault(cu => cu.CenterId == centerId);
+                        if (membership == null)
+                        {
+                            if (string.IsNullOrWhiteSpace(staffCode))
+                            {
+                                response.Errors.Add($"{rowPrefix}: Cần có Mã nhân sự khi gán nhân sự mới vào trung tâm.");
+                                response.ErrorCount++;
+                                continue;
+                            }
+                            membership = new CenterUser
+                            {
+                                CenterId = centerId.Value,
+                                UserId = userToUpdate.UserId,
+                                UserType = "TEACHER",
+                                StaffCode = staffCode,
+                                Status = "Active",
+                                CreatedAt = now
+                            };
+                            _context.CenterUsers.Add(membership);
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(staffCode)) membership.StaffCode = staffCode;
+                            if (membership.UserType != "OWNER") membership.UserType = "TEACHER";
+                        }
+                    }
+                    else if (normalizedPhone != null && existingUserPhones.TryGetValue(normalizedPhone, out var existingByPhone))
+                    {
+                        userToUpdate = existingByPhone;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(emailStr) && existingUserEmails.TryGetValue(emailStr.ToLower(), out var existingByEmail))
+                    {
+                        userToUpdate = existingByEmail;
+                    }
+
+                    if (userToUpdate != null && !isUpdate) // Found by Phone or Email but not an explicit ID update
+                    {
+                        if (!string.IsNullOrWhiteSpace(fullName)) userToUpdate.FullName = fullName;
+                        if (dateOfBirth != null) userToUpdate.DateOfBirth = dateOfBirth.Value;
+                        if (!string.IsNullOrWhiteSpace(gender)) userToUpdate.Gender = gender;
+                        
+                        var membership = userToUpdate.CenterUsers.FirstOrDefault(cu => cu.CenterId == centerId);
+                        if (membership == null)
+                        {
+                            membership = new CenterUser
+                            {
+                                CenterId = centerId.Value,
+                                UserId = userToUpdate.UserId,
+                                UserType = "TEACHER",
+                                StaffCode = staffCode,
+                                Status = "Active",
+                                CreatedAt = now
+                            };
+                            _context.CenterUsers.Add(membership);
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(staffCode)) membership.StaffCode = staffCode;
+                            if (membership.UserType != "OWNER") membership.UserType = "TEACHER";
+                        }
+                    }
+                    else if (userToUpdate == null) // Completely new
+                    {
+                        var newUser = new User
+                        {
+                            RoleId = teacherRoleId.Value,
+                            FullName = fullName,
+                            PhoneNumber = phoneStr,
+                            NormalizedPhoneNumber = normalizedPhone,
+                            IdentityNumber = string.IsNullOrWhiteSpace(identityStr) ? null : identityStr,
+                            Email = string.IsNullOrWhiteSpace(emailStr) ? null : emailStr.ToLower(),
+                            DateOfBirth = dateOfBirth ?? default,
+                            Gender = gender ?? "Nam",
+                            PasswordHash = BCrypt.Net.BCrypt.HashPassword("edubridge2026"),
+                            EmailConfirmed = true,
+                            Status = "Active",
+                            IsDeleted = false,
+                            CreatedAt = now
+                        };
+                        
+                        _context.Users.Add(newUser);
+                        newUser.CenterUsers.Add(new CenterUser
+                        {
+                            CenterId = centerId.Value,
+                            UserType = "TEACHER",
+                            StaffCode = staffCode,
+                            Status = "Active",
+                            CreatedAt = now
+                        });
+                        userToUpdate = newUser;
+                    }
+
+                    var teacherRecord = await _context.Teachers.FirstOrDefaultAsync(t => t.CenterId == centerId && t.UserId == userToUpdate.UserId, cancellationToken);
+                    if (teacherRecord == null)
+                    {
+                        teacherRecord = new Teacher
+                        {
+                            CenterId = centerId.Value,
+                            User = userToUpdate,
+                            TeacherCode = string.IsNullOrWhiteSpace(staffCode) ? "TEACHER" : staffCode,
+                            Specialization = string.IsNullOrWhiteSpace(specStr) ? null : specStr,
+                            ExperienceYears = experienceYears ?? 0,
+                            Status = "Active",
+                            IsDeleted = false
+                        };
+                        _context.Teachers.Add(teacherRecord);
+                    }
+                    else
+                    {
+                        teacherRecord.TeacherCode = staffCode;
+                        if (!string.IsNullOrWhiteSpace(specStr)) teacherRecord.Specialization = specStr;
+                        if (experienceYears.HasValue) teacherRecord.ExperienceYears = experienceYears.Value;
+                    }
+
+                    response.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing row {RowIndex}", rowIndex);
+                    response.Errors.Add($"Dòng {rowIndex}: Lỗi hệ thống khi xử lý dữ liệu.");
+                    response.ErrorCount++;
+                }
+                finally
+                {
+                    if (!isEmptyRow)
+                    {
+                        actualLastRow = Math.Max(actualLastRow, rowIndex);
+                        if (response.ErrorCount > initialErrorCount)
+                        {
+                            row.Cell(12).Value = "Thất bại";
+                            var newErrors = response.Errors.Skip(response.Errors.Count - (response.ErrorCount - initialErrorCount)).ToList();
+                            row.Cell(13).Value = string.Join(" | ", newErrors.Select(e => e.Contains(':') ? e.Substring(e.IndexOf(':') + 1).Trim() : e));
+                        }
+                        else
+                        {
+                            row.Cell(12).Value = "Thành công";
+                            row.Cell(13).Value = "";
+                        }
+                    }
+                }
+            }
+
+            if (response.SuccessCount > 0)
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            if (actualLastRow > 0)
+            {
+                int maxRow = worksheet.LastRowUsed()?.RowNumber() ?? actualLastRow;
+                if (maxRow > actualLastRow)
+                {
+                    worksheet.Rows(actualLastRow + 1, maxRow).Delete();
+                }
+
+                worksheet.Cell(1, 12).Value = "Trạng thái";
+                worksheet.Cell(1, 13).Value = "Lý do lỗi";
+                
+                var headerStyle = worksheet.Cell(1, 11).Style;
+                worksheet.Cell(1, 12).Style = headerStyle;
+                worksheet.Cell(1, 13).Style = headerStyle;
+
+                var resultRange = worksheet.Range(1, 1, actualLastRow, 13);
+                resultRange.Style.Font.FontName = "Times New Roman";
+                resultRange.Style.Font.FontSize = 12;
+                resultRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                resultRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+                worksheet.Columns(1, 13).AdjustToContents();
+                for (int i = 1; i <= 13; i++)
+                {
+                    worksheet.Column(i).Width += 2;
+                }
+
+                using var resultStream = new System.IO.MemoryStream();
+                workbook.SaveAs(resultStream);
+                resultStream.Position = 0;
+                var resultFileName = $"result_staff_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                
+                var errorFile = new Microsoft.AspNetCore.Http.FormFile(resultStream, 0, resultStream.Length, "result", resultFileName)
+                {
+                    Headers = new Microsoft.AspNetCore.Http.HeaderDictionary(),
+                    ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                };
+                
+                resultFileUrl = await _storageService.SaveFileAsync(errorFile, "imports/results", cancellationToken);
+            }
+
+            await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Completed", resultFileUrl, cancellationToken);
+            
+            return ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>.Success(response, "Import hoàn tất.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import staffs");
+            await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Error", null, cancellationToken);
+            return ClassOperationResult<EduBridge.Contracts.Students.ImportResultResponse>.Failure($"Lỗi khi đọc file Excel: {ex.Message}");
+        }
+    }
+
+    public async Task<ClassOperationResult<byte[]>> ExportStaffsAsync(int ownerUserId, StaffQuery query, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var centerId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
+            if (centerId == null)
+            {
+                var ownerCenter = await _context.Centers.FirstOrDefaultAsync(c => c.OwnerUserId == ownerUserId && c.Status == "Active", cancellationToken);
+                if (ownerCenter == null) return ClassOperationResult<byte[]>.Failure("Owner has no center.");
+                centerId = ownerCenter.CenterId;
+            }
+
+            var queryable = _context.Users.AsNoTracking()
+                .Include(u => u.Role)
+                .Include(u => u.CenterUsers)
+                .Include(u => u.Teacher)
+                .Where(u => !u.IsDeleted && u.CenterUsers.Any(cu => cu.CenterId == centerId.Value && (cu.UserType == "TEACHER" || cu.UserType == "OWNER")));
+
+            if (!string.IsNullOrWhiteSpace(query.Keyword))
+            {
+                var keyword = query.Keyword.Trim().ToLower();
+                var phone = NormalizePhone(query.Keyword);
+                var isPhoneSearch = !string.IsNullOrEmpty(phone) && !query.Keyword.Any(char.IsLetter);
+                queryable = queryable.Where(u => 
+                    (u.CenterUsers.Any(cu => cu.CenterId == centerId && cu.StaffCode != null && cu.StaffCode.ToLower().Contains(keyword))) ||
+                    (u.Teacher != null && u.Teacher.CenterId == centerId && u.Teacher.TeacherCode.ToLower().Contains(keyword)) || 
+                    u.FullName.ToLower().Contains(keyword) || 
+                    (u.PhoneNumber != null && u.PhoneNumber.ToLower().Contains(keyword)) ||
+                    (isPhoneSearch && u.NormalizedPhoneNumber != null && u.NormalizedPhoneNumber.Contains(phone)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.ContactKeyword))
+            {
+                var contact = query.ContactKeyword.Trim().ToLower();
+                queryable = queryable.Where(u => 
+                    (u.PhoneNumber != null && u.PhoneNumber.ToLower().Contains(contact)) || 
+                    (u.Email != null && u.Email.ToLower().Contains(contact)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(query.Status))
+                queryable = queryable.Where(u => u.CenterUsers.Any(cu => cu.CenterId == centerId && cu.Status.ToLower() == query.Status.ToLower()));
+                
+            if (!string.IsNullOrWhiteSpace(query.Role))
+                queryable = queryable.Where(u => u.CenterUsers.Any(cu => cu.CenterId == centerId && cu.UserType.ToLower() == query.Role.ToLower()));
+
+            queryable = queryable.OrderByDescending(u => u.UserId);
+
+            if (query.Page > 0 && query.PageSize > 0)
+            {
+                queryable = queryable.Skip((query.Page - 1) * query.PageSize).Take(query.PageSize);
+            }
+
+            var items = await queryable
+                .Select(u => new 
+                {
+                    User = u,
+                    CenterUsers = u.CenterUsers.Where(cu => cu.CenterId == centerId && (cu.UserType == "TEACHER" || cu.UserType == "OWNER")).ToList(),
+                    Teacher = u.Teacher != null && u.Teacher.CenterId == centerId && !u.Teacher.IsDeleted ? u.Teacher : null
+                })
+                .ToListAsync(cancellationToken);
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Danh sách nhân sự");
+
+            var headers = new string[] { "STT", "ID", "Mã nhân sự", "Họ và tên", "Ngày sinh", "Giới tính", "CMND/CCCD", "SĐT", "Email", "Vai trò", "Chuyên môn", "Năm kinh nghiệm", "Trạng thái" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(1, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.LightGray;
+                cell.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            }
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                var user = item.User;
+                var teacher = item.Teacher;
+                
+                var primaryCu = item.CenterUsers.FirstOrDefault(c => c.UserType == "OWNER") ?? item.CenterUsers.FirstOrDefault();
+                var staffCode = primaryCu?.StaffCode;
+                if (string.IsNullOrEmpty(staffCode) && teacher != null) staffCode = teacher.TeacherCode;
+                
+                var roles = item.CenterUsers.Select(c => c.UserType == "TEACHER" ? "Giáo viên" : (c.UserType == "OWNER" ? "Chủ trung tâm" : c.UserType)).ToList();
+                var roleString = string.Join(", ", roles);
+                var status = primaryCu?.Status == "Active" ? "Đang làm việc" : "Đã nghỉ việc";
+
+                int row = i + 2;
+                worksheet.Cell(row, 1).Value = i + 1;
+                worksheet.Cell(row, 2).Value = user.UserId;
+                worksheet.Cell(row, 3).Value = staffCode ?? "";
+                worksheet.Cell(row, 4).Value = user.FullName;
+                worksheet.Cell(row, 5).Value = user.DateOfBirth?.ToString("dd/MM/yyyy") ?? "";
+                worksheet.Cell(row, 6).Value = user.Gender ?? "";
+                worksheet.Cell(row, 7).Value = user.IdentityNumber ?? "";
+                worksheet.Cell(row, 8).Value = user.PhoneNumber ?? "";
+                worksheet.Cell(row, 9).Value = user.Email ?? "";
+                worksheet.Cell(row, 10).Value = roleString;
+                worksheet.Cell(row, 11).Value = teacher?.Specialization ?? "";
+                worksheet.Cell(row, 12).Value = teacher != null ? teacher.ExperienceYears.ToString() : "";
+                worksheet.Cell(row, 13).Value = status;
+                
+                for (int col = 1; col <= 13; col++)
+                {
+                    worksheet.Cell(row, col).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+                }
+            }
+
+            worksheet.Style.Font.FontName = "Times New Roman";
+            worksheet.Style.Font.FontSize = 12;
+
+            worksheet.Columns().AdjustToContents();
+            for (int i = 1; i <= 13; i++)
+            {
+                worksheet.Column(i).Width += 2;
+            }
+
+            worksheet.Column(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Column(5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Column(12).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var content = stream.ToArray();
+
+            // Save history
+            var history = await _historyService.CreateHistoryAsync(new EduBridge.Contracts.ImportExportHistories.CreateImportExportHistoryRequest
+            {
+                CenterId = centerId.Value,
+                UserId = ownerUserId,
+                Title = "Xuất danh sách nhân sự",
+                ActionType = "Export",
+                EntityName = "Staffs"
+            }, cancellationToken);
+            
+            await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Completed", null, cancellationToken);
+
+            return ClassOperationResult<byte[]>.Success(content, "Xuất dữ liệu thành công");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to export staffs");
+            return ClassOperationResult<byte[]>.Failure("Lỗi khi xuất file Excel.");
+        }
+    }
 }

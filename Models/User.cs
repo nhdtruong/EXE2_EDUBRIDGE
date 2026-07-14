@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -63,6 +63,8 @@ public partial class User
 
     public virtual ICollection<CenterUser> CenterUsers { get; set; } = new List<CenterUser>();
 
+    public virtual ICollection<ImportExportHistory> ImportExportHistories { get; set; } = new List<ImportExportHistory>();
+
     public virtual ICollection<Center> Centers { get; set; } = new List<Center>();
 
     public virtual ICollection<Class> ClassClosedByUsers { get; set; } = new List<Class>();
@@ -103,3 +105,4 @@ public partial class User
 
     public virtual Teacher? Teacher { get; set; }
 }
+

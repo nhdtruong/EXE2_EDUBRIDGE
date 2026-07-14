@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using EduBridge.Services.Auth;
+using ClosedXML.Excel;
 
 namespace EduBridge.Services.Students;
 
@@ -16,12 +17,21 @@ public class StudentManagementService : IStudentManagementService
     private readonly AppDbContext _context;
     private readonly ILogger<StudentManagementService> _logger;
     private readonly ICurrentCenterService _currentCenterService;
+    private readonly EduBridge.Services.ImportExportHistories.IImportExportHistoryService _historyService;
+    private readonly EduBridge.Services.Storage.IFileStorageService _storageService;
 
-    public StudentManagementService(AppDbContext context, ILogger<StudentManagementService> logger, ICurrentCenterService currentCenterService)
+    public StudentManagementService(
+        AppDbContext context, 
+        ILogger<StudentManagementService> logger, 
+        ICurrentCenterService currentCenterService,
+        EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService,
+        EduBridge.Services.Storage.IFileStorageService storageService)
     {
         _context = context;
         _logger = logger;
         _currentCenterService = currentCenterService;
+        _historyService = historyService;
+        _storageService = storageService;
     }
 
     private async Task<int?> GetOwnerCenterIdAsync(int ownerUserId, CancellationToken cancellationToken) =>
@@ -597,5 +607,451 @@ public class StudentManagementService : IStudentManagementService
         {
             System.IO.File.Delete(fullPath);
         }
+    }
+
+    public async Task<ClassOperationResult<ImportResultResponse>> ImportStudentsFromExcelAsync(int ownerUserId, Microsoft.AspNetCore.Http.IFormFile importFile, CancellationToken cancellationToken = default)
+    {
+        var centerId = await GetOwnerCenterIdAsync(ownerUserId, cancellationToken);
+        if (centerId == null) return ClassOperationResult<ImportResultResponse>.Failure("Không tìm thấy trung tâm.");
+
+        var response = new ImportResultResponse();
+        var now = DateTime.UtcNow;
+        var parentRoleId = await _context.Roles.Where(r => r.RoleCode == "PARENT").Select(r => (int?)r.RoleId).FirstOrDefaultAsync(cancellationToken);
+        if (parentRoleId == null) return ClassOperationResult<ImportResultResponse>.Failure("Hệ thống chưa cấu hình role PARENT.");
+
+        var inputFileUrl = await _storageService.SaveFileAsync(importFile, "imports", cancellationToken);
+
+        var history = await _historyService.CreateHistoryAsync(new EduBridge.Contracts.ImportExportHistories.CreateImportExportHistoryRequest
+        {
+            CenterId = centerId.Value,
+            UserId = ownerUserId,
+            Title = $"Import học sinh {DateTime.Now:dd/MM/yyyy HH:mm:ss}",
+            ActionType = "Import",
+            EntityName = "Students",
+            InputFileUrl = inputFileUrl,
+            Status = "Processing"
+        }, cancellationToken);
+
+        string? resultFileUrl = null;
+        try
+        {
+            using var excelStream = importFile.OpenReadStream();
+            using var workbook = new XLWorkbook(excelStream);
+            var worksheet = workbook.Worksheet(1);
+            var rows = worksheet.RangeUsed().RowsUsed().Skip(1).ToList(); // Skip header and materialize
+
+            var phoneNumbersInExcel = new HashSet<string>();
+            var emailsInExcel = new HashSet<string>();
+            foreach (var row in rows)
+            {
+                var phone = row.Cell(10).GetString().Trim();
+                if (!string.IsNullOrWhiteSpace(phone))
+                {
+                    // Basic normalization to find existing users (removing spaces/special chars if any, although NormalizeOptionalPhoneNumber handles it)
+                    var normPhone = string.Concat(phone.Where(char.IsDigit));
+                    if (normPhone.StartsWith("84")) normPhone = "0" + normPhone.Substring(2);
+                    if (normPhone.StartsWith("+84")) normPhone = "0" + normPhone.Substring(3);
+                    phoneNumbersInExcel.Add(normPhone);
+                }
+
+                var email = row.Cell(12).GetString().Trim();
+                if (!string.IsNullOrWhiteSpace(email))
+                {
+                    emailsInExcel.Add(email.ToLower());
+                }
+            }
+
+            var phoneNumbersList = phoneNumbersInExcel.ToList();
+            var existingUsers = await _context.Users
+                .Include(u => u.Role)
+                .Include(u => u.CenterUsers)
+                .Where(u => !u.IsDeleted && u.RoleId == parentRoleId && u.NormalizedPhoneNumber != null && phoneNumbersList.Contains(u.NormalizedPhoneNumber))
+                .ToListAsync(cancellationToken);
+
+            var emailsList = emailsInExcel.ToList();
+            var existingEmailsSet = new HashSet<string>(await _context.Users
+                .Where(u => !u.IsDeleted && u.Email != null && emailsList.Contains(u.Email))
+                .Select(u => u.Email!)
+                .ToListAsync(cancellationToken), StringComparer.OrdinalIgnoreCase);
+
+            var existingUserPhones = existingUsers
+                .Where(u => !string.IsNullOrEmpty(u.NormalizedPhoneNumber))
+                .GroupBy(u => u.NormalizedPhoneNumber!)
+                .ToDictionary(g => g.Key, g => g.First());
+                
+            var existingStudents = await _context.Students
+                .Where(s => s.CenterId == centerId && !s.IsDeleted)
+                .ToListAsync(cancellationToken);
+                
+            var existingStudentsById = existingStudents
+                .GroupBy(s => s.StudentId)
+                .ToDictionary(g => g.Key, g => g.First());
+            var existingStudentsByCode = existingStudents
+                .GroupBy(s => s.StudentCode.ToLower())
+                .ToDictionary(g => g.Key, g => g.First());
+            var existingStudentsByPhone = new Dictionary<string, Student>();
+            foreach(var s in existingStudents)
+            {
+                if (!string.IsNullOrEmpty(s.NormalizedPhoneNumber) && !existingStudentsByPhone.ContainsKey(s.NormalizedPhoneNumber))
+                {
+                    existingStudentsByPhone[s.NormalizedPhoneNumber] = s;
+                }
+            }
+            int actualLastRow = 1;
+            foreach (var row in rows)
+            {
+                response.TotalRows++;
+                var rowIndex = row.RowNumber();
+                int initialErrorCount = response.ErrorCount;
+                bool isEmptyRow = false;
+                bool isUpdate = false;
+                
+                try
+                {
+                    var sttStr = row.Cell(1).GetString().Trim();
+                    var idStr = row.Cell(2).GetString().Trim();
+                    var studentCode = row.Cell(3).GetString().Trim();
+                    var fullName = row.Cell(4).GetString().Trim();
+                    var dobStr = row.Cell(5).GetString().Trim();
+                    var genderStr = row.Cell(6).GetString().Trim();
+                    var studentPhone = row.Cell(7).GetString().Trim();
+                    var studentEmail = row.Cell(8).GetString().Trim();
+                    var address = row.Cell(9).GetString().Trim();
+                    var parentPhone = row.Cell(10).GetString().Trim();
+                    var parentFullName = row.Cell(11).GetString().Trim();
+                    var parentEmail = row.Cell(12).GetString().Trim();
+
+                    var rowPrefix = string.IsNullOrWhiteSpace(sttStr) ? $"Dòng {rowIndex}" : $"STT {sttStr}";
+
+                    // Bỏ qua các dòng trống hoàn toàn (có thể do các cột ghi chú bên phải làm XLWorkbook nhận diện là row used)
+                    if (string.IsNullOrWhiteSpace(sttStr) && string.IsNullOrWhiteSpace(idStr) && string.IsNullOrWhiteSpace(studentCode) && 
+                        string.IsNullOrWhiteSpace(fullName) && string.IsNullOrWhiteSpace(parentPhone))
+                    {
+                        isEmptyRow = true;
+                        response.TotalRows--; // Không tính là một dòng dữ liệu hợp lệ
+                        continue;
+                    }
+                    int studentId = 0;
+                    Student? existingStudentToUpdate = null;
+                    if (!string.IsNullOrWhiteSpace(idStr))
+                    {
+                        if (int.TryParse(idStr, out studentId) && studentId > 0)
+                        {
+                            if (!existingStudentsById.TryGetValue(studentId, out existingStudentToUpdate))
+                            {
+                                response.Errors.Add($"{rowPrefix}: Không tìm thấy học sinh với ID {studentId} trong hệ thống.");
+                                response.ErrorCount++;
+                                continue;
+                            }
+                            isUpdate = true;
+                        }
+                        else
+                        {
+                            response.Errors.Add($"{rowPrefix}: ID không hợp lệ.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    if (!isUpdate)
+                    {
+                        var missingFields = new List<string>();
+                        if (string.IsNullOrWhiteSpace(sttStr)) missingFields.Add("STT");
+                        if (string.IsNullOrWhiteSpace(studentCode)) missingFields.Add("Mã học sinh");
+                        if (string.IsNullOrWhiteSpace(fullName)) missingFields.Add("Họ và tên");
+                        if (string.IsNullOrWhiteSpace(genderStr)) missingFields.Add("Giới tính");
+                        if (string.IsNullOrWhiteSpace(parentPhone)) missingFields.Add("SĐT phụ huynh");
+                        if (string.IsNullOrWhiteSpace(parentFullName)) missingFields.Add("Tên phụ huynh");
+
+                        if (missingFields.Any())
+                        {
+                            response.Errors.Add($"{rowPrefix}: Thiếu thông tin bắt buộc ở các cột ({string.Join(", ", missingFields)}).");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(studentCode) && !Regex.IsMatch(studentCode, @"^[A-Za-z0-9][A-Za-z0-9\-_]{1,29}$"))
+                    {
+                        response.Errors.Add($"{rowPrefix}: Mã HS không hợp lệ (chỉ gồm chữ, số, dấu -, _, 2-30 ký tự).");
+                        response.ErrorCount++;
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(studentCode) && existingStudentsByCode.TryGetValue(studentCode.ToLower(), out var sCode) && (!isUpdate || sCode.StudentId != studentId))
+                    {
+                        response.Errors.Add($"{rowPrefix}: Mã học sinh đã tồn tại.");
+                        response.ErrorCount++;
+                        continue;
+                    }
+
+                    string? gender = null;
+                    if (!string.IsNullOrWhiteSpace(genderStr))
+                    {
+                        if (genderStr == "1") gender = "Nam";
+                        else if (genderStr == "2") gender = "Nữ";
+                        else
+                        {
+                            response.Errors.Add($"{rowPrefix}: Giới tính không hợp lệ (1=Nam, 2=Nữ).");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    DateOnly? dateOfBirth = null;
+                    if (!string.IsNullOrWhiteSpace(dobStr))
+                    {
+                        if (DateOnly.TryParseExact(dobStr, new[] { "dd/MM/yyyy", "d/M/yyyy" }, null, System.Globalization.DateTimeStyles.None, out var dob))
+                        {
+                            if (dob > GetVietnamToday())
+                            {
+                                response.Errors.Add($"{rowPrefix}: Ngày sinh không được lớn hơn ngày hiện tại.");
+                                response.ErrorCount++;
+                                continue;
+                            }
+                            dateOfBirth = dob;
+                        }
+                        else
+                        {
+                            response.Errors.Add($"{rowPrefix}: Ngày sinh không đúng định dạng dd/MM/yyyy.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    var normalizedStudentPhone = NormalizeOptionalPhoneNumber(studentPhone);
+                    if (!string.IsNullOrWhiteSpace(normalizedStudentPhone))
+                    {
+                        if (!IsValidVietnamPhone(normalizedStudentPhone))
+                        {
+                            response.Errors.Add($"{rowPrefix}: SĐT học sinh không hợp lệ.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                        if (existingStudentsByPhone.TryGetValue(normalizedStudentPhone, out var sPhone) && (!isUpdate || sPhone.StudentId != studentId))
+                        {
+                            response.Errors.Add($"{rowPrefix}: SĐT học sinh đã tồn tại.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    var normalizedParentPhone = NormalizeOptionalPhoneNumber(parentPhone);
+                    if (!string.IsNullOrWhiteSpace(normalizedParentPhone) && !IsValidVietnamPhone(normalizedParentPhone))
+                    {
+                        response.Errors.Add($"{rowPrefix}: SĐT phụ huynh không hợp lệ.");
+                        response.ErrorCount++;
+                        continue;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(parentEmail) && existingEmailsSet.Contains(parentEmail))
+                    {
+                        if (string.IsNullOrWhiteSpace(normalizedParentPhone) || !existingUserPhones.TryGetValue(normalizedParentPhone, out var p) || !string.Equals(p.Email, parentEmail, StringComparison.OrdinalIgnoreCase))
+                        {
+                            response.Errors.Add($"{rowPrefix}: Email phụ huynh ({parentEmail}) đã được sử dụng bởi một tài khoản khác.");
+                            response.ErrorCount++;
+                            continue;
+                        }
+                    }
+
+                    User? parent = null;
+                    bool isNewParent = false;
+                    bool updateParent = !string.IsNullOrWhiteSpace(normalizedParentPhone);
+
+                    if (updateParent || !isUpdate)
+                    {
+                        if (existingUserPhones.TryGetValue(normalizedParentPhone, out var existingParent))
+                        {
+                            parent = existingParent;
+                            if (parent.RoleId != parentRoleId.Value)
+                            {
+                                response.Errors.Add($"{rowPrefix}: SĐT phụ huynh đang thuộc về tài khoản không phải phụ huynh.");
+                                response.ErrorCount++;
+                                continue;
+                            }
+
+                            bool parentChanged = false;
+                            if (!string.IsNullOrWhiteSpace(parentFullName) && parent.FullName != parentFullName)
+                            {
+                                parent.FullName = parentFullName;
+                                parentChanged = true;
+                            }
+                            if (!string.IsNullOrWhiteSpace(parentEmail) && parent.Email != parentEmail)
+                            {
+                                parent.Email = parentEmail;
+                                parentChanged = true;
+                            }
+                            if (parentChanged) _context.Users.Update(parent);
+
+                            if (!parent.CenterUsers.Any(cu => cu.CenterId == centerId.Value))
+                            {
+                                var newCenterUser = new CenterUser { CenterId = centerId.Value, UserId = parent.UserId, UserType = "PARENT", Status = "Active", CreatedAt = now };
+                                _context.CenterUsers.Add(newCenterUser);
+                                parent.CenterUsers.Add(newCenterUser);
+                            }
+                        }
+                        else
+                        {
+                            parent = new User
+                            {
+                                RoleId = parentRoleId.Value,
+                                FullName = string.IsNullOrWhiteSpace(parentFullName) ? $"Phụ huynh {fullName}" : parentFullName,
+                                Email = string.IsNullOrWhiteSpace(parentEmail) ? null : parentEmail,
+                                PhoneNumber = parentPhone,
+                                NormalizedPhoneNumber = normalizedParentPhone,
+                                PasswordHash = BCrypt.Net.BCrypt.HashPassword("edubridge2026"),
+                                EmailConfirmed = true,
+                                Status = "Active",
+                                IsDeleted = false,
+                                CreatedAt = now
+                            };
+                            isNewParent = true;
+                        }
+                    }
+
+                    try 
+                    {
+                        if (isNewParent && parent != null)
+                        {
+                            _context.Users.Add(parent);
+                            await _context.SaveChangesAsync(cancellationToken);
+                            existingUserPhones[normalizedParentPhone] = parent;
+
+                            _context.CenterUsers.Add(new CenterUser { CenterId = centerId.Value, UserId = parent.UserId, UserType = "PARENT", Status = "Active", CreatedAt = now });
+                            await _context.SaveChangesAsync(cancellationToken);
+                        }
+                        else if (parent != null && _context.Entry(parent).State == EntityState.Modified)
+                        {
+                            await _context.SaveChangesAsync(cancellationToken);
+                        }
+
+                        if (isUpdate && existingStudentToUpdate != null)
+                        {
+                            var oldCode = existingStudentToUpdate.StudentCode.ToLower();
+                            if (!string.IsNullOrWhiteSpace(studentCode) && oldCode != studentCode.ToLower()) existingStudentsByCode.Remove(oldCode);
+                            
+                            var oldPhone = existingStudentToUpdate.NormalizedPhoneNumber;
+                            if (!string.IsNullOrWhiteSpace(normalizedStudentPhone) && oldPhone != null && oldPhone != normalizedStudentPhone) existingStudentsByPhone.Remove(oldPhone);
+
+                            if (parent != null) existingStudentToUpdate.ParentUserId = parent.UserId;
+                            if (!string.IsNullOrWhiteSpace(studentCode)) existingStudentToUpdate.StudentCode = studentCode;
+                            if (!string.IsNullOrWhiteSpace(fullName)) existingStudentToUpdate.FullName = fullName;
+                            if (dateOfBirth != null) existingStudentToUpdate.DateOfBirth = dateOfBirth;
+                            if (!string.IsNullOrWhiteSpace(gender)) existingStudentToUpdate.Gender = gender;
+                            if (!string.IsNullOrWhiteSpace(address)) existingStudentToUpdate.Address = address;
+                            if (!string.IsNullOrWhiteSpace(studentPhone)) existingStudentToUpdate.PhoneNumber = studentPhone;
+                            if (!string.IsNullOrWhiteSpace(studentEmail)) existingStudentToUpdate.Email = studentEmail;
+                            if (!string.IsNullOrWhiteSpace(normalizedStudentPhone)) existingStudentToUpdate.NormalizedPhoneNumber = normalizedStudentPhone;
+
+                            _context.Students.Update(existingStudentToUpdate);
+                            if (!string.IsNullOrWhiteSpace(studentCode)) existingStudentsByCode[studentCode.ToLower()] = existingStudentToUpdate;
+                            if (!string.IsNullOrWhiteSpace(normalizedStudentPhone)) existingStudentsByPhone[normalizedStudentPhone] = existingStudentToUpdate;
+                        }
+                        else
+                        {
+                            var student = new Student
+                            {
+                                ParentUserId = parent.UserId,
+                                CenterId = centerId.Value,
+                                StudentCode = studentCode,
+                                FullName = fullName,
+                                DateOfBirth = dateOfBirth,
+                                Gender = gender,
+                                Address = string.IsNullOrWhiteSpace(address) ? null : address,
+                                PhoneNumber = string.IsNullOrWhiteSpace(studentPhone) ? null : studentPhone,
+                                Email = string.IsNullOrWhiteSpace(studentEmail) ? null : studentEmail,
+                                NormalizedPhoneNumber = normalizedStudentPhone,
+                                Status = "Active",
+                                IsDeleted = false,
+                                CreatedAt = now
+                            };
+
+                            _context.Students.Add(student);
+                            existingStudentsByCode[studentCode.ToLower()] = student;
+                            if (normalizedStudentPhone != null) existingStudentsByPhone[normalizedStudentPhone] = student;
+                        }
+
+                        await _context.SaveChangesAsync(cancellationToken);
+
+                        response.SuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        var inner = ex;
+                        while (inner.InnerException != null) inner = inner.InnerException;
+                        response.Errors.Add($"{rowPrefix}: Lỗi khi lưu vào DB ({inner.Message}).");
+                        response.ErrorCount++;
+                        _context.ChangeTracker.Clear();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    response.Errors.Add($"Dòng {rowIndex}: Lỗi xử lý dữ liệu ({ex.Message}).");
+                    response.ErrorCount++;
+                    _context.ChangeTracker.Clear();
+                }
+                finally
+                {
+                    if (!isEmptyRow)
+                    {
+                        actualLastRow = Math.Max(actualLastRow, rowIndex);
+                        if (response.ErrorCount > initialErrorCount)
+                        {
+                            row.Cell(13).Value = "Thất bại";
+                            var newErrors = response.Errors.Skip(response.Errors.Count - (response.ErrorCount - initialErrorCount)).ToList();
+                            row.Cell(14).Value = string.Join(" | ", newErrors.Select(e => e.Contains(':') ? e.Substring(e.IndexOf(':') + 1).Trim() : e));
+                        }
+                        else
+                        {
+                            row.Cell(13).Value = "Thành công";
+                            row.Cell(14).Value = "";
+                        }
+                    }
+                }
+            }
+
+            if (actualLastRow > 0)
+            {
+                int maxRow = worksheet.LastRowUsed()?.RowNumber() ?? actualLastRow;
+                if (maxRow > actualLastRow)
+                {
+                    worksheet.Rows(actualLastRow + 1, maxRow).Delete();
+                }
+            }
+
+            worksheet.Cell(1, 13).Value = "Trạng thái";
+            worksheet.Cell(1, 14).Value = "Lý do lỗi";
+            
+            // Try to copy style from column 12 header
+            var headerStyle = worksheet.Cell(1, 12).Style;
+            worksheet.Cell(1, 13).Style = headerStyle;
+            worksheet.Cell(1, 14).Style = headerStyle;
+
+            var resultRange = worksheet.Range(1, 1, actualLastRow, 14);
+            resultRange.Style.Font.FontName = "Times New Roman";
+            resultRange.Style.Font.FontSize = 12;
+            resultRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            resultRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            worksheet.Columns(1, 14).AdjustToContents();
+            for (int i = 1; i <= 14; i++)
+            {
+                worksheet.Column(i).Width += 2;
+            }
+
+            using var resultStream = new System.IO.MemoryStream();
+            workbook.SaveAs(resultStream);
+            resultStream.Position = 0;
+            var resultFileName = $"result_{importFile.FileName}";
+            resultFileUrl = await _storageService.SaveFileAsync(resultStream, resultFileName, "imports/results", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Failed", null, cancellationToken);
+            return ClassOperationResult<ImportResultResponse>.Failure($"Lỗi đọc file Excel: File không hợp lệ hoặc bị lỗi ({ex.Message}).");
+        }
+
+        await _historyService.UpdateHistoryStatusAsync(history.HistoryId, "Completed", resultFileUrl, cancellationToken);
+
+        return ClassOperationResult<ImportResultResponse>.Success(response, "Import hoàn tất.");
     }
 }

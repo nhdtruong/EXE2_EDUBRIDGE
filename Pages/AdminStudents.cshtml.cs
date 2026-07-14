@@ -7,6 +7,7 @@ using EduBridge.Services.Students;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using ClosedXML.Excel;
 
 namespace EduBridge.Pages
 {
@@ -156,6 +157,84 @@ namespace EduBridge.Pages
             TempData["ToastMessage"] = "Đã xóa học sinh.";
 
             return RedirectToPage("/AdminStudents", BuildRouteValues());
+        }
+
+        public async Task<IActionResult> OnPostImportExcelAsync(IFormFile importFile, CancellationToken cancellationToken)
+        {
+            var ownerUserId = GetCurrentUserId();
+            if (ownerUserId == null) return RedirectToPage("/Login");
+
+            if (importFile == null || importFile.Length == 0)
+            {
+                TempData["ToastType"] = "error";
+                TempData["ToastTitle"] = "Thất bại";
+                TempData["ToastMessage"] = "Vui lòng chọn file Excel để import.";
+                return RedirectToPage("/AdminStudents", BuildRouteValues());
+            }
+
+            var ext = Path.GetExtension(importFile.FileName).ToLower();
+            if (ext != ".xlsx" && ext != ".xls")
+            {
+                TempData["ToastType"] = "error";
+                TempData["ToastTitle"] = "Thất bại";
+                TempData["ToastMessage"] = "Chỉ chấp nhận file định dạng .xlsx hoặc .xls";
+                return RedirectToPage("/AdminStudents", BuildRouteValues());
+            }
+
+            var result = await _studentService.ImportStudentsFromExcelAsync(ownerUserId.Value, importFile, cancellationToken);
+
+            if (!result.IsSuccess || result.Value == null)
+            {
+                TempData["ToastType"] = "error";
+                TempData["ToastTitle"] = "Thất bại";
+                TempData["ToastMessage"] = result.Message;
+                return RedirectToPage("/AdminStudents", BuildRouteValues());
+            }
+
+            if (result.Value.ErrorCount > 0)
+            {
+                TempData["ToastType"] = "warning";
+                TempData["ToastTitle"] = "Import hoàn tất với một số lỗi";
+                TempData["ToastMessage"] = $"Thành công: {result.Value.SuccessCount}. Lỗi: {result.Value.ErrorCount} dòng. Vui lòng tải file kết quả trong lịch sử để xem chi tiết.";
+            }
+            else
+            {
+                TempData["ToastType"] = "success";
+                TempData["ToastTitle"] = "Thành công";
+                TempData["ToastMessage"] = $"Đã import thành công {result.Value.SuccessCount} học sinh.";
+            }
+
+            return RedirectToPage("/AdminStudents", BuildRouteValues(true));
+        }
+
+        public async Task<IActionResult> OnGetHistoryAsync([FromServices] EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+        {
+            var ownerUserId = GetCurrentUserId() ?? 0;
+            var result = await historyService.GetHistoriesAsync(ownerUserId, new EduBridge.Contracts.ImportExportHistories.ImportExportHistoryQuery { Page = page, PageSize = pageSize, EntityName = "Students" }, cancellationToken);
+            return new JsonResult(result);
+        }
+
+        public IActionResult OnGetDownloadTemplate()
+        {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "docs", "import", "Student_Import_Template.xlsx");
+            if (!System.IO.File.Exists(filePath))
+            {
+                TempData["ToastType"] = "error";
+                TempData["ToastTitle"] = "Thất bại";
+                TempData["ToastMessage"] = "Không tìm thấy file mẫu trên server.";
+                return RedirectToPage("/AdminStudents", BuildRouteValues());
+            }
+
+            byte[] content;
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            {
+                using (var ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    content = ms.ToArray();
+                }
+            }
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Student_Import_Template.xlsx");
         }
 
         private async Task LoadStudentsAsync(

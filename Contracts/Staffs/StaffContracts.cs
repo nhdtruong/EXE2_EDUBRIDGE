@@ -5,6 +5,7 @@ namespace EduBridge.Contracts.Staffs;
 public sealed class StaffQuery
 {
     public string? Keyword { get; set; }
+    public string? ContactKeyword { get; set; }
     public string? Status { get; set; }
     public string? Role { get; set; }
     public int Page { get; set; } = 1;

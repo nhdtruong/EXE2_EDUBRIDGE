@@ -1,4 +1,4 @@
-﻿USE EduBridgeDB;
+USE EduBridgeDB;
 GO
 
 /* =========================================================
@@ -778,6 +778,22 @@ IF NOT EXISTS (
       AND name = N'UX_Students_CenterId_StudentCode'
 )
 BEGIN
+    ;WITH DuplicateStudents AS (
+        SELECT 
+            StudentId,
+            CenterId,
+            StudentCode,
+            ROW_NUMBER() OVER(PARTITION BY CenterId, StudentCode ORDER BY StudentId) as rn
+        FROM dbo.Students
+        WHERE StudentCode IS NOT NULL AND LTRIM(RTRIM(StudentCode)) <> N''
+    )
+    UPDATE s
+    SET StudentCode = CONCAT(s.StudentCode, N'-DUP-', s.StudentId)
+    FROM dbo.Students s
+    JOIN DuplicateStudents d ON s.StudentId = d.StudentId
+    WHERE d.rn > 1;
+
+
     CREATE UNIQUE INDEX UX_Students_CenterId_StudentCode
     ON dbo.Students(CenterId, StudentCode);
 END;

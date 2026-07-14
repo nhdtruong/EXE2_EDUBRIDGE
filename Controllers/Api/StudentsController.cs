@@ -141,4 +141,26 @@ public class StudentsController : ControllerBase
 
         return Ok(new { success = true, message = "Xóa học sinh thành công" });
     }
+
+    [HttpPost("import")]
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ImportStudents(IFormFile file, CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetCurrentUserId();
+        if (ownerUserId == null) return Unauthorized(new { success = false, message = "Unauthorized" });
+
+        if (file == null || file.Length == 0)
+            return BadRequest(new { success = false, message = "Vui lòng chọn file Excel." });
+
+        var ext = Path.GetExtension(file.FileName).ToLower();
+        if (ext != ".xlsx" && ext != ".xls")
+            return BadRequest(new { success = false, message = "Chỉ chấp nhận file định dạng .xlsx hoặc .xls" });
+
+        var result = await _studentService.ImportStudentsFromExcelAsync(ownerUserId.Value, file, cancellationToken);
+        
+        if (!result.IsSuccess) 
+            return BadRequest(new { success = false, message = result.Message });
+
+        return Ok(new { success = true, message = result.Message, data = result.Value });
+    }
 }
