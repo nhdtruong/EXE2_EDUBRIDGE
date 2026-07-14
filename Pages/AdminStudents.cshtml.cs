@@ -207,6 +207,34 @@ namespace EduBridge.Pages
             return RedirectToPage("/AdminStudents", BuildRouteValues(true));
         }
 
+        public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+        {
+            var ownerUserId = GetCurrentUserId() ?? 0;
+            if (ownerUserId == 0) return RedirectToPage("/Login");
+
+            var query = new EduBridge.Contracts.Students.StudentQuery
+            {
+                Keyword = StudentSearch,
+                ParentKeyword = ParentSearch,
+                ContactKeyword = ContactSearch,
+                Gender = GenderFilter,
+                Status = StatusFilter,
+                ClassId = ClassFilter
+            };
+
+            var result = await _studentService.ExportStudentsAsync(ownerUserId, query, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                TempData["ToastType"] = "error";
+                TempData["ToastTitle"] = "Lỗi";
+                TempData["ToastMessage"] = result.Message;
+                return RedirectToPage(new { StudentSearch, ParentSearch, ContactSearch, GenderFilter, StatusFilter, ClassFilter, PageNumber, PageSize });
+            }
+
+            var fileName = $"Students_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+            return File(result.Value!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+        }
+
         public async Task<IActionResult> OnGetHistoryAsync([FromServices] EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
         {
             var ownerUserId = GetCurrentUserId() ?? 0;

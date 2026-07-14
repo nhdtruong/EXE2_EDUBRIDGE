@@ -122,6 +122,35 @@ public sealed class AdminParentsModel : PageModel
         return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Parent_Import_Template.xlsx");
     }
 
+    public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetUserId();
+        if (ownerUserId == 0) return RedirectToPage("/Login");
+
+        var query = new ParentQuery
+        {
+            Name = NameFilter,
+            Email = EmailFilter,
+            PhoneNumber = PhoneFilter,
+            Status = StatusFilter,
+            HasChildren = ChildrenFilter == "yes" ? true : ChildrenFilter == "no" ? false : null,
+            Page = 0,
+            PageSize = 0
+        };
+
+        var result = await _service.ExportParentsAsync(ownerUserId, query, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Lỗi";
+            TempData["ToastMessage"] = result.Message;
+            return RedirectToPage(new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+        }
+
+        var fileName = $"Parents_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        return File(result.Value!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
     public async Task<IActionResult> OnGetHistoryAsync([FromServices] EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
     {
         var result = await historyService.GetHistoriesAsync(GetUserId(), new EduBridge.Contracts.ImportExportHistories.ImportExportHistoryQuery { Page = page, PageSize = pageSize, EntityName = "Parents" }, cancellationToken);

@@ -191,8 +191,8 @@ public class AdminStaffModel : PageModel
             ContactKeyword = ContactSearch,
             Status = StatusFilter,
             Role = RoleFilter,
-            Page = PageNumber,
-            PageSize = PageSize
+            Page = 0,
+            PageSize = 0
         };
 
         var result = await _service.ExportStaffsAsync(ownerUserId.Value, query, cancellationToken);
