@@ -51,6 +51,7 @@ namespace EduBridge.Models.DTOs.TeacherAttendance
     public class AttendanceHistoryDto
     {
         public int LessonId { get; set; }
+        public string LessonTitle { get; set; } = string.Empty;
         public string DateString { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
         public int PresentCount { get; set; }

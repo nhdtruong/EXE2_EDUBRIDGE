@@ -17,23 +17,55 @@
     </div>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 class="text-lg font-bold text-gray-900">Bảng điểm</h2>
-        <div class="flex items-center gap-3 w-full sm:w-auto">
-            <select id="classSelect" class="block w-full sm:w-48 rounded-lg border-gray-300 py-2 pl-3 pr-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                @foreach(var c in Model.TeacherClasses)
-                {
-                    <!option value="@c.ClassId" @(c.ClassId == Model.SelectedClassId ? "selected" : "")>@c.ClassName</!option>
-                }
-            </select>
-            <div class="relative w-full sm:w-64">
-                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"></path>
-                    </svg>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+    <div class="bg-[#f8f9fa] rounded-t-xl border-b border-gray-200 p-5">
+        <h3 class="text-base font-bold text-gray-800 mb-4">Danh sách bảng điểm</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <!-- Student Search -->
+            <div>
+                <input type="text" id="studentSearchInput" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="Tìm tên học sinh...">
+            </div>
+
+            <!-- Class Filter -->
+            <div class="relative custom-dropdown" id="classDropdownContainer">
+                <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-500" onclick="toggleDropdown('classFilterMenu')">
+                    <span id="classFilterLabel" class="truncate pr-2">
+                        @{
+                            var initialClass = Model.TeacherClasses.FirstOrDefault(c => c.ClassId == Model.SelectedClassId);
+                            if (initialClass != null) {
+                                <text>@initialClass.ClassName</text>
+                            } else {
+                                <text>Lớp học</text>
+                            }
+                        }
+                    </span>
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="classFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <div class="p-2 border-b border-gray-100">
+                        <input type="text" id="classFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm lớp học...">
+                    </div>
+                    <ul id="classFilterList" class="max-h-48 overflow-y-auto py-1">
+                        @foreach (var cls in Model.TeacherClasses)
+                        {
+                            <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item" onclick="selectClassFilter(@cls.ClassId, '@cls.ClassName')">@cls.ClassName</li>
+                        }
+                    </ul>
                 </div>
-                <input type="text" id="studentSearchInput" class="block w-full rounded-lg border-0 py-2 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" placeholder="Tìm học sinh...">
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mt-2">
+            <div></div>
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="resetGradesFilters()" class="h-10 px-5 bg-[#545b62] text-white text-sm font-medium rounded hover:bg-[#43494e] transition-colors flex items-center shadow-sm">
+                    Làm mới bộ lọc
+                </button>
+                <button type="button" onclick="applyGradesFilters()" class="h-10 px-5 bg-[#2563eb] text-white text-sm font-medium rounded hover:bg-[#1d4ed8] transition-colors flex items-center shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Tìm kiếm
+                </button>
             </div>
         </div>
     </div>
@@ -162,23 +194,77 @@
         let gradesCurrentPage = 1;
         let gradesPageSize = 10;
         let filteredGrades = [...studentGradesData];
+        
+        let currentGradesClassId = @Model.SelectedClassId;
+        let tempGradesClassId = currentGradesClassId;
+        let grFilterState = {
+            studentName: ""
+        };
+
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                document.querySelectorAll('.custom-dropdown > div').forEach(d => d.classList.add('hidden'));
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        function selectClassFilter(value, label) {
+            tempGradesClassId = parseInt(value);
+            document.getElementById('classFilterLabel').textContent = label;
+            document.getElementById('classFilterMenu').classList.add('hidden');
+        }
+
+        function resetGradesFilters() {
+            document.getElementById('studentSearchInput').value = '';
+            grFilterState.studentName = "";
+            gradesCurrentPage = 1;
+            applyLocalFilter();
+        }
+
+        function applyGradesFilters() {
+            grFilterState.studentName = document.getElementById('studentSearchInput').value.trim().toLowerCase();
+            
+            if (tempGradesClassId !== currentGradesClassId) {
+                currentGradesClassId = tempGradesClassId;
+                loadGradesForClass(currentGradesClassId);
+            } else {
+                gradesCurrentPage = 1;
+                applyLocalFilter();
+            }
+        }
+
+        function applyLocalFilter() {
+            const query = grFilterState.studentName;
+            filteredGrades = studentGradesData.filter(std => 
+                std.StudentName.toLowerCase().includes(query) || 
+                (std.StudentCode && std.StudentCode.toLowerCase().includes(query))
+            );
+            renderGradesTable();
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-dropdown')) {
+                document.querySelectorAll('.custom-dropdown > div').forEach(d => d.classList.add('hidden'));
+            }
+        });
 
         document.addEventListener("DOMContentLoaded", function () {
             renderGradesTable();
 
-            document.getElementById("classSelect").addEventListener("change", function () {
-                loadGradesForClass(this.value);
-            });
-
-            document.getElementById("studentSearchInput").addEventListener("input", function () {
-                const query = this.value.trim().toLowerCase();
-                filteredGrades = studentGradesData.filter(std => 
-                    std.StudentName.toLowerCase().includes(query) || 
-                    (std.StudentCode && std.StudentCode.toLowerCase().includes(query))
-                );
-                gradesCurrentPage = 1;
-                renderGradesTable();
-            });
+            const classFilterSearch = document.getElementById('classFilterSearch');
+            if (classFilterSearch) {
+                classFilterSearch.addEventListener('input', function(e) {
+                    const term = e.target.value.toLowerCase();
+                    const items = document.querySelectorAll('#classFilterList .class-filter-item');
+                    items.forEach(item => {
+                        if(item.textContent.toLowerCase().includes(term)) item.style.display = 'block';
+                        else item.style.display = 'none';
+                    });
+                });
+            }
 
             document.getElementById("btnEnterGrades").addEventListener("click", function () {
                 if (studentGradesData && studentGradesData.length > 0) {
@@ -217,10 +303,9 @@
                             CommentFinal: std.commentFinal,
                             AverageScore: std.averageScore
                         }));
-                        filteredGrades = [...studentGradesData];
                         gradesCurrentPage = 1;
-                        renderGradesTable();
-                        document.getElementById("studentSearchInput").value = "";
+                        applyLocalFilter();
+                        document.getElementById("studentSearchInput").value = grFilterState.studentName;
                     } else {
                         showToast(res.message, false);
                     }

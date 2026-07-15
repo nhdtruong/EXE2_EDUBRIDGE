@@ -7,6 +7,7 @@ namespace EduBridge.Models.DTOs.TeacherChat
         public int ParentUserId { get; set; }
         public string ParentName { get; set; } = string.Empty;
         public string StudentNames { get; set; } = string.Empty;
+        public string ClassNames { get; set; } = string.Empty;
         public string? LastMessage { get; set; }
         public int? LastMessageSenderId { get; set; }
         public string? LastMessageTime { get; set; }

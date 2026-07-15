@@ -14,10 +14,10 @@
 }
 
 <!-- Header -->
-<div class="mb-6 flex justify-between items-start">
+<div class="mb-6 rounded-2xl bg-gradient-to-br from-white to-blue-50 p-6 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)] border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Tin nhắn</h1>
-        <p class="mt-1 text-sm text-gray-500">@(User.IsInRole("PARENT") ? "Trao đổi với giáo viên" : "Trao đổi với phụ huynh")</p>
+        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">Tin nhắn</h1>
+        <p class="mt-2 text-base text-gray-500">@(User.IsInRole("PARENT") ? "Trao đổi với giáo viên" : "Trao đổi với phụ huynh")</p>
     </div>
     @if (!User.IsInRole("PARENT"))
     {
@@ -28,18 +28,55 @@
     }
 </div>
 
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="bg-[#f8f9fa] rounded-xl border-b border-gray-200 p-5">
+        <h3 class="text-base font-bold text-gray-800 mb-4">Bộ lọc tìm kiếm</h3>
+        
+        <div class="flex flex-col lg:flex-row gap-3 items-start">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                <!-- Class Custom Dropdown -->
+                <div class="relative custom-dropdown" id="classDropdownContainer">
+                    <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-700" onclick="toggleClassDropdown()">
+                        <span id="classFilterLabel" class="truncate pr-2">-- Tất cả các lớp --</span>
+                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="classFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                        <div class="p-2 border-b border-gray-100">
+                            <input type="text" id="classFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm lớp học..." onclick="event.stopPropagation()">
+                        </div>
+                        <ul id="classFilterList" class="max-h-48 overflow-y-auto py-1">
+                            <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item" onclick="selectClassFilter('', '-- Tất cả các lớp --')">-- Tất cả các lớp --</li>
+                        </ul>
+                    </div>
+                    <input type="hidden" id="filterClassSelect" value="">
+                </div>
+                <div>
+                    <input type="text" id="filterNameInput" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="@(User.IsInRole("PARENT") ? "Tìm kiếm giáo viên..." : "Tìm kiếm phụ huynh...")">
+                </div>
+                <div>
+                    <input type="text" id="filterStudentInput" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="Tìm kiếm học sinh...">
+                </div>
+            </div>
+            
+            <div class="flex gap-2 w-full lg:w-auto shrink-0">
+                <button type="button" id="btnResetFilter" class="px-4 py-2 h-10 bg-white border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium transition-colors w-full sm:w-auto">
+                    Làm mới
+                </button>
+                <button type="button" id="btnSearchFilter" class="px-4 py-2 h-10 bg-blue-600 border border-transparent rounded text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium transition-colors shadow-sm w-full sm:w-auto">
+                    Tìm kiếm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Main Layout -->
 <div class="flex flex-col md:flex-row gap-6 h-[calc(100vh-200px)] min-h-[500px]">
     <!-- Left Sidebar: Conversations -->
     <div class="w-full md:w-80 lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
         <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
-            <h3 class="text-lg font-bold text-gray-900 mb-3">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
-            <div class="relative">
-                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center" style="padding-left: 0.75rem;">
-                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                </div>
-                <input type="text" id="conversationSearchInput" placeholder="@(User.IsInRole("PARENT") ? "Tìm kiếm giáo viên..." : "Tìm kiếm phụ huynh...")" style="padding-left: 2.5rem;" class="block w-full rounded-xl border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" />
-            </div>
+            <h3 class="text-lg font-bold text-gray-900">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
         </div>
 
         <div class="flex-1 overflow-y-auto p-3" id="conversationsContainer">
@@ -172,14 +209,66 @@
                 }
             });
 
-            // 4. Tìm kiếm phụ huynh/giáo viên ở sidebar
-            document.getElementById("conversationSearchInput").addEventListener("input", function () {
-                const query = this.value.trim().toLowerCase();
-                const filtered = conversationsData.filter(c => 
-                    c.parentName.toLowerCase().includes(query) || 
-                    c.studentNames.toLowerCase().includes(query)
-                );
+            // 4. Lọc danh sách hội thoại
+            function applyFilters() {
+                const nameQuery = document.getElementById("filterNameInput").value.trim().toLowerCase();
+                const studentQuery = document.getElementById("filterStudentInput").value.trim().toLowerCase();
+                const classQuery = document.getElementById("filterClassSelect").value;
+
+                const filtered = conversationsData.filter(c => {
+                    const matchName = !nameQuery || (c.parentName && c.parentName.toLowerCase().includes(nameQuery));
+                    const matchStudent = !studentQuery || (c.studentNames && c.studentNames.toLowerCase().includes(studentQuery));
+                    const matchClass = !classQuery || (c.classNames && c.classNames.includes(classQuery));
+                    
+                    return matchName && matchStudent && matchClass;
+                });
                 renderConversations(filtered);
+            }
+
+            // Lọc khi nhấn nút Tìm kiếm
+            document.getElementById("btnSearchFilter").addEventListener("click", applyFilters);
+
+            // Nút Làm mới
+            document.getElementById("btnResetFilter").addEventListener("click", function () {
+                document.getElementById("filterNameInput").value = "";
+                document.getElementById("filterStudentInput").value = "";
+                selectClassFilter('', '-- Tất cả các lớp --');
+                document.getElementById("classFilterSearch").value = "";
+                document.querySelectorAll("#classFilterList .class-filter-item").forEach(item => item.style.display = "block");
+                applyFilters();
+            });
+
+            // Dropdown functions
+            window.toggleClassDropdown = function() {
+                const menu = document.getElementById("classFilterMenu");
+                menu.classList.toggle("hidden");
+            };
+
+            window.selectClassFilter = function(val, text) {
+                document.getElementById("filterClassSelect").value = val;
+                document.getElementById("classFilterLabel").textContent = text;
+                document.getElementById("classFilterMenu").classList.add("hidden");
+            };
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#classDropdownContainer')) {
+                    document.getElementById('classFilterMenu')?.classList.add('hidden');
+                }
+            });
+
+            // Class Filter Search
+            document.getElementById("classFilterSearch").addEventListener("input", function(e) {
+                const query = e.target.value.toLowerCase();
+                const items = document.querySelectorAll("#classFilterList .class-filter-item");
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        item.style.display = "block";
+                    } else {
+                        item.style.display = "none";
+                    }
+                });
             });
 
             // 5. Mở Modal gửi thông báo chung (chỉ dành cho giáo viên)
@@ -412,6 +501,26 @@
                 .then(res => {
                     if (res.success) {
                         conversationsData = res.data;
+
+                        // Cập nhật dropdown chọn Lớp
+                        const classList = document.getElementById("classFilterList");
+                        const classes = new Set();
+                        conversationsData.forEach(c => {
+                            if (c.classNames) {
+                                c.classNames.split(',').forEach(cls => classes.add(cls.trim()));
+                            }
+                        });
+                        
+                        classList.innerHTML = '<li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item" onclick="selectClassFilter(\'\', \'-- Tất cả các lớp --\')">-- Tất cả các lớp --</li>';
+                        
+                        Array.from(classes).sort().forEach(cls => {
+                            const li = document.createElement("li");
+                            li.className = "px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item";
+                            li.textContent = cls;
+                            li.onclick = () => selectClassFilter(cls, cls);
+                            classList.appendChild(li);
+                        });
+
                         renderConversations(conversationsData, activeUserId);
                     } else {
                         showToast(res.message, false);
@@ -438,6 +547,7 @@
                 const contactId = isParent ? c.teacherUserId : c.parentUserId;
                 const contactName = isParent ? c.teacherName : c.parentName;
                 const studentNamesText = isParent ? "" : (c.studentNames || "");
+                const classNamesText = c.classNames || "";
 
                 const isActive = activeUserId !== null && contactId === activeUserId;
                 const avatarChar = contactName ? contactName.trim().charAt(0).toUpperCase() : "U";
@@ -473,7 +583,10 @@
                 item.className = itemClass;
                 item.setAttribute("data-contact-id", contactId);
                 
-                const studentLabel = isParent ? "" : `PH: ${studentNamesText}`;
+                let studentLabel = isParent ? "" : `PH: ${studentNamesText}`;
+                if (classNamesText) {
+                    studentLabel += studentLabel ? ` | Lớp: ${classNamesText}` : `Lớp: ${classNamesText}`;
+                }
 
                 item.innerHTML = `
                     <div class="${avatarClass}">
@@ -492,7 +605,8 @@
                 `;
 
                 item.addEventListener("click", function () {
-                    openChatWithContact(contactId, contactName, studentNamesText);
+                    const infoLabel = classNamesText ? `${studentNamesText} | Lớp: ${classNamesText}` : studentNamesText;
+                    openChatWithContact(contactId, contactName, isParent ? "" : infoLabel);
                 });
 
                 container.appendChild(item);
