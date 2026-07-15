@@ -231,34 +231,7 @@
                 </div>
             </div>
 
-            <!-- Branch selector -->
-            @if (showCenterMenu && branches.Any())
-            {
-                <div class="p-4 border-b border-[#374c5e] admin-sidebar-branch-section flex-shrink-0">
-                    <div class="text-white font-semibold mb-2 flex items-center justify-center admin-sidebar-branch-label">Dự án quản lý</div>
-                    <form method="post" asp-page="/SetBranch" class="m-0">
-                        <div class="relative">
-                            <select name="branchId" onchange="this.form.submit()" class="w-full bg-white text-gray-800 text-sm rounded h-9 pl-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-[#1ab394] shadow-sm cursor-pointer truncate">
-                                <option value="0">Tất cả dự án</option>
-                                @foreach (var branch in branches)
-                                {
-                                    if (currentBranchId == branch.BranchId)
-                                    {
-                                        <option value="@branch.BranchId" selected>@branch.BranchName</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@branch.BranchId">@branch.BranchName</option>
-                                    }
-                                }
-                            </select>
-                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            }
+
 
             <!-- Navigation -->
             <nav class="flex-1 overflow-y-auto custom-scrollbar py-2 admin-sidebar-nav text-[13px] font-medium">
