@@ -9,5 +9,10 @@ namespace EduBridge.Services.Notifications
     {
         Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default);
         Task<bool> BroadcastNotificationAsync(int teacherUserId, BroadcastNotificationRequest request, CancellationToken cancellationToken = default);
+        
+        Task<List<EduBridge.Models.DTOs.Shared.NotificationDto>> GetMyNotificationsAsync(int userId, int limit = 20, CancellationToken cancellationToken = default);
+        Task<int> GetUnreadCountAsync(int userId, CancellationToken cancellationToken = default);
+        Task<bool> MarkAsReadAsync(int notificationId, int userId, CancellationToken cancellationToken = default);
+        Task<bool> MarkAllAsReadAsync(int userId, CancellationToken cancellationToken = default);
     }
 }

@@ -64,6 +64,11 @@
     display: none;
 }
 
+.ds-datepicker.ds-datepicker-right .ds-datepicker-panel {
+    left: auto;
+    right: 0;
+}
+
 .ds-datepicker-header {
     display: flex;
     height: 48px;

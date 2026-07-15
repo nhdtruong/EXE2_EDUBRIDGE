@@ -228,6 +228,7 @@ namespace EduBridge.Services.Attendance
                 result.Add(new AttendanceHistoryDto
                 {
                     LessonId = lesson.LessonId,
+                    LessonTitle = lesson.LessonTitle,
                     DateString = lesson.LessonDate.ToString("dd/MM/yyyy"),
                     ClassName = classObj.ClassName,
                     PresentCount = present,

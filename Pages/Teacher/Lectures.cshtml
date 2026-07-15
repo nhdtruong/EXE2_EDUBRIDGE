@@ -67,14 +67,74 @@
 </div>
 
 <!-- History Table Section -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="text-lg font-bold text-gray-800">Lịch sử bài giảng</h3>
-        <div class="relative">
-            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" id="lectureSearchInput" class="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-64 transition-all" placeholder="Tìm kiếm bài giảng...">
+<div class="bg-[#f8f9fa] rounded-lg border border-gray-200 p-5 mb-6">
+    <h3 class="text-base font-bold text-gray-800 mb-4">Danh sách bài giảng</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <!-- Topic Search -->
+        <div>
+            <input type="text" id="lectureSearchTopic" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="Tìm chủ đề...">
+        </div>
+
+        <!-- Class Filter -->
+        <div class="relative custom-dropdown" id="classDropdownContainer">
+            <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-500" onclick="toggleDropdown('classFilterMenu')">
+                <span id="classFilterLabel" class="truncate pr-2">Lớp học (Tất cả)</span>
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="classFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                <div class="p-2 border-b border-gray-100">
+                    <input type="text" id="classFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm lớp học...">
+                </div>
+                <ul id="classFilterList" class="max-h-48 overflow-y-auto py-1">
+                    <!-- JS Populated -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Date Range -->
+        <div class="ds-datepicker" data-ds-datepicker data-ds-range="true">
+            <input type="hidden" id="lectureDateRange" data-ds-date-value>
+            <div class="ds-datepicker-field flex h-10 w-full items-center overflow-hidden rounded border border-gray-300 bg-white focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500">
+                <input class="ds-datepicker-input h-full w-full border-none bg-transparent px-3 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-0" type="text" placeholder="Khoảng ngày" data-ds-date-display>
+                <button type="button" class="ds-datepicker-button flex h-full w-10 items-center justify-center bg-[#0088cc] text-white hover:bg-[#0077b3] transition-colors" data-ds-date-toggle aria-label="Chọn ngày">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="relative custom-dropdown" id="statusDropdownContainer">
+            <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-500" onclick="toggleDropdown('statusFilterMenu')">
+                <span id="statusFilterLabel" class="truncate pr-2">Trạng thái (Tất cả)</span>
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </button>
+            <div id="statusFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg right-0">
+                <div class="p-2 border-b border-gray-100">
+                    <input type="text" id="statusFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm trạng thái...">
+                </div>
+                <ul id="statusFilterList" class="max-h-48 overflow-y-auto py-1">
+                    <!-- JS Populated -->
+                </ul>
+            </div>
         </div>
     </div>
+
+    <div class="flex justify-between items-center mt-2">
+        <div></div>
+        <div class="flex items-center space-x-3">
+            <button type="button" onclick="resetFilters()" class="h-10 px-5 bg-[#545b62] text-white text-sm font-medium rounded hover:bg-[#43494e] transition-colors flex items-center shadow-sm">
+                Làm mới bộ lọc
+            </button>
+            <button type="button" onclick="applyFilters()" class="h-10 px-5 bg-[#2563eb] text-white text-sm font-medium rounded hover:bg-[#1d4ed8] transition-colors flex items-center shadow-sm">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Tìm kiếm
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-xl shadow-sm border border-gray-100">
 
     <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
         <table class="w-full text-left border-collapse">
@@ -83,7 +143,7 @@
                     <th class="py-4 px-4 text-center font-bold border-r border-slate-200 w-20">STT</th>
                     <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-32">Ngày</th>
                     <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-40">Lớp</th>
-                    <th class="py-4 px-6 font-bold border-r border-slate-200">Chủ đề</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Chủ đề</th>
                     <th class="py-4 px-6 font-bold border-r border-slate-200">Nội dung</th>
                     <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-40">Trạng thái</th>
                     <th class="py-4 px-6 font-bold text-center w-24">Thao tác</th>
@@ -161,20 +221,255 @@
         let pageSize = 10;
         let filteredLectures = [...lectureHistoriesData];
 
-        document.addEventListener("DOMContentLoaded", function() {
-            renderLecturesTable();
+        let filterState = {
+            topic: '',
+            classId: 'all',
+            status: 'all',
+            dateFrom: '',
+            dateTo: ''
+        };
 
-            document.getElementById("lectureSearchInput").addEventListener("input", function() {
-                const query = this.value.trim().toLowerCase();
-                filteredLectures = lectureHistoriesData.filter(lh => 
-                    lh.Topic.toLowerCase().includes(query) || 
-                    (lh.Content && lh.Content.toLowerCase().includes(query)) ||
-                    lh.ClassName.toLowerCase().includes(query)
-                );
-                currentPage = 1;
-                renderLecturesTable();
+        const statuses = [
+            { id: 'Completed', name: 'Hoàn thành' },
+            { id: 'Scheduled', name: 'Lên lịch' },
+            { id: 'Cancelled', name: 'Đã hủy' },
+            { id: 'Rescheduled', name: 'Thay đổi lịch' }
+        ];
+
+        document.addEventListener("DOMContentLoaded", function() {
+            initFilters();
+            applyFilters();
+
+            // Setup global click listener to close dropdowns
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#classDropdownContainer')) {
+                    document.getElementById('classFilterMenu').classList.add('hidden');
+                }
+                if (!e.target.closest('#statusDropdownContainer')) {
+                    document.getElementById('statusFilterMenu').classList.add('hidden');
+                }
             });
         });
+
+        window.toggleDropdown = function(menuId) {
+            const menu = document.getElementById(menuId);
+            const isHidden = menu.classList.contains('hidden');
+            
+            // Close all dropdowns
+            document.getElementById('classFilterMenu').classList.add('hidden');
+            document.getElementById('statusFilterMenu').classList.add('hidden');
+            
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                const searchInput = menu.querySelector('input');
+                if (searchInput) {
+                    setTimeout(() => searchInput.focus(), 50);
+                }
+            }
+        };
+
+        function initFilters() {
+            // Extract unique classes from data
+            const uniqueClasses = [];
+            const classMap = new Map();
+            lectureHistoriesData.forEach(lh => {
+                if (!classMap.has(lh.ClassId)) {
+                    classMap.set(lh.ClassId, true);
+                    uniqueClasses.push({ id: lh.ClassId, name: lh.ClassName });
+                }
+            });
+
+            renderFilterList('classFilterList', uniqueClasses, 'classId', 'Lớp học (Tất cả)');
+            renderFilterList('statusFilterList', statuses, 'status', 'Trạng thái (Tất cả)');
+
+            // Setup Search inside dropdowns
+            setupDropdownSearch('classFilterSearch', 'classFilterList');
+            setupDropdownSearch('statusFilterSearch', 'statusFilterList');
+
+            // Setup other filter inputs (only save to state)
+            document.getElementById("lectureSearchTopic").addEventListener("input", function() {
+                filterState.topic = this.value.trim().toLowerCase();
+            });
+
+            const parseDsDateRange = (val) => {
+                if (!val) return null;
+                const parts = val.split(' to ');
+                if (parts.length === 2) {
+                    const from = new Date(parts[0]);
+                    from.setHours(0,0,0,0);
+                    const to = new Date(parts[1]);
+                    to.setHours(0,0,0,0);
+                    return { from, to };
+                }
+                return null;
+            };
+
+            document.getElementById('lectureDateRange')?.addEventListener('change', function(e) {
+                const range = parseDsDateRange(e.target.value);
+                if (range) {
+                    filterState.dateFrom = range.from;
+                    filterState.dateTo = range.to;
+                } else {
+                    filterState.dateFrom = null;
+                    filterState.dateTo = null;
+                }
+            });
+        }
+
+        function renderFilterList(listId, items, filterKey, defaultText) {
+            const ul = document.getElementById(listId);
+            ul.innerHTML = `
+                <li>
+                    <button type="button" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${filterState[filterKey] === 'all' ? 'bg-blue-50 text-blue-600 font-medium' : ''}" 
+                            onclick="selectFilterItem('${filterKey}', 'all', '${defaultText}')">
+                        ${defaultText}
+                    </button>
+                </li>
+            `;
+            
+            items.forEach(item => {
+                const isSelected = filterState[filterKey] === item.id.toString();
+                ul.innerHTML += `
+                    <li>
+                        <button type="button" class="filter-item-btn w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors ${isSelected ? 'bg-blue-50 text-blue-600 font-medium' : ''}" 
+                                data-name="${item.name.toLowerCase()}"
+                                onclick="selectFilterItem('${filterKey}', '${item.id}', '${item.name}')">
+                            ${item.name}
+                        </button>
+                    </li>
+                `;
+            });
+        }
+
+        window.selectFilterItem = function(filterKey, value, text) {
+            filterState[filterKey] = value;
+            
+            // Update labels
+            if (filterKey === 'classId') {
+                document.getElementById('classFilterLabel').textContent = text;
+                document.getElementById('classFilterMenu').classList.add('hidden');
+                // Re-render list to update active state
+                const uniqueClasses = [];
+                const classMap = new Map();
+                lectureHistoriesData.forEach(lh => {
+                    if (!classMap.has(lh.ClassId)) {
+                        classMap.set(lh.ClassId, true);
+                        uniqueClasses.push({ id: lh.ClassId, name: lh.ClassName });
+                    }
+                });
+                renderFilterList('classFilterList', uniqueClasses, 'classId', 'Lớp học (Tất cả)');
+                document.getElementById('classFilterSearch').value = '';
+                filterDropdownList('classFilterList', '');
+            } else if (filterKey === 'status') {
+                document.getElementById('statusFilterLabel').textContent = text;
+                document.getElementById('statusFilterMenu').classList.add('hidden');
+                renderFilterList('statusFilterList', statuses, 'status', 'Trạng thái (Tất cả)');
+                document.getElementById('statusFilterSearch').value = '';
+                filterDropdownList('statusFilterList', '');
+            }
+        };
+
+        window.resetFilters = function() {
+            filterState = {
+                topic: '',
+                classId: 'all',
+                status: 'all',
+                dateFrom: '',
+                dateTo: ''
+            };
+            
+            document.getElementById('lectureSearchTopic').value = '';
+            
+            document.querySelectorAll('.ds-datepicker-panel [data-clear]').forEach(btn => btn.click());
+            
+            document.getElementById('classFilterLabel').textContent = 'Lớp học (Tất cả)';
+            document.getElementById('statusFilterLabel').textContent = 'Trạng thái (Tất cả)';
+            
+            // Re-render lists
+            const uniqueClasses = [];
+            const classMap = new Map();
+            lectureHistoriesData.forEach(lh => {
+                if (!classMap.has(lh.ClassId)) {
+                    classMap.set(lh.ClassId, true);
+                    uniqueClasses.push({ id: lh.ClassId, name: lh.ClassName });
+                }
+            });
+            renderFilterList('classFilterList', uniqueClasses, 'classId', 'Lớp học (Tất cả)');
+            renderFilterList('statusFilterList', statuses, 'status', 'Trạng thái (Tất cả)');
+            
+            applyFilters();
+        };
+
+        function setupDropdownSearch(inputId, listId) {
+            document.getElementById(inputId).addEventListener('input', function() {
+                filterDropdownList(listId, this.value.trim().toLowerCase());
+            });
+        }
+
+        function filterDropdownList(listId, query) {
+            const ul = document.getElementById(listId);
+            const items = ul.querySelectorAll('.filter-item-btn');
+            items.forEach(item => {
+                const name = item.getAttribute('data-name');
+                if (name && name.includes(query)) {
+                    item.parentElement.style.display = 'block';
+                } else {
+                    item.parentElement.style.display = 'none';
+                }
+            });
+        }
+
+        function parseDate(dateStr) {
+            // dd/MM/yyyy
+            if (!dateStr) return null;
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return null;
+        }
+
+        window.applyFilters = function() {
+            filteredLectures = lectureHistoriesData.filter(lh => {
+                // Topic Match
+                if (filterState.topic && !lh.Topic.toLowerCase().includes(filterState.topic)) {
+                    return false;
+                }
+                
+                // Class Match
+                if (filterState.classId !== 'all' && lh.ClassId.toString() !== filterState.classId) {
+                    return false;
+                }
+                
+                // Status Match
+                if (filterState.status !== 'all' && lh.Status !== filterState.status) {
+                    return false;
+                }
+
+                // Date Match
+                const lhDate = parseDate(lh.DateString);
+                if (lhDate) {
+                    // Reset time for correct comparison
+                    lhDate.setHours(0,0,0,0);
+                    
+                    if (filterState.dateFrom) {
+                        const fromDate = new Date(filterState.dateFrom);
+                        fromDate.setHours(0,0,0,0);
+                        if (lhDate < fromDate) return false;
+                    }
+                    if (filterState.dateTo) {
+                        const toDate = new Date(filterState.dateTo);
+                        toDate.setHours(0,0,0,0);
+                        if (lhDate > toDate) return false;
+                    }
+                }
+
+                return true;
+            });
+            
+            currentPage = 1;
+            renderLecturesTable();
+        }
 
         function renderLecturesTable() {
             const tbody = document.getElementById("lecturesTableBody");
@@ -357,4 +652,6 @@
             });
         }
     </script>
+    <link rel="stylesheet" href="~/css/design-system/datepicker.css" asp-append-version="true" />
+    <script src="~/js/design-system/datepicker.js" asp-append-version="true"></script>
 }

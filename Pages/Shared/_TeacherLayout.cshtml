@@ -57,328 +57,265 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduBridge Teacher Portal</title>
+    @await RenderSectionAsync("Styles", required: false)
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; font-size: 14px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f3f3f4; font-size: 14px; }
 
-        .admin-main {
-            padding: 1.25rem;
-        }
-
-        .admin-main h1 {
-            font-size: 1.625rem;
-            line-height: 2rem;
-        }
-
-        .admin-main h1 + p {
-            font-size: 0.875rem;
-        }
-
-        .admin-main .rounded-2xl {
-            border-radius: 0.75rem;
-        }
-
-        .admin-main .bg-blue-50\/60.p-6 {
-            padding: 1.25rem;
-        }
-
+        /* Body internal styles - DO NOT MODIFY */
+        .admin-main { padding: 1.25rem; }
+        .admin-main h1 { font-size: 1.625rem; line-height: 2rem; }
+        .admin-main h1 + p { font-size: 0.875rem; }
+        .admin-main .rounded-2xl { border-radius: 0.75rem; }
+        .admin-main .bg-blue-50\/60.p-6 { padding: 1.25rem; }
         .admin-main input:not([type="hidden"]):not([type="radio"]):not([type="checkbox"]):not([type="file"]),
-        .admin-main select,
-        .admin-main [data-dropdown-toggle],
-        .admin-main [data-range-toggle] {
-            min-height: 2.5rem !important;
-            height: 2.5rem !important;
-            font-size: 0.8125rem !important;
-            padding-left: 0.875rem !important;
-            padding-right: 0.875rem !important;
+        .admin-main select, .admin-main [data-dropdown-toggle], .admin-main [data-range-toggle] {
+            min-height: 2.5rem !important; height: 2.5rem !important; font-size: 0.8125rem !important;
+            padding-left: 0.875rem !important; padding-right: 0.875rem !important;
+        }
+        .admin-main [data-range-toggle] span:last-child { width: 2.75rem !important; }
+        .admin-main [data-range-toggle] { padding-left: 0 !important; padding-right: 0 !important; }
+        .admin-main [data-dropdown-search] { height: 2.375rem !important; }
+        .admin-main a.inline-flex:not(.h-11):not(.h-12), .admin-main button.inline-flex:not(.h-11):not(.h-12) { font-size: 0.8125rem; }
+        .admin-main a.h-11, .admin-main button.h-11, .admin-main a.h-12, .admin-main button.h-12 {
+            height: 2.5rem !important; min-height: 2.5rem !important; font-size: 0.8125rem !important;
+        }
+        .admin-main table thead tr { font-size: 0.8125rem !important; }
+        .admin-main table th, .admin-main table td { padding: 0.75rem 0.875rem !important; font-size: 0.8125rem !important; }
+        .admin-main table .h-10.w-10, .admin-main table .w-10.h-10 { width: 2rem !important; height: 2rem !important; margin-right: 0.75rem !important; }
+        .admin-main table .h-11.w-11, .admin-main table .w-11.h-11 { width: 2.375rem !important; height: 2.375rem !important; }
+        .admin-main table .h-5.w-5, .admin-main table .w-5.h-5 { width: 1.125rem !important; height: 1.125rem !important; }
+        .admin-main table .gap-3 { gap: 0.5rem !important; }
+        .admin-main table .min-w-28 { min-width: 5.75rem !important; }
+        .admin-main .border-t.bg-white.px-6.py-4 { padding: 0.75rem 1rem !important; }
+        /* End Body internal styles */
+
+        /* Custom Scrollbar for sidebar */
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5d6d; border-radius: 4px; }
+        .custom-scrollbar:hover::-webkit-scrollbar-thumb { background: #6c7c8b; }
+
+        /* Menu active state based on image: slightly darker bg, left border blue/green */
+        .admin-sidebar-link.active {
+            background-color: #293846;
+            color: #ffffff;
+            border-left: 4px solid #19aa8d; /* green brand color */
+        }
+        .admin-sidebar-link {
+            border-left: 4px solid transparent;
+            color: #a7b1c2;
+        }
+        .admin-sidebar-link:hover {
+            background-color: #293846;
+            color: #ffffff;
         }
 
-        .admin-main [data-range-toggle] span:last-child {
-            width: 2.75rem !important;
-        }
-
-        .admin-main [data-range-toggle] {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-        }
-
-        .admin-main [data-dropdown-search] {
-            height: 2.375rem !important;
-        }
-
-        .admin-main a.inline-flex:not(.h-11):not(.h-12),
-        .admin-main button.inline-flex:not(.h-11):not(.h-12) {
-            font-size: 0.8125rem;
-        }
-
-        .admin-main a.h-11,
-        .admin-main button.h-11,
-        .admin-main a.h-12,
-        .admin-main button.h-12 {
-            height: 2.5rem !important;
-            min-height: 2.5rem !important;
-            font-size: 0.8125rem !important;
-        }
-
-        .admin-main table thead tr {
-            font-size: 0.8125rem !important;
-        }
-
-        .admin-main table th {
-            padding: 0.75rem 0.875rem !important;
-        }
-
-        .admin-main table td {
-            padding: 0.75rem 0.875rem !important;
-            font-size: 0.8125rem !important;
-        }
-
-        .admin-main table .h-10.w-10,
-        .admin-main table .w-10.h-10 {
-            width: 2rem !important;
-            height: 2rem !important;
-            margin-right: 0.75rem !important;
-        }
-
-        .admin-main table .h-11.w-11,
-        .admin-main table .w-11.h-11 {
-            width: 2.375rem !important;
-            height: 2.375rem !important;
-        }
-
-        .admin-main table .h-5.w-5,
-        .admin-main table .w-5.h-5 {
-            width: 1.125rem !important;
-            height: 1.125rem !important;
-        }
-
-        .admin-main table .gap-3 {
-            gap: 0.5rem !important;
-        }
-
-        .admin-main table .min-w-28 {
-            min-width: 5.75rem !important;
-        }
-
-        .admin-main .border-t.bg-white.px-6.py-4 {
-            padding: 0.75rem 1rem !important;
-        }
-
-        #admin-sidebar {
-            transition: width 0.2s ease;
-        }
-
-        .admin-sidebar-label,
-        .admin-sidebar-brand-text,
-        .admin-sidebar-user-info,
-        .admin-sidebar-logout-label {
-            transition: opacity 0.15s ease, visibility 0.15s ease;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar {
-            width: 5rem !important;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-brand-text,
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-label,
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-user-info,
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logout-label {
-            width: 0;
-            opacity: 0;
-            visibility: hidden;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo-row {
-            justify-content: center;
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-logo {
-            display: none;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-nav {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link {
-            justify-content: center;
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-link svg {
-            margin-right: 0;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar form button svg {
-            margin-right: 0;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-footer {
-            padding-left: 0.75rem;
-            padding-right: 0.75rem;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-profile {
-            justify-content: center;
-        }
-
-        body.admin-sidebar-collapsed #admin-sidebar .admin-sidebar-avatar {
-            margin-right: 0;
-        }
+        /* Basic Collapse styles for phase 2 - not fully animated yet but functional */
+        body.admin-sidebar-collapsed #admin-sidebar { width: 4.5rem !important; }
+        body.admin-sidebar-collapsed #header-logo-area { width: 4.5rem !important; }
+        body.admin-sidebar-collapsed .admin-header-brand-text { display: none; }
+        body.admin-sidebar-collapsed .admin-header-brand-icon { display: block; }
+        body.admin-sidebar-collapsed .admin-sidebar-user-info { display: none; }
+        body.admin-sidebar-collapsed .admin-sidebar-user-section { padding-left: 0.75rem; padding-right: 0.75rem; justify-content: center; }
+        body.admin-sidebar-collapsed .admin-sidebar-user-section .w-12 { width: 2.5rem; height: 2.5rem; font-size: 1rem; }
+        body.admin-sidebar-collapsed .admin-sidebar-branch-section { display: none; }
+        body.admin-sidebar-collapsed .admin-sidebar-label { display: none; }
+        body.admin-sidebar-collapsed .admin-sidebar-link { padding-left: 0.75rem; padding-right: 0.75rem; justify-content: center; border-left: none; }
+        body.admin-sidebar-collapsed .admin-sidebar-link.active { border-left: none; background-color: #293846; }
+        body.admin-sidebar-collapsed .admin-sidebar-link svg { margin-right: 0; }
     </style>
 </head>
-<body class="text-gray-800 flex h-screen overflow-hidden">
-    <div id="layout-toast-container" class="fixed right-6 top-6 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col gap-3"></div>
+<body class="text-gray-800 flex flex-col h-screen overflow-hidden bg-[#f3f3f4]">
+    <div id="layout-toast-container" class="fixed right-6 top-20 z-50 flex w-[380px] max-w-[calc(100vw-2rem)] flex-col gap-3"></div>
 
-    <!-- Sidebar -->
-    <aside id="admin-sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
-        <div>
-            <!-- Logo -->
-            <div class="admin-sidebar-logo-row h-20 flex items-center justify-between px-6 border-b border-gray-50">
-                <div class="flex min-w-0 items-center">
-                    <div class="admin-sidebar-logo text-blue-600 mr-3 flex-shrink-0">
-                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
-                            <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
-                        </svg>
-                    </div>
-                    <div class="admin-sidebar-brand-text min-w-0">
-                        <div class="font-bold text-xl text-gray-900 leading-tight">EduBridge</div>
-                        <div class="text-xs text-gray-500 font-medium">
-                            Giáo viên
+    <!-- Header -->
+    <header class="h-14 bg-[#3c8dbc] flex items-center justify-between z-20 flex-shrink-0 shadow-sm relative">
+        <!-- Logo Area -->
+        <div id="header-logo-area" class="h-full bg-[#367fa9] flex items-center justify-center w-64 flex-shrink-0 text-white transition-all duration-200">
+            <span class="font-bold text-xl tracking-wide admin-header-brand-text">EDUBRIDGE</span>
+            <span class="font-bold text-xl hidden admin-header-brand-icon">EB</span>
+        </div>
+        
+        <!-- Top Nav -->
+        <div class="flex-1 flex justify-between items-center px-4 h-full bg-[#3c8dbc]">
+            <!-- Hamburger -->
+            <button id="admin-sidebar-toggle" class="hover:bg-[#367fa9] p-2 rounded text-white transition-colors" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </button>
+            
+            <!-- Right side -->
+            <div class="flex items-center space-x-3 text-white h-full">
+                <!-- Notification (Temporarily Hidden) -->
+                <div class="relative h-full flex items-center hidden">
+                    <button id="headerNotificationBtn" class="hover:bg-[#367fa9] p-2 rounded relative transition-colors h-10 w-10 flex items-center justify-center" aria-label="Thông báo" aria-expanded="false">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        <span id="headerNotificationBadge" class="absolute top-1 right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center hidden">0</span>
+                    </button>
+                    <!-- Notification Dropdown -->
+                    <div id="headerNotificationMenu" class="hidden absolute right-0 top-14 w-80 bg-white rounded-md shadow-lg border border-gray-200 z-50 overflow-hidden flex flex-col">
+                        <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <p class="text-sm font-semibold text-gray-800">Thông báo</p>
+                            <button id="headerNotificationMarkAllBtn" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Đánh dấu đã đọc</button>
+                        </div>
+                        <div id="headerNotificationList" class="max-h-80 overflow-y-auto custom-scrollbar flex-1 bg-white">
+                            <!-- JS will populate notifications here -->
+                            <div class="p-4 text-center text-sm text-gray-500">Đang tải...</div>
+                        </div>
+                        <div class="px-4 py-2 border-t border-gray-100 text-center bg-gray-50">
+                            <a href="#" class="text-xs text-blue-600 hover:text-blue-800 font-medium">Xem tất cả thông báo</a>
                         </div>
                     </div>
                 </div>
-                <button id="admin-sidebar-toggle" type="button" class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-600" aria-label="Thu gọn/mở rộng sidebar" aria-expanded="true">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Navigation -->
-            <nav class="admin-sidebar-nav p-4 space-y-1.5 mt-2">
-                <a href="/Teacher/Dashboard" title="Dashboard" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Dashboard" || ViewData["ActivePage"] == null ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-                    <span class="admin-sidebar-label">Dashboard</span>
-                </a>
-                <a href="/Teacher/Lectures" title="Bài giảng" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Lectures" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path></svg>
-                    <span class="admin-sidebar-label">Bài giảng</span>
-                </a>
-                <a href="/Homework" title="Bài tập" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Assignments" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                    <span class="admin-sidebar-label">Bài tập</span>
-                </a>
-                <a href="/Grades" title="Sổ điểm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Grades" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
-                    <span class="admin-sidebar-label">Sổ điểm</span>
-                </a>
-                <a href="/Teacher/Attendance" title="Điểm danh" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Attendance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span class="admin-sidebar-label">Điểm danh</span>
-                </a>
-                <a href="/Messages" title="Tin nhắn" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "Messages" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                    <span class="admin-sidebar-label">Tin nhắn</span>
-                </a>
-            </nav>
-        </div>
-
-        <!-- User Profile & Logout Dropdown -->
-        <div class="admin-sidebar-footer p-5 border-t border-gray-100 relative">
-            <button type="button" id="adminProfileBtn" class="admin-sidebar-profile flex items-center w-full focus:outline-none cursor-pointer">
-                <div class="admin-sidebar-avatar w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold mr-3 flex-shrink-0">
-                    @initials
-                </div>
-                <div class="admin-sidebar-user-info min-w-0 text-left flex-1">
-                    <div class="font-bold text-sm text-gray-900 truncate">@fullName</div>
-                    <div class="text-xs text-gray-500 truncate">@email</div>
-                </div>
-                <svg class="admin-sidebar-dropdown-icon w-4 h-4 text-gray-400 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path></svg>
-            </button>
-            
-            <!-- Dropdown Menu -->
-            <div id="adminProfileMenu" class="hidden absolute bottom-[72px] left-4 w-[calc(100%-2rem)] min-w-[220px] z-50">
-                <div class="bg-white rounded-xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.15)] border border-gray-100 p-2 space-y-1">
-                    @if (hasOwnerRole)
-                    {
-                        <form method="post" asp-page="/SwitchRole" class="w-full m-0">
-                            <input type="hidden" name="roleCode" value="OWNER" />
-                            <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition-colors text-left">
-                                <svg class="w-4 h-4 mr-3 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
-                                <span>Giao diện Quản lý</span>
+                
+                <!-- User Menu -->
+                <div class="relative h-full flex items-center">
+                    <button id="headerUserBtn" class="flex items-center space-x-2 hover:bg-[#367fa9] px-3 py-1.5 rounded transition-colors h-10" aria-expanded="false">
+                        <div class="w-7 h-7 rounded-full bg-white text-[#3c8dbc] flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            @initials
+                        </div>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <!-- User Dropdown Menu -->
+                    <div id="headerUserMenu" class="hidden absolute right-0 top-14 w-48 bg-white rounded-md shadow-lg py-1 text-gray-700 border border-gray-200 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <p class="text-sm font-semibold">Quản lý tài khoản</p>
+                        </div>
+                        @if (hasOwnerRole)
+                        {
+                            <form method="post" asp-page="/SwitchRole" class="w-full m-0">
+                                <input type="hidden" name="roleCode" value="OWNER" />
+                                <button type="submit" class="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 text-left">
+                                    <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+                                    Giao diện Quản lý
+                                </button>
+                            </form>
+                        }
+                        <a href="/Profile" class="flex items-center px-4 py-2 text-sm hover:bg-gray-100">
+                            <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                            Thông tin
+                        </a>
+                        <a href="/ChangePassword" class="flex items-center px-4 py-2 text-sm hover:bg-gray-100">
+                            <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            Đổi mật khẩu
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <form method="post" asp-page="/Logout" class="w-full m-0">
+                            <button type="submit" class="flex items-center w-full px-4 py-2 text-sm hover:bg-gray-100 text-left text-red-600">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                                Đăng xuất
                             </button>
                         </form>
-                    }
-                    <a href="/Profile" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                          <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                          <span>Hồ sơ cá nhân</span>
-                      </a>
-                      <a href="/ChangePassword" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                        <svg class="w-4 h-4 mr-3 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                        <span>Đổi mật khẩu</span>
-                    </a>
-                    <form method="post" asp-page="/Logout" class="w-full m-0">
-                        <button type="submit" class="flex items-center w-full py-2 px-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left">
-                            <svg class="w-4 h-4 mr-3 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                            <span>Đăng xuất</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sidebar and Main Wrapper -->
+    <div class="flex flex-1 overflow-hidden relative">
+        <!-- Sidebar -->
+        <aside id="admin-sidebar" class="w-64 bg-[#2f4050] text-[#a7b1c2] flex-shrink-0 flex flex-col transition-all duration-200 z-10 custom-scrollbar">
+            <!-- User Info area -->
+            <div class="p-4 border-b border-[#374c5e] flex items-center space-x-3 admin-sidebar-user-section flex-shrink-0">
+                <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                    @initials
+                </div>
+                <div class="min-w-0 flex-1 admin-sidebar-user-info">
+                    <div class="text-white font-semibold text-sm truncate" title="@fullName">@fullName</div>
+                    <div class="text-xs flex items-center mt-0.5">
+                        <span class="w-2.5 h-2.5 bg-green-500 rounded-full mr-1.5 shadow-[0_0_4px_rgba(34,197,94,0.6)]"></span>
+                        Trực tuyến
+                    </div>
+                </div>
+            </div>
+
+            <!-- Branch selector -->
+            @if (showCenterMenu && branches.Any())
+            {
+                <div class="p-4 border-b border-[#374c5e] admin-sidebar-branch-section flex-shrink-0">
+                    <div class="text-white font-semibold mb-2 flex items-center justify-center admin-sidebar-branch-label">Dự án quản lý</div>
+                    <form method="post" asp-page="/SetBranch" class="m-0">
+                        <div class="relative">
+                            <select name="branchId" onchange="this.form.submit()" class="w-full bg-white text-gray-800 text-sm rounded h-9 pl-3 pr-8 appearance-none focus:outline-none focus:ring-2 focus:ring-[#1ab394] shadow-sm cursor-pointer truncate">
+                                <option value="0">Tất cả dự án</option>
+                                @foreach (var branch in branches)
+                                {
+                                    if (currentBranchId == branch.BranchId)
+                                    {
+                                        <option value="@branch.BranchId" selected>@branch.BranchName</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@branch.BranchId">@branch.BranchName</option>
+                                    }
+                                }
+                            </select>
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            }
+
+            <!-- Navigation -->
+            <nav class="flex-1 overflow-y-auto custom-scrollbar py-2 admin-sidebar-nav text-[13px] font-medium">
+                @{
+                    var isDashboardActive = ViewData["ActivePage"] as string == "Dashboard" || ViewData["ActivePage"] == null;
+                    var isLecturesActive = ViewData["ActivePage"] as string == "Lectures";
+                    var isAssignmentsActive = ViewData["ActivePage"] as string == "Assignments";
+                    var isGradesActive = ViewData["ActivePage"] as string == "Grades";
+                    var isAttendanceActive = ViewData["ActivePage"] as string == "Attendance";
+                    var isMessagesActive = ViewData["ActivePage"] as string == "Messages";
+                }
+                <a href="/Teacher/Dashboard" class="admin-sidebar-link flex items-center px-5 py-3 transition-colors @(isDashboardActive ? "active" : "")">
+                    <svg class="w-[18px] h-[18px] mr-3 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span class="admin-sidebar-label truncate">Dashboard</span>
+                </a>
+                <a href="/Teacher/Lectures" class="admin-sidebar-link flex items-center px-5 py-3 transition-colors @(isLecturesActive ? "active" : "")">
+                    <svg class="w-[18px] h-[18px] mr-3 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"></path></svg>
+                    <span class="admin-sidebar-label truncate">Bài giảng</span>
+                </a>
+                <a href="/Homework" class="admin-sidebar-link flex items-center px-5 py-3 transition-colors @(isAssignmentsActive ? "active" : "")">
+                    <svg class="w-[18px] h-[18px] mr-3 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span class="admin-sidebar-label truncate">Bài tập</span>
+                </a>
+                <a href="/Grades" class="admin-sidebar-link flex items-center px-5 py-3 transition-colors @(isGradesActive ? "active" : "")">
+                    <svg class="w-[18px] h-[18px] mr-3 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                    <span class="admin-sidebar-label truncate">Sổ điểm</span>
+                </a>
+                <a href="/Teacher/Attendance" class="admin-sidebar-link flex items-center px-5 py-3 transition-colors @(isAttendanceActive ? "active" : "")">
+                    <svg class="w-[18px] h-[18px] mr-3 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="admin-sidebar-label truncate">Điểm danh</span>
+                </a>
+                <a href="/Messages" class="admin-sidebar-link flex items-center px-5 py-3 transition-colors @(isMessagesActive ? "active" : "")">
+                    <svg class="w-[18px] h-[18px] mr-3 opacity-80 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    <span class="admin-sidebar-label truncate">Tin nhắn</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main flex-1 overflow-y-auto relative bg-[#f3f3f4]">
+            @if (isSupportMode)
+            {
+                <div class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl mb-4 flex justify-between items-center shadow-sm">
+                    <div class="font-medium flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        Bạn đang trong chế độ Hỗ Trợ (Support Mode). Mọi thao tác sẽ được ghi lại.
+                    </div>
+                    <form method="post" asp-page="/SystemAdmin/ExitSupportMode" class="m-0">
+                        <button type="submit" class="bg-white text-red-600 px-3 py-1.5 rounded-lg border border-red-200 text-sm font-bold hover:bg-red-50 transition-colors">
+                            Thoát chế độ hỗ trợ
                         </button>
                     </form>
                 </div>
-            </div>
-        </div>
-    </aside>
-
-    <!-- Main Content -->
-    <main class="admin-main flex-1 overflow-y-auto relative">
-        <!-- Top bar containing Branch Selector -->
-        @if (showCenterMenu && branches.Any())
-        {
-            <div class="flex justify-end mb-4">
-                <form method="post" asp-page="/SetBranch" class="flex items-center space-x-2">
-                    <label for="branchSelector" class="text-sm font-medium text-gray-700">Cơ sở:</label>
-                    <select id="branchSelector" name="branchId" onchange="this.form.submit()" class="border-gray-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500">
-                        <option value="0">Tất cả cơ sở</option>
-                        @foreach (var branch in branches)
-                        {
-                            if (currentBranchId == branch.BranchId)
-                            {
-                                <option value="@branch.BranchId" selected>@branch.BranchName</option>
-                            }
-                            else
-                            {
-                                <option value="@branch.BranchId">@branch.BranchName</option>
-                            }
-                        }
-                    </select>
-                </form>
-            </div>
-        }
-
-        @if (isSupportMode)
-        {
-            <div class="bg-red-50 text-red-700 border border-red-200 px-4 py-3 rounded-xl mb-4 flex justify-between items-center shadow-sm">
-                <div class="font-medium flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                    Bạn đang trong chế độ Hỗ Trợ (Support Mode). Mọi thao tác sẽ được ghi lại.
-                </div>
-                <form method="post" asp-page="/SystemAdmin/ExitSupportMode">
-                    <button type="submit" class="bg-white text-red-600 px-3 py-1.5 rounded-lg border border-red-200 text-sm font-bold hover:bg-red-50 transition-colors">
-                        Thoát chế độ hỗ trợ
-                    </button>
-                </form>
-            </div>
-        }
-        @RenderBody()
-    </main>
+            }
+            @RenderBody()
+        </main>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -388,34 +325,41 @@
 
         function setAdminSidebarCollapsed(isCollapsed) {
             document.body.classList.toggle('admin-sidebar-collapsed', isCollapsed);
-            adminSidebarToggle?.setAttribute('aria-expanded', (!isCollapsed).toString());
+            if (adminSidebarToggle) {
+                adminSidebarToggle.setAttribute('aria-expanded', (!isCollapsed).toString());
+            }
             localStorage.setItem(adminSidebarStorageKey, isCollapsed ? 'true' : 'false');
         }
 
         setAdminSidebarCollapsed(localStorage.getItem(adminSidebarStorageKey) === 'true');
-        adminSidebarToggle?.addEventListener('click', () => {
-            setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
-        });
+        if (adminSidebarToggle) {
+            adminSidebarToggle.addEventListener('click', () => {
+                setAdminSidebarCollapsed(!document.body.classList.contains('admin-sidebar-collapsed'));
+            });
+        }
 
-        const adminProfileBtn = document.getElementById('adminProfileBtn');
-        const adminProfileMenu = document.getElementById('adminProfileMenu');
+        const headerUserBtn = document.getElementById('headerUserBtn');
+        const headerUserMenu = document.getElementById('headerUserMenu');
         
-        if (adminProfileBtn && adminProfileMenu) {
-            adminProfileBtn.addEventListener('click', (e) => {
+        if (headerUserBtn && headerUserMenu) {
+            headerUserBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (document.body.classList.contains('admin-sidebar-collapsed')) {
-                    setAdminSidebarCollapsed(false);
-                    setTimeout(() => {
-                        adminProfileMenu.classList.toggle('hidden');
-                    }, 200);
-                } else {
-                    adminProfileMenu.classList.toggle('hidden');
+                const isHidden = headerUserMenu.classList.contains('hidden');
+                
+                const notifMenu = document.getElementById('headerNotificationMenu');
+                if (notifMenu && !notifMenu.classList.contains('hidden')) {
+                    notifMenu.classList.add('hidden');
+                    document.getElementById('headerNotificationBtn')?.setAttribute('aria-expanded', 'false');
                 }
+
+                headerUserMenu.classList.toggle('hidden');
+                headerUserBtn.setAttribute('aria-expanded', !headerUserMenu.classList.contains('hidden'));
             });
             
             document.addEventListener('click', (e) => {
-                if (!adminProfileMenu.contains(e.target) && !adminProfileBtn.contains(e.target)) {
-                    adminProfileMenu.classList.add('hidden');
+                if (!headerUserMenu.contains(e.target) && !headerUserBtn.contains(e.target)) {
+                    headerUserMenu.classList.add('hidden');
+                    headerUserBtn.setAttribute('aria-expanded', 'false');
                 }
             });
         }
@@ -513,6 +457,119 @@
             const title = isSuccess ? 'Thành công' : 'Thất bại';
             showLayoutToast(title, message, type, null, 4500);
         };
+
+        // Notifications Logic
+        const headerNotificationBtn = document.getElementById('headerNotificationBtn');
+        const headerNotificationMenu = document.getElementById('headerNotificationMenu');
+        const headerNotificationBadge = document.getElementById('headerNotificationBadge');
+        const headerNotificationList = document.getElementById('headerNotificationList');
+        const headerNotificationMarkAllBtn = document.getElementById('headerNotificationMarkAllBtn');
+
+        function fetchUnreadCount() {
+            fetch('/api/v1/shared/notifications/unread-count')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && headerNotificationBadge) {
+                        const count = data.data;
+                        if (count > 0) {
+                            headerNotificationBadge.textContent = count > 99 ? '99+' : count;
+                            headerNotificationBadge.classList.remove('hidden');
+                        } else {
+                            headerNotificationBadge.classList.add('hidden');
+                        }
+                    }
+                }).catch(err => console.error(err));
+        }
+
+        function fetchNotifications() {
+            if (headerNotificationList) {
+                headerNotificationList.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">Đang tải...</div>';
+            }
+            fetch('/api/v1/shared/notifications/my?limit=10')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.data && headerNotificationList) {
+                        renderNotifications(data.data);
+                    }
+                }).catch(err => {
+                    console.error(err);
+                    if (headerNotificationList) {
+                        headerNotificationList.innerHTML = '<div class="p-4 text-center text-sm text-red-500">Lỗi khi tải thông báo.</div>';
+                    }
+                });
+        }
+
+        function renderNotifications(notifications) {
+            if (notifications.length === 0) {
+                headerNotificationList.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">Không có thông báo nào.</div>';
+                return;
+            }
+            
+            headerNotificationList.innerHTML = notifications.map(n => `
+                <div class="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${!n.isRead ? 'bg-blue-50/30' : ''}" onclick="markNotificationAsRead(${n.notificationId})">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-sm font-semibold text-gray-800 ${!n.isRead ? 'text-blue-700' : ''}">${n.title}</p>
+                        ${!n.isRead ? '<span class="w-2 h-2 bg-blue-600 rounded-full mt-1.5 flex-shrink-0"></span>' : ''}
+                    </div>
+                    <p class="text-xs text-gray-600 line-clamp-2 mb-1">${n.content}</p>
+                    <p class="text-[10px] text-gray-400">${n.createdAtString}</p>
+                </div>
+            `).join('');
+        }
+
+        window.markNotificationAsRead = function(id) {
+            fetch(`/api/v1/shared/notifications/${id}/read`, { method: 'PUT' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        fetchUnreadCount();
+                        fetchNotifications();
+                    }
+                }).catch(err => console.error(err));
+        }
+
+        if (headerNotificationMarkAllBtn) {
+            headerNotificationMarkAllBtn.addEventListener('click', () => {
+                fetch('/api/v1/shared/notifications/read-all', { method: 'PUT' })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            fetchUnreadCount();
+                            fetchNotifications();
+                        }
+                    }).catch(err => console.error(err));
+            });
+        }
+
+        if (headerNotificationBtn && headerNotificationMenu) {
+            fetchUnreadCount();
+
+            headerNotificationBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = headerNotificationMenu.classList.contains('hidden');
+                
+                if (headerUserMenu && !headerUserMenu.classList.contains('hidden')) {
+                    headerUserMenu.classList.add('hidden');
+                    headerUserBtn.setAttribute('aria-expanded', 'false');
+                }
+
+                if (isHidden) {
+                    headerNotificationMenu.classList.remove('hidden');
+                    headerNotificationBtn.setAttribute('aria-expanded', 'true');
+                    fetchNotifications();
+                } else {
+                    headerNotificationMenu.classList.add('hidden');
+                    headerNotificationBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!headerNotificationMenu.contains(e.target) && !headerNotificationBtn.contains(e.target)) {
+                    headerNotificationMenu.classList.add('hidden');
+                    headerNotificationBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
 
         pushStoredLayoutToast(
             @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["ToastTitle"] as string)),

@@ -36,12 +36,14 @@ namespace EduBridge.Services.Chat
             var studentsData = await _context.Enrollments
                 .Include(e => e.Student)
                 .ThenInclude(s => s.ParentUser)
+                .Include(e => e.Class)
                 .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != null)
                 .Select(e => new
                 {
                     ParentUserId = e.Student.ParentUserId!.Value,
                     ParentName = e.Student.ParentUser != null ? e.Student.ParentUser.FullName : string.Empty,
-                    StudentName = e.Student.FullName
+                    StudentName = e.Student.FullName,
+                    ClassName = e.Class.ClassName
                 })
                 .ToListAsync(cancellationToken);
 
@@ -80,6 +82,7 @@ namespace EduBridge.Services.Chat
                     ParentUserId = parentId,
                     ParentName = group.First().ParentName,
                     StudentNames = string.Join(", ", group.Select(s => s.StudentName).Distinct()),
+                    ClassNames = string.Join(", ", group.Select(s => s.ClassName).Distinct()),
                     LastMessage = lastMsg?.Content,
                     LastMessageSenderId = lastMsg?.SenderUserId,
                     LastMsgAt = lastMsg?.SentAt,
@@ -94,6 +97,7 @@ namespace EduBridge.Services.Chat
                 ParentUserId = c.ParentUserId,
                 ParentName = c.ParentName,
                 StudentNames = c.StudentNames,
+                ClassNames = c.ClassNames,
                 LastMessage = c.LastMessage,
                 LastMessageSenderId = c.LastMessageSenderId,
                 LastMessageTime = c.LastMsgAt?.ToString("dd/MM/yyyy HH:mm"),
@@ -150,6 +154,10 @@ namespace EduBridge.Services.Chat
                     .Where(name => !string.IsNullOrEmpty(name))
                     .Distinct());
 
+                var classNames = string.Join(", ", group
+                    .Select(e => e.Class.ClassName)
+                    .Distinct());
+
                 // Tin nhắn giữa phụ huynh và giáo viên này
                 var teacherMessages = allMessages
                     .Where(m => (m.SenderUserId == parentUserId && m.ReceiverUserId == teacherUserId) ||
@@ -167,6 +175,7 @@ namespace EduBridge.Services.Chat
                     TeacherUserId = teacherUserId,
                     TeacherName = teacherName,
                     StudentNames = studentNames,
+                    ClassNames = classNames,
                     LastMessage = lastMsg?.Content,
                     LastMessageSenderId = lastMsg?.SenderUserId,
                     LastMsgAt = lastMsg?.SentAt,
@@ -181,6 +190,7 @@ namespace EduBridge.Services.Chat
                 ParentUserId = c.TeacherUserId, // Dùng ParentUserId để giữ nguyên cấu trúc DTO cho UI dễ đọc
                 ParentName = c.TeacherName,
                 StudentNames = c.StudentNames,
+                ClassNames = c.ClassNames,
                 LastMessage = c.LastMessage,
                 LastMessageSenderId = c.LastMessageSenderId,
                 LastMessageTime = c.LastMsgAt?.ToString("dd/MM/yyyy HH:mm"),

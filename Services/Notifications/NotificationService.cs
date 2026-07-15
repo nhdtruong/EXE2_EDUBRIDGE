@@ -101,5 +101,62 @@ namespace EduBridge.Services.Notifications
 
             return true;
         }
+
+        public async Task<List<EduBridge.Models.DTOs.Shared.NotificationDto>> GetMyNotificationsAsync(int userId, int limit = 20, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(limit);
+
+            var list = await query.Select(n => new EduBridge.Models.DTOs.Shared.NotificationDto
+            {
+                NotificationId = n.NotificationId,
+                Title = n.Title,
+                Content = n.Content,
+                IsRead = n.IsRead,
+                CreatedAt = n.CreatedAt
+            }).ToListAsync(cancellationToken);
+
+            return list;
+        }
+
+        public async Task<int> GetUnreadCountAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .CountAsync(cancellationToken);
+        }
+
+        public async Task<bool> MarkAsReadAsync(int notificationId, int userId, CancellationToken cancellationToken = default)
+        {
+            var notif = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId, cancellationToken);
+                
+            if (notif == null) return false;
+            if (notif.IsRead) return true;
+
+            notif.IsRead = true;
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        public async Task<bool> MarkAllAsReadAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            var unread = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync(cancellationToken);
+
+            if (!unread.Any()) return true;
+
+            foreach (var n in unread)
+            {
+                n.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
     }
 }

@@ -23,7 +23,7 @@
         <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">Điểm danh</h1>
         <p class="mt-2 text-base text-gray-500">Ghi nhận tình trạng chuyên cần</p>
     </div>
-    <button class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" id="btnExportReport">
+    <button class="hidden items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2" id="btnExportReport">
         <svg class="mr-2" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Xuất báo cáo
     </button>
@@ -72,31 +72,99 @@
     </div>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-    <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
-        <h3 class="text-lg font-bold text-gray-900 m-0">Bảng điểm danh</h3>
-        <div class="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-            <!-- Select Lớp học -->
-            <select class="block w-full sm:w-48 pl-3 pr-8 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border border-solid" id="classSelect">
-                @foreach(var c in Model.TeacherClasses)
-                {
-                    <!option value="@c.ClassId" @(c.ClassId == Model.SelectedClassId ? "selected" : "")>@c.ClassName</!option>
-                }
-            </select>
-            
-            <!-- Select Buổi học -->
-            <select class="block w-full sm:w-56 pl-3 pr-8 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg border border-solid" id="lessonSelect">
-                @foreach(var l in Model.ClassLessons)
-                {
-                    <!option value="@l.LessonId" data-can-edit="@l.CanEdit.ToString().ToLower()" @(l.LessonId == Model.SelectedLessonId ? "selected" : "")>@l.LessonTitle (@l.DateString)</!option>
-                }
-            </select>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="bg-[#f8f9fa] rounded-t-xl border-b border-gray-200 p-5">
+        <h3 class="text-base font-bold text-gray-800 mb-4">Danh sách điểm danh</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <!-- Student Search -->
+            <div>
+                <input type="text" id="studentSearchInput" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="Tìm tên học sinh...">
+            </div>
 
-            <div class="relative w-full sm:w-56">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <!-- Class Filter -->
+            <div class="relative custom-dropdown" id="classDropdownContainer">
+                <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-500" onclick="toggleDropdown('classFilterMenu')">
+                    <span id="classFilterLabel" class="truncate pr-2">
+                        @{
+                            var initialClass = Model.TeacherClasses.FirstOrDefault(c => c.ClassId == Model.SelectedClassId);
+                            if (initialClass != null) {
+                                <text>@initialClass.ClassName</text>
+                            } else {
+                                <text>Lớp học</text>
+                            }
+                        }
+                    </span>
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="classFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <div class="p-2 border-b border-gray-100">
+                        <input type="text" id="classFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm lớp học...">
+                    </div>
+                    <ul id="classFilterList" class="max-h-48 overflow-y-auto py-1">
+                        @foreach (var cls in Model.TeacherClasses)
+                        {
+                            <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item" onclick="selectClassFilter(@cls.ClassId, '@cls.ClassName')">@cls.ClassName</li>
+                        }
+                    </ul>
                 </div>
-                <input type="text" id="studentSearchInput" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Tìm học sinh...">
+            </div>
+
+            <!-- Lesson Filter -->
+            <div class="relative custom-dropdown" id="lessonDropdownContainer">
+                <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-500" onclick="toggleDropdown('lessonFilterMenu')">
+                    <span id="lessonFilterLabel" class="truncate pr-2">
+                        @{
+                            var initialLesson = Model.ClassLessons.FirstOrDefault(l => l.LessonId == Model.SelectedLessonId);
+                            if (initialLesson != null) {
+                                <text>@initialLesson.LessonTitle (@initialLesson.DateString)</text>
+                            } else {
+                                <text>Buổi học</text>
+                            }
+                        }
+                    </span>
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="lessonFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <div class="p-2 border-b border-gray-100">
+                        <input type="text" id="lessonFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm buổi học...">
+                    </div>
+                    <ul id="lessonFilterList" class="max-h-48 overflow-y-auto py-1">
+                        @foreach (var l in Model.ClassLessons)
+                        {
+                            <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer lesson-filter-item" onclick="selectLessonFilter(@l.LessonId, '@l.LessonTitle (@l.DateString)', @l.CanEdit.ToString().ToLower())">@l.LessonTitle (@l.DateString)</li>
+                        }
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="relative custom-dropdown" id="statusDropdownContainer">
+                <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-500" onclick="toggleDropdown('statusFilterMenu')">
+                    <span id="statusFilterLabel" class="truncate pr-2">Trạng thái (Tất cả)</span>
+                    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="statusFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <ul id="statusFilterList" class="max-h-48 overflow-y-auto py-1">
+                        <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer" onclick="selectStatusFilter('all', 'Trạng thái (Tất cả)')">Tất cả</li>
+                        <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer" onclick="selectStatusFilter('Present', 'Có mặt')">Có mặt</li>
+                        <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer" onclick="selectStatusFilter('Absent', 'Vắng mặt')">Vắng mặt</li>
+                        <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer" onclick="selectStatusFilter('Late', 'Đi muộn')">Đi muộn</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mt-2">
+            <div></div>
+            <div class="flex items-center space-x-3">
+                <button type="button" onclick="resetAttendanceFilters()" class="h-10 px-5 bg-[#545b62] text-white text-sm font-medium rounded hover:bg-[#43494e] transition-colors flex items-center shadow-sm">
+                    Làm mới bộ lọc
+                </button>
+                <button type="button" onclick="applyAttendanceFilters()" class="h-10 px-5 bg-[#2563eb] text-white text-sm font-medium rounded hover:bg-[#1d4ed8] transition-colors flex items-center shadow-sm">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    Tìm kiếm
+                </button>
             </div>
         </div>
     </div>
@@ -120,17 +188,17 @@
     </div>
 
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">STT</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Học sinh</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-40">Trạng thái</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Ghi chú</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-64">Cập nhật</th>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                    <th class="py-4 px-4 text-center font-bold border-r border-slate-200 w-16">STT</th>
+                    <th class="py-4 px-6 text-left font-bold border-r border-slate-200">Học sinh</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-40">Trạng thái</th>
+                    <th class="py-4 px-6 text-left font-bold border-r border-slate-200">Ghi chú</th>
+                    <th class="py-4 px-6 text-center font-bold w-64">Cập nhật</th>
                 </tr>
             </thead>
-            <tbody id="attendanceTableBody" class="bg-white divide-y divide-gray-200">
+            <tbody id="attendanceTableBody" class="text-sm divide-y divide-gray-100 bg-white">
                 @if (Model.StudentAttendances.Any())
                 {
                     int idx = 1;
@@ -171,10 +239,10 @@
                             </td>
                             <td class="px-6 py-4"><input type="text" class="notes-input" id="note-@std.StudentId" value="@std.Note" placeholder="Nhập ghi chú..." @(initialCanEdit ? "" : "disabled") /></td>
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                <div class="inline-flex rounded-md shadow-sm" role="group">
-                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-present-select @(std.Status == "Present" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Có mặt</button>
-                                    <button class="px-3 py-1 text-sm font-medium border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-late-select @(std.Status == "Late" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Muộn</button>
-                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-r-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-absent-select @(std.Status == "Absent" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Vắng</button>
+                                <div class="inline-flex gap-2" role="group">
+                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-present-select @(std.Status == "Present" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Có mặt</button>
+                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-late-select @(std.Status == "Late" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Muộn</button>
+                                    <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-absent-select @(std.Status == "Absent" ? "btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700" : "text-gray-900 bg-white")" @(initialCanEdit ? "" : "disabled") data-id="@std.StudentId">Vắng</button>
                                 </div>
                             </td>
                         </tr>
@@ -203,17 +271,18 @@
     </div>
     
     <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">STT</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">Ngày</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Lớp</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Có mặt</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Vắng</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Muộn</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Tỷ lệ</th>
-                    <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider w-24">Thao tác</th>
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="whitespace-nowrap bg-slate-100 border-b border-slate-200 text-sm font-bold text-slate-800">
+                    <th class="py-4 px-4 text-center font-bold border-r border-slate-200 w-16">STT</th>
+                    <th class="py-4 px-6 text-left font-bold border-r border-slate-200">Buổi</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-32">Ngày</th>
+                    <th class="py-4 px-6 text-left font-bold border-r border-slate-200">Lớp</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-24">Có mặt</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-24">Vắng</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-24">Muộn</th>
+                    <th class="py-4 px-6 text-center font-bold border-r border-slate-200 w-24">Tỷ lệ</th>
+                    <th class="py-4 px-6 text-center font-bold w-24">Thao tác</th>
                 </tr>
             </thead>
             <tbody id="attendanceHistoryTableBody" class="text-sm divide-y divide-gray-100 bg-white">
@@ -313,6 +382,7 @@
         let rawHistoryData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AttendanceHistory));
         let attendanceHistoryData = (rawHistoryData || []).map(h => ({
             LessonId: h.LessonId !== undefined ? h.LessonId : h.lessonId,
+            LessonTitle: h.LessonTitle !== undefined ? h.LessonTitle : h.lessonTitle,
             DateString: h.DateString !== undefined ? h.DateString : h.dateString,
             ClassName: h.ClassName !== undefined ? h.ClassName : h.className,
             PresentCount: h.PresentCount !== undefined ? h.PresentCount : h.presentCount,
@@ -323,35 +393,121 @@
         let historyCurrentPage = 1;
         let historyPageSize = 10;
 
+        let currentAttClassId = @Model.SelectedClassId;
+        let tempAttClassId = currentAttClassId;
+        let currentAttLessonId = @Model.SelectedLessonId;
+        let tempAttLessonId = currentAttLessonId;
+        let tempAttLessonCanEdit = @(initialCanEdit.ToString().ToLower());
+        
+        let attFilterState = {
+            studentName: "",
+            status: "all"
+        };
+
+        function toggleDropdown(id) {
+            const el = document.getElementById(id);
+            if (el.classList.contains('hidden')) {
+                document.querySelectorAll('.custom-dropdown > div').forEach(d => d.classList.add('hidden'));
+                el.classList.remove('hidden');
+            } else {
+                el.classList.add('hidden');
+            }
+        }
+
+        function selectClassFilter(value, label) {
+            tempAttClassId = parseInt(value);
+            document.getElementById('classFilterLabel').textContent = label;
+            document.getElementById('classFilterMenu').classList.add('hidden');
+            loadLessonsForClassDropdown(tempAttClassId);
+        }
+
+        function selectLessonFilter(value, label, canEdit) {
+            tempAttLessonId = parseInt(value);
+            tempAttLessonCanEdit = canEdit;
+            document.getElementById('lessonFilterLabel').textContent = label;
+            document.getElementById('lessonFilterMenu').classList.add('hidden');
+        }
+
+        function selectStatusFilter(value, label) {
+            attFilterState.status = value;
+            document.getElementById('statusFilterLabel').textContent = label;
+            document.getElementById('statusFilterMenu').classList.add('hidden');
+        }
+
+        function resetAttendanceFilters() {
+            document.getElementById('studentSearchInput').value = '';
+            attFilterState.studentName = "";
+            attFilterState.status = "all";
+            document.getElementById('statusFilterLabel').textContent = 'Trạng thái (Tất cả)';
+            applyLocalAttendanceFilter();
+        }
+
+        function applyAttendanceFilters() {
+            attFilterState.studentName = document.getElementById('studentSearchInput').value.trim().toLowerCase();
+            
+            let needFetchClass = tempAttClassId !== currentAttClassId;
+            let needFetchLesson = tempAttLessonId !== currentAttLessonId;
+
+            if (needFetchClass) {
+                currentAttClassId = tempAttClassId;
+                loadHistoryForClass(currentAttClassId);
+            }
+            
+            if (needFetchLesson || needFetchClass) {
+                currentAttLessonId = tempAttLessonId;
+                loadAttendanceForLessonData(currentAttLessonId, tempAttLessonCanEdit);
+            } else {
+                applyLocalAttendanceFilter();
+            }
+        }
+
+        function applyLocalAttendanceFilter() {
+            const query = attFilterState.studentName;
+            const status = attFilterState.status;
+            
+            const filtered = studentAttendancesData.filter(std => {
+                let matchQuery = std.StudentName.toLowerCase().includes(query) || 
+                                 (std.StudentCode && std.StudentCode.toLowerCase().includes(query));
+                let matchStatus = status === "all" || std.Status === status;
+                return matchQuery && matchStatus;
+            });
+            renderAttendanceTable(filtered, tempAttLessonCanEdit);
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.custom-dropdown')) {
+                document.querySelectorAll('.custom-dropdown > div').forEach(d => d.classList.add('hidden'));
+            }
+        });
+
         document.addEventListener("DOMContentLoaded", function () {
             // Thống kê lúc load trang ban đầu
             updateStatistics();
             renderAttendanceHistoryTable();
 
-            // Lắng nghe đổi Lớp học
-            document.getElementById("classSelect").addEventListener("change", function () {
-                const classId = this.value;
-                loadLessonsForClass(classId);
-            });
+            const classFilterSearch = document.getElementById('classFilterSearch');
+            if (classFilterSearch) {
+                classFilterSearch.addEventListener('input', function(e) {
+                    const term = e.target.value.toLowerCase();
+                    const items = document.querySelectorAll('#classFilterList .class-filter-item');
+                    items.forEach(item => {
+                        if(item.textContent.toLowerCase().includes(term)) item.style.display = 'block';
+                        else item.style.display = 'none';
+                    });
+                });
+            }
 
-            // Lắng nghe đổi Buổi học
-            document.getElementById("lessonSelect").addEventListener("change", function () {
-                const lessonId = this.value;
-                loadAttendanceForLesson(lessonId);
-            });
-
-            // Tìm kiếm học sinh trực tiếp
-            document.getElementById("studentSearchInput").addEventListener("input", function () {
-                const query = this.value.trim().toLowerCase();
-                const filtered = studentAttendancesData.filter(std => 
-                    std.StudentName.toLowerCase().includes(query) || 
-                    std.StudentCode.toLowerCase().includes(query)
-                );
-                const lessonSelect = document.getElementById("lessonSelect");
-                const selectedOption = lessonSelect.options[lessonSelect.selectedIndex];
-                const canEdit = selectedOption ? (selectedOption.getAttribute("data-can-edit") === "true") : true;
-                renderAttendanceTable(filtered, canEdit);
-            });
+            const lessonFilterSearch = document.getElementById('lessonFilterSearch');
+            if (lessonFilterSearch) {
+                lessonFilterSearch.addEventListener('input', function(e) {
+                    const term = e.target.value.toLowerCase();
+                    const items = document.querySelectorAll('#lessonFilterList .lesson-filter-item');
+                    items.forEach(item => {
+                        if(item.textContent.toLowerCase().includes(term)) item.style.display = 'block';
+                        else item.style.display = 'none';
+                    });
+                });
+            }
 
             // Gán sự kiện click nút bấm đổi trạng thái & ghi chú ban đầu
             registerAttendanceActions();
@@ -414,39 +570,35 @@
             showToast("Xuất báo cáo chuyên cần thành công!");
         }
 
-        // Tải danh sách buổi học & lịch sử khi đổi lớp
-        function loadLessonsForClass(classId) {
+        function loadLessonsForClassDropdown(classId) {
             fetch(`/api/v1/teacher/attendance/lessons?classId=${classId}`)
                 .then(res => res.json())
                 .then(res => {
-                    const lessonSelect = document.getElementById("lessonSelect");
-                    lessonSelect.innerHTML = "";
+                    const lessonList = document.getElementById("lessonFilterList");
+                    lessonList.innerHTML = "";
                     
                     if (res.success && res.data.length > 0) {
                         res.data.forEach(l => {
-                            const opt = document.createElement("option");
-                            opt.value = l.lessonId;
-                            opt.textContent = `${l.lessonTitle} (${l.dateString})`;
-                            opt.setAttribute("data-can-edit", l.canEdit);
-                            lessonSelect.appendChild(opt);
+                            const li = document.createElement("li");
+                            li.className = "px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer lesson-filter-item";
+                            li.onclick = () => selectLessonFilter(l.lessonId, `${l.lessonTitle} (${l.dateString})`, l.canEdit);
+                            li.textContent = `${l.lessonTitle} (${l.dateString})`;
+                            lessonList.appendChild(li);
                         });
                         
-                        // Tải bảng điểm danh buổi học đầu tiên
-                        loadAttendanceForLesson(res.data[0].lessonId);
+                        // Select the first one temporarily
+                        const first = res.data[0];
+                        selectLessonFilter(first.lessonId, `${first.lessonTitle} (${first.dateString})`, first.canEdit);
                     } else {
-                        lessonSelect.innerHTML = `<option value="">-- Không có buổi học --</option>`;
-                        studentAttendancesData = [];
-                        renderAttendanceTable([]);
-                        updateStatistics();
+                        lessonList.innerHTML = `<li class="px-3 py-2 text-sm text-gray-500">-- Không có buổi học --</li>`;
+                        document.getElementById('lessonFilterLabel').textContent = '-- Không có buổi học --';
+                        tempAttLessonId = null;
                     }
                 })
                 .catch(err => {
                     console.error(err);
                     showToast("Đã xảy ra lỗi khi tải danh sách buổi học.", false);
                 });
-
-            // Tải lịch sử điểm danh của lớp
-            loadHistoryForClass(classId);
         }
 
         // Tải lịch sử điểm danh qua API
@@ -471,8 +623,13 @@
         }
 
         // Tải bảng điểm danh của một buổi học
-        function loadAttendanceForLesson(lessonId) {
-            if (!lessonId) return;
+        function loadAttendanceForLessonData(lessonId, canEdit) {
+            if (!lessonId) {
+                studentAttendancesData = [];
+                applyLocalAttendanceFilter();
+                updateStatistics();
+                return;
+            }
             fetch(`/api/v1/teacher/attendance?lessonId=${lessonId}`)
                 .then(res => res.json())
                 .then(res => {
@@ -485,18 +642,15 @@
                             Note: std.note
                         }));
 
-                        // Đọc canEdit từ option được chọn
-                        const lessonSelect = document.getElementById("lessonSelect");
-                        const selectedOption = lessonSelect.options[lessonSelect.selectedIndex];
-                        const canEdit = selectedOption ? (selectedOption.getAttribute("data-can-edit") === "true") : true;
-
                         // Ẩn/Hiện alert
                         const alertEl = document.getElementById("attendanceAlert");
                         if (alertEl) {
                             if (canEdit) {
-                                alertEl.classList.add("d-none");
+                                alertEl.classList.add("hidden");
+                                alertEl.classList.remove("flex");
                             } else {
-                                alertEl.classList.remove("d-none");
+                                alertEl.classList.remove("hidden");
+                                alertEl.classList.add("flex");
                             }
                         }
 
@@ -506,10 +660,9 @@
                             saveBtn.style.display = canEdit ? "" : "none";
                         }
 
-                        renderAttendanceTable(studentAttendancesData, canEdit);
+                        applyLocalAttendanceFilter();
                         updateStatistics();
-                        // Reset tìm kiếm
-                        document.getElementById("studentSearchInput").value = "";
+                        document.getElementById("studentSearchInput").value = attFilterState.studentName;
                     } else {
                         showToast(res.message, false);
                     }
@@ -549,8 +702,9 @@
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${indexGlobal}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-left">${h.LessonTitle || h.lessonTitle || ''}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">${h.dateString || h.DateString}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${h.className || h.ClassName}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-left"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">${h.className || h.ClassName}</span></td>
                     <td class="px-6 py-4 whitespace-nowrap text-center"><span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-800 font-bold text-sm">${h.presentCount ?? h.PresentCount}</span></td>
                     <td class="px-6 py-4 whitespace-nowrap text-center"><span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-red-100 text-red-800 font-bold text-sm">${h.absentCount ?? h.AbsentCount}</span></td>
                     <td class="px-6 py-4 whitespace-nowrap text-center"><span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-800 font-bold text-sm">${h.lateCount ?? h.LateCount}</span></td>
@@ -677,10 +831,10 @@
                     </td>
                     <td class="px-6 py-4"><input type="text" class="notes-input border-gray-300 rounded-md w-full focus:ring-blue-500 focus:border-blue-500 sm:text-sm px-3 py-2 border" id="note-${std.StudentId}" value="${std.Note || ''}" placeholder="Nhập ghi chú..." ${disabledAttr} /></td>
                     <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <div class="inline-flex rounded-md shadow-sm" role="group">
-                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-l-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-present-select ${std.Status === 'Present' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Có mặt</button>
-                            <button class="px-3 py-1 text-sm font-medium border-t border-b border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-late-select ${std.Status === 'Late' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Muộn</button>
-                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-r-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-absent-select ${std.Status === 'Absent' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Vắng</button>
+                        <div class="inline-flex gap-2" role="group">
+                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-present-select ${std.Status === 'Present' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Có mặt</button>
+                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-late-select ${std.Status === 'Late' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Muộn</button>
+                            <button class="px-3 py-1 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 btn-status btn-absent-select ${std.Status === 'Absent' ? 'btn-status-active text-blue-700 bg-gray-100 ring-2 ring-blue-700' : 'text-gray-900 bg-white'}" ${disabledAttr} data-id="${std.StudentId}">Vắng</button>
                         </div>
                     </td>
                 `;
