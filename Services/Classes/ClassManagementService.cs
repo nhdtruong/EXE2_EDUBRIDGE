@@ -441,12 +441,9 @@ public sealed class ClassManagementService : IClassManagementService
         int ownerUserId,
         CancellationToken cancellationToken = default)
     {
-        var centerId = await _context.Centers
-            .Where(c => c.Status == "Active" && (c.OwnerUserId == ownerUserId || _context.CenterUsers.Any(cu => cu.CenterId == c.CenterId && cu.UserId == ownerUserId && cu.UserType == "OWNER" && cu.Status == "Active")))
-            .Select(c => c.CenterId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var centerId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
 
-        if (centerId == 0)
+        if (centerId == null || centerId == 0)
         {
             return ClassOperationResult<ClassDropdownOptionsResponse>.Failure("Không tìm thấy trung tâm.", new Dictionary<string, string[]>());
         }
