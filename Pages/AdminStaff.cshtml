@@ -1,9 +1,12 @@
 @page
 @model EduBridge.Pages.AdminStaffModel
 @{
-    ViewData["Title"] = "Quản lý nhân sự";
+    ViewData["Title"] = "Danh sách nhân sự";
     Layout = "_AdminLayout";
     ViewData["ActivePage"] = "AdminStaff";
+    var currentBranchIdStr = HttpContext.Request.Cookies["CurrentBranchId"];
+    int.TryParse(currentBranchIdStr, out int currentBranchId);
+    bool isSpecificBranch = currentBranchId > 0;
     var selectedStatusText = Model.StatusFilter switch
     {
         "Active" => "Hoạt động",
@@ -110,6 +113,10 @@
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">ID</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Nhân sự</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Liên hệ</th>
+                        @if (!isSpecificBranch)
+                        {
+                            <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Cơ sở</th>
+                        }
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Chuyên môn</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Lớp phụ trách</th>
                         <th class="py-4 px-6 text-center font-bold border-r border-slate-200">Trạng thái</th>
@@ -120,7 +127,7 @@
                     @if (Model.Staffs.Count == 0)
                     {
                         <tr>
-                            <td colspan="9" class="py-10 px-6 text-center text-gray-500">
+                            <td colspan="@(isSpecificBranch ? 9 : 10)" class="py-10 px-6 text-center text-gray-500">
                                 Chưa có nhân sự phù hợp.
                             </td>
                         </tr>
@@ -173,6 +180,12 @@
                                         @Staff.DisplayPhoneNumber
                                     </div>
                                 </td>
+                                @if (!isSpecificBranch)
+                                {
+                                    <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">
+                                        @(string.IsNullOrEmpty(Staff.BranchName) ? "-" : Staff.BranchName)
+                                    </td>
+                                }
                                 <td class="py-4 px-6 text-center font-medium text-gray-900 border-r border-gray-200">
                                     @(string.IsNullOrEmpty(Staff.Specialization) ? "-" : Staff.Specialization)
                                 </td>

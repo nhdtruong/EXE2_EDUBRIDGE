@@ -1076,12 +1076,12 @@
                             <span class="admin-sidebar-label">Dashboard trung tâm</span>
                         </a>
                         <div class="admin-sidebar-item @(isCenterGroupActive ? "is-open" : "")">
-                            <a href="/AdminSettings" title="Quản lý trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors" role="button" aria-expanded="@isCenterGroupActive.ToString().ToLowerInvariant()">
+                            <a href="javascript:void(0)" title="Quản lý trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors" role="button" aria-expanded="@isCenterGroupActive.ToString().ToLowerInvariant()">
                                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l8-4 6 4v14"></path><path d="M9 10h1"></path><path d="M13 10h1"></path><path d="M9 14h1"></path><path d="M13 14h1"></path></svg>
                                 <span class="admin-sidebar-label">Quản lý trung tâm</span>
                             </a>
                             <div class="admin-sidebar-submenu">
-                                <a href="/AdminSettings" class="admin-sidebar-submenu-link @(isCenterSettingsActive ? "is-active" : "")">Quản lý trung tâm</a>
+                                <a href="/AdminSettings" style="display: none !important;" class="admin-sidebar-submenu-link @(isCenterSettingsActive ? "is-active" : "")">Quản lý trung tâm</a>
                                 <a href="/AdminBranches" class="admin-sidebar-submenu-link @(isBranchesActive ? "is-active" : "")">Danh sách cơ sở</a>
                             </div>
                         </div>
@@ -1093,11 +1093,11 @@
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                             <span class="admin-sidebar-label">Nhân sự trung tâm</span>
                         </a>
-                        <a href="/AdminFinance" title="Tài chính trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <a href="/AdminFinance" title="Tài chính trung tâm" style="display: none !important;" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                             <span class="admin-sidebar-label">Tài chính trung tâm</span>
                         </a>
-                        <a href="/AdminSettings" title="Cài đặt trung tâm" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                        <a href="/AdminSettings" title="Cài đặt trung tâm" style="display: none !important;" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                             <span class="admin-sidebar-label">Cài đặt trung tâm</span>
                         </a>
@@ -1128,11 +1128,11 @@
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                         <span class="admin-sidebar-label">Nhân sự</span>
                     </a>
-                    <a href="/AdminFinance" title="Tài chính" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <a href="/AdminFinance" title="Tài chính" style="display: none !important;" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminFinance" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
                         <span class="admin-sidebar-label">Tài chính</span>
                     </a>
-                    <a href="/AdminSettings" title="Cài đặt" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
+                    <a href="/AdminSettings" title="Cài đặt" style="display: none !important;" class="admin-sidebar-link flex items-center px-4 py-3 @(ViewData["ActivePage"] as string == "AdminSettings" ? "bg-blue-50 text-blue-600 rounded-xl font-medium" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-medium transition-colors")">
                         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                         <span class="admin-sidebar-label">Cài đặt</span>
                     </a>

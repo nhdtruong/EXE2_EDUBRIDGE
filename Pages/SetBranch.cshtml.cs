@@ -32,11 +32,16 @@ public class SetBranchModel : PageModel
             TempData["ToastType"] = "success";
         }
 
-        var referer = Request.Headers["Referer"].ToString();
-        if (!string.IsNullOrEmpty(referer))
+        var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        if (role == "TEACHER")
         {
-            return Redirect(referer);
+            return RedirectToPage("/Teacher/Dashboard");
         }
-        return RedirectToPage("/AdminDashboard");
+        else if (role == "OWNER" || role == "SYSTEM_ADMIN")
+        {
+            return RedirectToPage("/AdminDashboard");
+        }
+        
+        return RedirectToPage("/Index");
     }
 }

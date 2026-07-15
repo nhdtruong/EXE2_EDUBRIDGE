@@ -16,6 +16,8 @@ public sealed class SaveStaffRequest
     [Required(ErrorMessage = "Vui lòng chọn ít nhất 1 vai trò.")]
     public List<string> Roles { get; set; } = new() { "TEACHER" };
 
+    public List<int> BranchIds { get; set; } = new();
+
     [Required(ErrorMessage = "Vui lòng nhập mã nhân sự.")]
     [StringLength(30)]
     public string StaffCode { get; set; } = string.Empty;
@@ -84,7 +86,8 @@ public sealed record StaffListItemResponse(
     int ClassCount,
     int StudentCount,
     string Status,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    string? BranchName);
 
 public sealed record StaffDetailResponse(
     int UserId,
@@ -108,7 +111,8 @@ public sealed record StaffDetailResponse(
     string? Hometown,
     string? PlaceOfBirth,
     string Status,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    List<int> BranchIds);
 
 public sealed record StaffPagedResponse(
     IReadOnlyList<StaffListItemResponse> Items,

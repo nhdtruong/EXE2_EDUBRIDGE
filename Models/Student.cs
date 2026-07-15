@@ -7,7 +7,7 @@ public partial class Student
 {
     public int StudentId { get; set; }
 
-    public int ParentUserId { get; set; }
+    public int? ParentUserId { get; set; }
 
     public int CenterId { get; set; }
 
@@ -73,5 +73,5 @@ public partial class Student
 
     public virtual ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
 
-    public virtual User ParentUser { get; set; } = null!;
+    public virtual User? ParentUser { get; set; }
 }

@@ -151,9 +151,110 @@
             });
 
             form.addEventListener('submit', (event) => {
-                event.preventDefault();
+                // Không preventDefault nữa vì ta muốn form thực sự submit
+                // event.preventDefault();
             });
         });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('editBranchModal');
+            const openButtons = document.querySelectorAll('[data-open-edit-branch-modal]');
+            const closeButtons = document.querySelectorAll('[data-close-edit-branch-modal]');
+
+            if (!modal) return;
+
+            const setModalOpen = (isOpen) => {
+                modal.classList.toggle('hidden', !isOpen);
+                document.body.classList.toggle('overflow-hidden', isOpen);
+                if (isOpen) {
+                    requestAnimationFrame(() => modal.querySelector('input:not([readonly])')?.focus());
+                } else {
+                    document.getElementById('editBranchFrontendForm').reset();
+                    document.getElementById('editBranchLogoPreview').classList.add('hidden');
+                    document.getElementById('editBranchLogoPlaceholder').classList.remove('hidden');
+                    document.getElementById('editBranchCenterImagePreview').classList.add('hidden');
+                    document.getElementById('editBranchCenterImagePlaceholder').classList.remove('hidden');
+                }
+            };
+
+            openButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    const branchId = button.dataset.openEditBranchModal;
+                    try {
+                        const response = await fetch(`?handler=Detail&id=${branchId}`);
+                        const result = await response.json();
+
+                        if (result.success && result.data) {
+                            const data = result.data;
+                            document.getElementById('editBranchId').value = data.branchId;
+                            document.getElementById('editBranchName').value = data.branchName;
+                            document.getElementById('editEmail').value = data.email;
+                            document.getElementById('editPhoneNumber').value = data.phoneNumber;
+                            document.getElementById('editBranchCode').value = data.branchCode;
+                            document.getElementById('editAddress').value = data.address;
+
+                            if (data.logoUrl) {
+                                const preview = document.getElementById('editBranchLogoPreview');
+                                preview.src = data.logoUrl;
+                                preview.classList.remove('hidden');
+                                document.getElementById('editBranchLogoPlaceholder').classList.add('hidden');
+                            }
+                            if (data.imageUrl) {
+                                const preview = document.getElementById('editBranchCenterImagePreview');
+                                preview.src = data.imageUrl;
+                                preview.classList.remove('hidden');
+                                document.getElementById('editBranchCenterImagePlaceholder').classList.add('hidden');
+                            }
+
+                            setModalOpen(true);
+                        } else {
+                            alert(result.message || 'Không thể lấy dữ liệu cơ sở');
+                        }
+                    } catch (error) {
+                        alert('Lỗi kết nối khi lấy dữ liệu');
+                    }
+                });
+            });
+
+            closeButtons.forEach(button => {
+                button.addEventListener('click', () => setModalOpen(false));
+            });
+
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) setModalOpen(false);
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && !modal.classList.contains('hidden')) setModalOpen(false);
+            });
+        });
+
+        // Automatically open modal if validation failed
+        @if (TempData["OpenModal"] != null)
+        {
+            var modalToOpen = TempData["OpenModal"]?.ToString();
+            if (modalToOpen == "Create")
+            {
+                <text>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const createBtn = document.querySelector('[data-open-create-branch-modal]');
+                    if (createBtn) createBtn.click();
+                });
+                </text>
+            }
+            else if (modalToOpen == "Edit")
+            {
+                <text>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const editModal = document.getElementById('editBranchModal');
+                    if (editModal) {
+                        editModal.classList.remove('hidden');
+                        document.body.classList.add('overflow-hidden');
+                    }
+                });
+                </text>
+            }
+        }
     </script>
 }
 
@@ -366,15 +467,15 @@
                             </td>
                             <td class="py-4 px-6 text-center">
                                 <div class="flex items-center justify-center">
-                                    <a href="/AdminBranches/Detail?id=@branch.BranchId"
+                                    <button type="button" data-open-edit-branch-modal="@branch.BranchId"
                                        class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100"
-                                       title="Xem chi tiết"
+                                       title="Xem / Sửa chi tiết"
                                        aria-label="Xem chi tiết cơ sở @branch.BranchName">
                                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path>
                                             <circle cx="12" cy="12" r="3" stroke-width="2"></circle>
                                         </svg>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -456,13 +557,13 @@
 
         <div class="max-h-[calc(100vh-8rem)] overflow-y-auto bg-white p-5">
             <div class="border border-gray-200 p-3">
-                <form id="createBranchFrontendForm" class="border border-gray-200 bg-gray-50 p-3" enctype="multipart/form-data">
+                <form id="createBranchFrontendForm" class="border border-gray-200 bg-gray-50 p-3" method="post" asp-page-handler="Create" enctype="multipart/form-data">
                     <div class="grid gap-3 lg:grid-cols-[300px_1fr]">
                         <div class="border border-gray-200 bg-white p-3">
                             <div class="flex min-h-[190px] flex-col items-center justify-center gap-3">
                                 <div class="text-sm font-bold text-gray-900">Logo</div>
                                 <div class="flex h-24 w-36 items-center justify-center overflow-hidden rounded border border-dashed border-gray-300 bg-gray-50">
-                                    <img id="createBranchLogoPreview" class="hidden h-full w-full object-cover" alt="Logo cơ sở" />
+                                    <img id="createBranchLogoPreview" class="hidden h-full w-full object-contain" alt="Logo cơ sở" />
                                     <svg id="createBranchLogoPlaceholder" class="h-20 w-20 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="1.8"></rect>
                                         <circle cx="8.5" cy="10" r="1.8" stroke-width="1.8"></circle>
@@ -477,7 +578,7 @@
                                     </button>
                                     <label class="inline-flex h-8 cursor-pointer items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
                                         Chọn
-                                        <input id="createBranchLogoInput" name="Logo" type="file" accept="image/*" class="hidden" data-preview-target="createBranchLogoPreview" data-placeholder-target="createBranchLogoPlaceholder" />
+                                        <input asp-for="CreateRequest.Logo" id="createBranchLogoInput" type="file" accept="image/*" class="hidden" data-preview-target="createBranchLogoPreview" data-placeholder-target="createBranchLogoPlaceholder" />
                                     </label>
                                 </div>
                             </div>
@@ -491,23 +592,28 @@
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-sm font-semibold text-gray-800">Email cơ sở (*)</label>
-                                    <input type="email" name="Email" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập email cơ sở (*)" />
+                                    <input asp-for="CreateRequest.Email" type="email" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập email cơ sở (*)" />
+                                    <span asp-validation-for="CreateRequest.Email" class="text-xs text-red-600 mt-1 block"></span>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-sm font-semibold text-gray-800">Tên cơ sở (*)</label>
-                                    <input type="text" name="BranchName" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập tên cơ sở (*)" />
+                                    <input asp-for="CreateRequest.BranchName" type="text" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập tên cơ sở (*)" />
+                                    <span asp-validation-for="CreateRequest.BranchName" class="text-xs text-red-600 mt-1 block"></span>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-sm font-semibold text-gray-800">Số điện thoại (*)</label>
-                                    <input type="tel" name="PhoneNumber" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập số điện thoại (*)" />
+                                    <input asp-for="CreateRequest.PhoneNumber" type="tel" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập số điện thoại (*)" />
+                                    <span asp-validation-for="CreateRequest.PhoneNumber" class="text-xs text-red-600 mt-1 block"></span>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-sm font-semibold text-gray-800">Mã cơ sở (*)</label>
-                                    <input type="text" name="BranchCode" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập mã cơ sở (*)" />
+                                    <input asp-for="CreateRequest.BranchCode" type="text" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập mã cơ sở (*)" />
+                                    <span asp-validation-for="CreateRequest.BranchCode" class="text-xs text-red-600 mt-1 block"></span>
                                 </div>
                                 <div>
                                     <label class="mb-2 block text-sm font-semibold text-gray-800">Địa chỉ (*)</label>
-                                    <input type="text" name="Address" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập địa chỉ (*)" />
+                                    <input asp-for="CreateRequest.Address" type="text" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập địa chỉ (*)" />
+                                    <span asp-validation-for="CreateRequest.Address" class="text-xs text-red-600 mt-1 block"></span>
                                 </div>
                             </div>
 
@@ -528,11 +634,11 @@
                                                 <path d="M21 16l-5.2-5.2a1.5 1.5 0 0 0-2.1 0L7 17.5" stroke-width="1.8"></path>
                                             </svg>
                                             Chọn
-                                            <input id="createBranchCenterImageInput" name="CenterImage" type="file" accept="image/*" class="hidden" data-preview-target="createBranchCenterImagePreview" data-placeholder-target="createBranchCenterImagePlaceholder" />
+                                            <input asp-for="CreateRequest.CenterImage" id="createBranchCenterImageInput" type="file" accept="image/*" class="hidden" data-preview-target="createBranchCenterImagePreview" data-placeholder-target="createBranchCenterImagePlaceholder" />
                                         </label>
                                     </div>
                                     <div class="flex min-h-[82px] items-center justify-center overflow-hidden border border-gray-200 bg-gray-50">
-                                        <img id="createBranchCenterImagePreview" class="hidden max-h-52 w-full object-cover" alt="Ảnh trung tâm" />
+                                        <img id="createBranchCenterImagePreview" class="hidden max-h-52 w-full object-contain" alt="Ảnh trung tâm" />
                                         <div id="createBranchCenterImagePlaceholder" class="h-9 w-full border border-gray-200 bg-gradient-to-b from-white to-gray-100"></div>
                                     </div>
                                 </div>
@@ -540,13 +646,132 @@
 
                             <div class="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
                                 <button type="button" data-close-create-branch-modal class="inline-flex h-10 items-center rounded border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">Hủy</button>
-                                <button type="button" class="inline-flex h-10 items-center rounded bg-blue-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-blue-700">Lưu</button>
+                                <button type="submit" class="inline-flex h-10 items-center rounded bg-blue-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-blue-700">Lưu</button>
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
         </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit Branch -->
+<div id="editBranchModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/45 px-4 py-6" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="mx-auto flex min-h-full max-w-6xl items-start justify-center">
+        <div class="flex w-full flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+            <div class="flex h-16 flex-shrink-0 items-center justify-between border-b border-gray-200 bg-white px-5">
+                <h2 class="text-base font-bold text-gray-900" id="modal-title">Xem / Sửa cơ sở</h2>
+                <button type="button"
+                        data-close-edit-branch-modal
+                        class="inline-flex h-9 w-9 items-center justify-center rounded text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800"
+                        aria-label="Đóng">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="max-h-[calc(100vh-8rem)] overflow-y-auto bg-white p-5">
+                <div class="border border-gray-200 p-3">
+                    <form id="editBranchFrontendForm" class="border border-gray-200 bg-gray-50 p-3" method="post" asp-page-handler="Update" enctype="multipart/form-data">
+                        <input type="hidden" asp-for="EditRequest.BranchId" id="editBranchId" />
+                        <div class="grid gap-3 lg:grid-cols-[300px_1fr]">
+                            <div class="border border-gray-200 bg-white p-3">
+                                <div class="flex min-h-[190px] flex-col items-center justify-center gap-3">
+                                    <div class="text-sm font-bold text-gray-900">Logo</div>
+                                    <div class="flex h-24 w-36 items-center justify-center overflow-hidden rounded border border-dashed border-gray-300 bg-gray-50">
+                                        <img id="editBranchLogoPreview" class="hidden h-full w-full object-contain" alt="Logo cơ sở" />
+                                        <svg id="editBranchLogoPlaceholder" class="h-20 w-20 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="1.8"></rect>
+                                            <circle cx="8.5" cy="10" r="1.8" stroke-width="1.8"></circle>
+                                            <path d="M21 16l-5.2-5.2a1.5 1.5 0 0 0-2.1 0L7 17.5" stroke-width="1.8"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button type="button" data-clear-file="editBranchLogoInput" class="inline-flex h-8 w-8 items-center justify-center rounded bg-blue-600 text-white transition-colors hover:bg-blue-700" aria-label="Bỏ logo">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                        </button>
+                                        <label class="inline-flex h-8 cursor-pointer items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                                            Chọn
+                                            <input asp-for="EditRequest.Logo" id="editBranchLogoInput" type="file" accept="image/*" class="hidden" data-preview-target="editBranchLogoPreview" data-placeholder-target="editBranchLogoPlaceholder" />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border border-gray-200 bg-white p-5">
+                                <div class="grid gap-x-6 gap-y-4 lg:grid-cols-2">
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-gray-800">Trung tâm</label>
+                                        <input type="text" value="@Model.CurrentCenterName" readonly class="block h-10 w-full rounded border border-gray-300 bg-gray-100 px-3 text-sm text-gray-700 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-gray-800">Email cơ sở (*)</label>
+                                        <input asp-for="EditRequest.Email" id="editEmail" type="email" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập email cơ sở (*)" />
+                                        <span asp-validation-for="EditRequest.Email" class="text-xs text-red-600 mt-1 block"></span>
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-gray-800">Tên cơ sở (*)</label>
+                                        <input asp-for="EditRequest.BranchName" id="editBranchName" type="text" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập tên cơ sở (*)" />
+                                        <span asp-validation-for="EditRequest.BranchName" class="text-xs text-red-600 mt-1 block"></span>
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-gray-800">Số điện thoại (*)</label>
+                                        <input asp-for="EditRequest.PhoneNumber" id="editPhoneNumber" type="tel" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập số điện thoại (*)" />
+                                        <span asp-validation-for="EditRequest.PhoneNumber" class="text-xs text-red-600 mt-1 block"></span>
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-gray-800">Mã cơ sở (*)</label>
+                                        <input asp-for="EditRequest.BranchCode" id="editBranchCode" type="text" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập mã cơ sở (*)" />
+                                        <span asp-validation-for="EditRequest.BranchCode" class="text-xs text-red-600 mt-1 block"></span>
+                                    </div>
+                                    <div>
+                                        <label class="mb-2 block text-sm font-semibold text-gray-800">Địa chỉ (*)</label>
+                                        <input asp-for="EditRequest.Address" id="editAddress" type="text" class="block h-10 w-full rounded border border-gray-300 bg-white px-3 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Nhập địa chỉ (*)" />
+                                        <span asp-validation-for="EditRequest.Address" class="text-xs text-red-600 mt-1 block"></span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6">
+                                    <label class="mb-2 block text-sm font-semibold text-gray-800">Ảnh trung tâm</label>
+                                    <div class="border border-gray-200 bg-white p-3">
+                                        <div class="mb-3 flex justify-end gap-2">
+                                            <button type="button" data-clear-file="editBranchCenterImageInput" class="inline-flex h-9 items-center rounded bg-red-500 px-4 text-sm font-semibold text-white transition-colors hover:bg-red-600">
+                                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                                Bỏ chọn
+                                            </button>
+                                            <label class="inline-flex h-9 cursor-pointer items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-blue-700">
+                                                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <rect x="3" y="5" width="18" height="14" rx="2" stroke-width="1.8"></rect>
+                                                    <circle cx="8.5" cy="10" r="1.8" stroke-width="1.8"></circle>
+                                                    <path d="M21 16l-5.2-5.2a1.5 1.5 0 0 0-2.1 0L7 17.5" stroke-width="1.8"></path>
+                                                </svg>
+                                                Chọn
+                                                <input asp-for="EditRequest.CenterImage" id="editBranchCenterImageInput" type="file" accept="image/*" class="hidden" data-preview-target="editBranchCenterImagePreview" data-placeholder-target="editBranchCenterImagePlaceholder" />
+                                            </label>
+                                        </div>
+                                        <div class="flex min-h-[82px] items-center justify-center overflow-hidden border border-gray-200 bg-gray-50">
+                                            <img id="editBranchCenterImagePreview" class="hidden max-h-52 w-full object-contain" alt="Ảnh trung tâm" />
+                                            <div id="editBranchCenterImagePlaceholder" class="h-9 w-full border border-gray-200 bg-gradient-to-b from-white to-gray-100"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex justify-end gap-3 border-t border-gray-200 pt-4">
+                                    <button type="button" data-close-edit-branch-modal class="inline-flex h-10 items-center rounded border border-gray-300 bg-white px-5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50">Hủy</button>
+                                    <button type="submit" class="inline-flex h-10 items-center rounded bg-blue-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-blue-700">Lưu</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>

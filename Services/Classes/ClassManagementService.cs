@@ -137,8 +137,6 @@ public sealed class ClassManagementService : IClassManagementService
                 return Failure<ClassMutationResponse>("Phiên bản dữ liệu không hợp lệ. Vui lòng tải lại trang.", "RowVersion");
             }
 
-            _context.Entry(entity).Property(c => c.RowVersion).OriginalValue = rowVersion;
-
             var today = GetVietnamToday();
             var protectedLessons = entity.Lessons
                 .Where(l => l.LessonDate <= today || l.Attendances.Count > 0 || l.Homeworks.Count > 0)
@@ -179,6 +177,10 @@ public sealed class ClassManagementService : IClassManagementService
                 .ToHashSet();
             _context.ClassSchedules.RemoveRange(
                 entity.ClassSchedules.Where(s => !usedScheduleIds.Contains(s.ClassScheduleId)));
+
+            // Flush deletions first to avoid unique constraint UX_Lessons_ClassId_SessionNumber
+            // when generating new lessons with the same SessionNumber as the removed ones.
+            await _context.SaveChangesAsync(cancellationToken);
 
             var schedulesByKey = entity.ClassSchedules
                 .Where(s => usedScheduleIds.Contains(s.ClassScheduleId))
@@ -235,6 +237,8 @@ public sealed class ClassManagementService : IClassManagementService
                 ?? request.StartDate.Value;
             entity.UpdatedAt = GetVietnamNow();
             entity.UpdatedByUserId = ownerUserId;
+
+            _context.Entry(entity).Property(c => c.RowVersion).OriginalValue = rowVersion;
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -361,8 +365,11 @@ public sealed class ClassManagementService : IClassManagementService
         ClassQuery query,
         CancellationToken cancellationToken = default)
     {
-        var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
-        var queryable = managedClasses
+        var centerId = await _currentCenterService.GetCenterIdAsync(cancellationToken);
+        if (centerId == 0) return ClassOperationResult<ClassPagedResponse>.Failure("Không tìm thấy trung tâm.", new Dictionary<string, string[]>());
+
+        var queryable = _context.Classes
+            .Where(c => c.CenterId == centerId)
             .AsNoTracking()
             .Include(c => c.Course)
             .Include(c => c.Teacher)
@@ -400,12 +407,14 @@ public sealed class ClassManagementService : IClassManagementService
         var totalItems = await queryable.CountAsync(cancellationToken);
 
         var classes = await queryable
-            .OrderByDescending(c => c.StartDate)
+            .OrderBy(c => c.IsDeleted)
+            .ThenByDescending(c => c.StartDate)
             .ThenByDescending(c => c.ClassId)
             .Skip((query.PageNumber - 1) * query.PageSize)
             .Take(query.PageSize)
             .ToListAsync(cancellationToken);
 
+        var today = GetVietnamToday();
         var items = classes.Select(c => new ClassListItemDto(
             c.ClassId,
             c.ClassCode,
@@ -423,7 +432,9 @@ public sealed class ClassManagementService : IClassManagementService
             c.Status,
             GetDisplaySchedule(c.RoomNavigation != null ? c.RoomNavigation.RoomName : c.Room, c.ScheduleText),
             GetStatusText(c.Status),
-            GetStatusBadgeClass(c.Status)
+            GetStatusBadgeClass(c.Status),
+            c.IsDeleted,
+            GetUpcomingText(c.StartDate, today)
         )).ToList();
 
         var response = new ClassPagedResponse(
@@ -507,6 +518,7 @@ public sealed class ClassManagementService : IClassManagementService
         var managedClasses = await ManagedClassesAsync(ownerUserId, cancellationToken);
         var entity = await managedClasses
             .AsNoTracking()
+            .Include(c => c.ClassSchedules)
             .FirstOrDefaultAsync(c => c.ClassId == request.ClassId, cancellationToken);
 
         if (entity == null || entity.CenterId != request.CenterId)
@@ -526,6 +538,33 @@ public sealed class ClassManagementService : IClassManagementService
             AddError(errors, "TotalSessions", "Tổng số buổi phải từ 1 đến 1000.");
 
         ValidateSchedules(request.Schedules, errors);
+
+        bool isStarted = entity.StartDate <= GetVietnamToday() || 
+                         entity.Status.Equals("Active", StringComparison.OrdinalIgnoreCase);
+
+        if (isStarted)
+        {
+            if (request.StartDate.HasValue && request.StartDate.Value != entity.StartDate)
+            {
+                AddError(errors, "StartDate", "Lớp đã khai giảng, không thể thay đổi ngày khai giảng.");
+            }
+
+            var existingSchedules = entity.ClassSchedules
+                .Select(s => $"{s.DayOfWeek}-{s.StartTime:HH:mm}-{s.EndTime:HH:mm}")
+                .OrderBy(s => s)
+                .ToList();
+            
+            var requestedSchedules = request.Schedules
+                .Where(s => s.StartTime.HasValue && s.EndTime.HasValue)
+                .Select(s => $"{s.DayOfWeek}-{s.StartTime!.Value:HH:mm}-{s.EndTime!.Value:HH:mm}")
+                .OrderBy(s => s)
+                .ToList();
+
+            if (!existingSchedules.SequenceEqual(requestedSchedules))
+            {
+                AddError(errors, "Schedules", "Lớp đã khai giảng, không thể thay đổi lịch học.");
+            }
+        }
 
         if (request.StartDate.HasValue)
         {
@@ -695,6 +734,7 @@ public sealed class ClassManagementService : IClassManagementService
     private static void AddError(IDictionary<string, List<string>> errors, string key, string message) { if (!errors.TryGetValue(key, out var list)) errors[key] = list = []; if (!list.Contains(message)) list.Add(message); }
     private static IReadOnlyDictionary<string, string[]> ToErrors(IDictionary<string, List<string>> errors) => errors.ToDictionary(x => x.Key, x => x.Value.ToArray());
     private static ClassOperationResult<T> Failure<T>(string message, string key) => ClassOperationResult<T>.Failure(message, new Dictionary<string, string[]> { [key] = [message] });
+    private static string? GetUpcomingText(DateOnly startDate, DateOnly today) { if (startDate <= today) return null; var days = startDate.DayNumber - today.DayNumber; return days <= 30 ? $"Còn {days} ngày nữa khai giảng" : "Chưa khai giảng"; }
     private static DateOnly GetVietnamToday() => DateOnly.FromDateTime(GetVietnamNow());
     private static DateTime GetVietnamNow() { try { return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")); } catch { return DateTime.UtcNow.AddHours(7); } }
 }

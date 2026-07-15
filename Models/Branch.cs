@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -29,6 +29,10 @@ public partial class Branch
 
     public int? HeadUserId { get; set; }
 
+    public string? LogoUrl { get; set; }
+
+    public string? ImageUrl { get; set; }
+
     public virtual Center Center { get; set; } = null!;
 
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();
@@ -36,6 +40,10 @@ public partial class Branch
     public virtual User? HeadUser { get; set; }
 
     public virtual ICollection<Room> Rooms { get; set; } = new List<Room>();
+
+    public virtual ICollection<StudyShift> StudyShifts { get; set; } = new List<StudyShift>();
+
+    public virtual ICollection<TeacherBranch> TeacherBranches { get; set; } = new List<TeacherBranch>();
 
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 

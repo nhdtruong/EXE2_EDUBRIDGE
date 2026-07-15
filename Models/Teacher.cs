@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace EduBridge.Models;
@@ -25,9 +25,7 @@ public partial class Teacher
 
     public int? DeletedByUserId { get; set; }
 
-    public int? BranchId { get; set; }
-
-    public virtual Branch? Branch { get; set; }
+    public virtual ICollection<TeacherBranch> TeacherBranches { get; set; } = new List<TeacherBranch>();
 
     public virtual Center Center { get; set; } = null!;
 

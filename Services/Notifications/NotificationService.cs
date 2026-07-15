@@ -55,8 +55,8 @@ namespace EduBridge.Services.Notifications
             // Lấy danh sách phụ huynh của các học sinh thuộc lớp học này
             var parentUserIds = await _context.Enrollments
                 .Include(e => e.Student)
-                .Where(e => e.ClassId == request.ClassId && e.Status == "Đang học" && !e.Student.IsDeleted)
-                .Select(e => e.Student.ParentUserId)
+                .Where(e => e.ClassId == request.ClassId && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != null)
+                .Select(e => e.Student.ParentUserId ?? 0)
                 .Distinct()
                 .ToListAsync(cancellationToken);
 

@@ -34,7 +34,9 @@ public sealed record ClassListItemDto(
     string Status,
     string DisplaySchedule,
     string StatusText,
-    string StatusBadgeClass
+    string StatusBadgeClass,
+    bool IsDeleted = false,
+    string? UpcomingText = null
 );
 
 public sealed record ClassDropdownOptionsResponse(

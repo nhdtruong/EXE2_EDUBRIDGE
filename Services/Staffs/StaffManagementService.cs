@@ -44,6 +44,7 @@ public sealed class StaffManagementService : IStaffManagementService
         var queryable = _context.Users.AsNoTracking()
             .Include(u => u.Role)
             .Include(u => u.CenterUsers)
+            .Include(u => u.Teacher).ThenInclude(t => t!.TeacherBranches).ThenInclude(tb => tb.Branch)
             .Include(u => u.Teacher).ThenInclude(t => t!.Classes).ThenInclude(c => c.Enrollments)
             .Where(u => !u.IsDeleted && u.CenterUsers.Any(cu => cu.CenterId == centerId && (cu.UserType == "TEACHER" || cu.UserType == "OWNER")));
 
@@ -93,7 +94,7 @@ public sealed class StaffManagementService : IStaffManagementService
                 x.Teacher?.Specialization,
                 x.Teacher != null ? x.Teacher.Classes.Count(c => !c.IsDeleted && c.Status != "CANCELLED") : 0,
                 x.Teacher != null ? x.Teacher.Classes.Where(c => !c.IsDeleted && c.Status != "CANCELLED").SelectMany(c => c.Enrollments).Count(e => e.Status == "Đang học") : 0,
-                primaryCu?.Status ?? "Inactive", x.User.CreatedAt);
+                primaryCu?.Status ?? "Inactive", x.User.CreatedAt, x.Teacher != null && x.Teacher.TeacherBranches.Any() ? string.Join(", ", x.Teacher.TeacherBranches.Select(tb => tb.Branch.BranchName)) : null);
         }).ToList();
 
         return ClassOperationResult<StaffPagedResponse>.Success(
@@ -109,7 +110,7 @@ public sealed class StaffManagementService : IStaffManagementService
         var staff = await _context.Users.AsNoTracking()
             .Include(u => u.Role)
             .Include(u => u.CenterUsers)
-            .Include(u => u.Teacher)
+            .Include(u => u.Teacher).ThenInclude(t => t!.TeacherBranches)
             .Where(u => !u.IsDeleted && u.UserId == staffUserId && u.CenterUsers.Any(cu => cu.CenterId == centerId && (cu.UserType == "TEACHER" || cu.UserType == "OWNER")))
             .Select(u => new 
             {
@@ -132,7 +133,8 @@ public sealed class StaffManagementService : IStaffManagementService
             staff.Teacher?.ExperienceYears ?? 0,
             staff.User.DateOfBirth, staff.User.Gender ?? string.Empty, staff.User.Ethnicity, staff.User.Religion, staff.User.IdentityNumber ?? string.Empty,
             staff.User.IdentityIssuedDate, staff.User.IdentityIssuedPlace, staff.User.CurrentAddress, staff.User.PermanentAddress,
-            staff.User.Hometown, staff.User.PlaceOfBirth, primaryCu?.Status ?? "Inactive", staff.User.CreatedAt);
+            staff.User.Hometown, staff.User.PlaceOfBirth, primaryCu?.Status ?? "Inactive", staff.User.CreatedAt,
+            staff.Teacher?.TeacherBranches.Select(tb => tb.BranchId).ToList() ?? new List<int>());
 
         return ClassOperationResult<StaffDetailResponse>.Success(detail, "Tải thông tin nhân sự thành công.");
     }
@@ -253,7 +255,7 @@ public sealed class StaffManagementService : IStaffManagementService
 
             if (request.Roles.Contains("TEACHER"))
             {
-                var existingTeacher = await _context.Teachers.FirstOrDefaultAsync(t =>
+                var existingTeacher = await _context.Teachers.Include(t => t.TeacherBranches).FirstOrDefaultAsync(t =>
                     t.CenterId == centerId && t.UserId == existing.UserId && !t.IsDeleted, cancellationToken);
 
                 if (existingTeacher == null)
@@ -264,6 +266,15 @@ public sealed class StaffManagementService : IStaffManagementService
                         Specialization = request.Specialization, ExperienceYears = request.ExperienceYears ?? 0,
                         Status = request.IsActive ? "Active" : "Inactive", IsDeleted = false
                     };
+
+                    if (request.BranchIds != null)
+                    {
+                        foreach(var bId in request.BranchIds)
+                        {
+                            newTeacher.TeacherBranches.Add(new TeacherBranch { BranchId = bId });
+                        }
+                    }
+
                     _context.Teachers.Add(newTeacher);
                 }
                 else
@@ -273,6 +284,20 @@ public sealed class StaffManagementService : IStaffManagementService
                     existingTeacher.Specialization = request.Specialization;
                     existingTeacher.ExperienceYears = request.ExperienceYears ?? 0;
                     existingTeacher.Status = request.IsActive ? "Active" : "Inactive";
+
+                    var currentBranchIds = existingTeacher.TeacherBranches.Select(tb => tb.BranchId).ToList();
+                    var branchIdsToAdd = (request.BranchIds ?? new List<int>()).Except(currentBranchIds).ToList();
+                    var branchIdsToRemove = currentBranchIds.Except(request.BranchIds ?? new List<int>()).ToList();
+
+                    foreach (var bId in branchIdsToRemove)
+                    {
+                        var tb = existingTeacher.TeacherBranches.First(t => t.BranchId == bId);
+                        _context.Remove(tb);
+                    }
+                    foreach (var bId in branchIdsToAdd)
+                    {
+                        existingTeacher.TeacherBranches.Add(new TeacherBranch { BranchId = bId });
+                    }
                 }
             }
 
@@ -309,7 +334,7 @@ public sealed class StaffManagementService : IStaffManagementService
         var existingUser = await _context.Users
             .Include(u => u.Role)
             .Include(u => u.CenterUsers)
-            .Include(u => u.Teacher)
+            .Include(u => u.Teacher).ThenInclude(t => t!.TeacherBranches)
             .FirstOrDefaultAsync(u => u.UserId == staffUserId && !u.IsDeleted, cancellationToken);
         
         if (existingUser == null) return Fail<StaffMutationResponse>("Không tìm thấy hồ sơ nhân sự.");
@@ -394,6 +419,15 @@ public sealed class StaffManagementService : IStaffManagementService
                     Specialization = request.Specialization, ExperienceYears = request.ExperienceYears ?? 0,
                     Status = request.IsActive ? "Active" : "Inactive", IsDeleted = false
                 };
+
+                if (request.BranchIds != null)
+                {
+                    foreach (var bId in request.BranchIds)
+                    {
+                        newTeacher.TeacherBranches.Add(new TeacherBranch { BranchId = bId });
+                    }
+                }
+
                 _context.Teachers.Add(newTeacher);
             }
             else
@@ -403,6 +437,21 @@ public sealed class StaffManagementService : IStaffManagementService
                 existingUser.Teacher.ExperienceYears = request.ExperienceYears ?? 0;
                 existingUser.Teacher.Status = request.IsActive ? "Active" : "Inactive";
                 existingUser.Teacher.IsDeleted = false;
+
+                var currentBranchIds = existingUser.Teacher.TeacherBranches.Select(tb => tb.BranchId).ToList();
+                var branchIdsToAdd = (request.BranchIds ?? new List<int>()).Except(currentBranchIds).ToList();
+                var branchIdsToRemove = currentBranchIds.Except(request.BranchIds ?? new List<int>()).ToList();
+
+                foreach (var bId in branchIdsToRemove)
+                {
+                    var tb = existingUser.Teacher.TeacherBranches.First(t => t.BranchId == bId);
+                    _context.Remove(tb);
+                }
+
+                foreach (var bId in branchIdsToAdd)
+                {
+                    existingUser.Teacher.TeacherBranches.Add(new TeacherBranch { BranchId = bId });
+                }
             }
         }
 

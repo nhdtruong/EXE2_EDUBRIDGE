@@ -41,7 +41,7 @@
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2">
-                <div class="lg:col-span-2">
+                <div class="@(Model.IsSpecificBranch ? "lg:col-span-2" : "lg:col-span-1")">
                     <label class="block text-sm font-semibold text-gray-700">Vai trò (*)</label>
                     <div class="relative mt-1 w-full" data-multi-select-dropdown>
                         <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:outline-none">
@@ -66,6 +66,33 @@
                     </div>
                     <span asp-validation-for="Input.Roles" class="mt-1 block text-xs font-medium text-red-600"></span>
                 </div>
+
+                @if (!Model.IsSpecificBranch)
+                {
+                    <div class="lg:col-span-1">
+                        <label class="block text-sm font-semibold text-gray-700">Cơ sở</label>
+                        <div class="relative mt-1 w-full" data-multi-select-dropdown>
+                            <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between border border-gray-300 bg-white px-3 text-sm focus:border-blue-500 focus:outline-none">
+                                <span data-dropdown-text class="truncate text-gray-700">Chọn cơ sở</span>
+                                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                            <div data-dropdown-panel class="absolute z-10 hidden mt-1 max-h-60 w-full overflow-auto border border-gray-300 bg-white shadow-lg">
+                                <div class="sticky top-0 border-b border-gray-200 bg-gray-50 p-2">
+                                    <input type="text" data-search-input class="h-9 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Tìm kiếm cơ sở..." />
+                                </div>
+                                <div class="p-1" data-options-container>
+                                    @foreach (var branch in Model.Branches)
+                                    {
+                                        <label class="flex cursor-pointer items-center px-3 py-2 hover:bg-gray-100" data-searchable>
+                                            <input type="checkbox" name="Input.BranchIds" value="@branch.BranchId" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" @((Model.Input.BranchIds != null && Model.Input.BranchIds.Contains(branch.BranchId)) ? "checked" : "") />
+                                            <span class="ml-2 text-sm text-gray-700" data-search-text>@branch.BranchName</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <div>
                     <label asp-for="Input.StaffCode" class="block text-sm font-semibold text-gray-700">Mã nhân sự (*)</label>

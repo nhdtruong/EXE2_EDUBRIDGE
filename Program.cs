@@ -69,6 +69,7 @@ namespace EduBridge
             builder.Services.AddScoped<EduBridge.Services.SystemAdmin.ISystemAdminCenterService, EduBridge.Services.SystemAdmin.SystemAdminCenterService>();
             builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
             builder.Services.AddScoped<EduBridge.Services.ParentApp.IParentAppService, EduBridge.Services.ParentApp.ParentAppService>();
+            builder.Services.AddScoped<EduBridge.Services.Branches.IBranchManagementService, EduBridge.Services.Branches.BranchManagementService>();
             
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<ICurrentCenterService, CurrentCenterService>();

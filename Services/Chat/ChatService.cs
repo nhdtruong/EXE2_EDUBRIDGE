@@ -36,10 +36,10 @@ namespace EduBridge.Services.Chat
             var studentsData = await _context.Enrollments
                 .Include(e => e.Student)
                 .ThenInclude(s => s.ParentUser)
-                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != 0)
+                .Where(e => classIds.Contains(e.ClassId) && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != null)
                 .Select(e => new
                 {
-                    ParentUserId = e.Student.ParentUserId,
+                    ParentUserId = e.Student.ParentUserId ?? 0,
                     ParentName = e.Student.ParentUser != null ? e.Student.ParentUser.FullName : string.Empty,
                     StudentName = e.Student.FullName
                 })
@@ -119,10 +119,10 @@ namespace EduBridge.Services.Chat
             var studentsData = await _context.Enrollments
                 .Include(e => e.Student)
                 .ThenInclude(s => s.ParentUser)
-                .Where(e => e.ClassId == classId && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != 0)
+                .Where(e => e.ClassId == classId && e.Status == "Đang học" && !e.Student.IsDeleted && e.Student.ParentUserId != null)
                 .Select(e => new
                 {
-                    ParentUserId = e.Student.ParentUserId,
+                    ParentUserId = e.Student.ParentUserId ?? 0,
                     ParentName = e.Student.ParentUser != null ? e.Student.ParentUser.FullName : string.Empty,
                     StudentName = e.Student.FullName,
                     StudentCode = e.Student.StudentCode

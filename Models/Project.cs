@@ -22,4 +22,6 @@ public partial class Project
     public DateTime? UpdatedAt { get; set; }
 
     public virtual ICollection<Center> Centers { get; set; } = new List<Center>();
+
+    public virtual ICollection<SystemAuditLog> SystemAuditLogs { get; set; } = new List<SystemAuditLog>();
 }

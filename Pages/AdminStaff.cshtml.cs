@@ -77,7 +77,8 @@ public class AdminStaffModel : PageModel
             ClassCount = t.ClassCount,
             StudentCount = t.StudentCount,
             Status = t.Status,
-            UserStatus = t.Status // The service normalizes user status properly
+            UserStatus = t.Status, // The service normalizes user status properly
+            BranchName = t.BranchName
         }).ToList();
 
         return Page();
@@ -153,6 +154,7 @@ public sealed class StaffListItem
     public int StudentCount { get; set; }
     public string Status { get; set; } = string.Empty;
     public string UserStatus { get; set; } = string.Empty;
+    public string? BranchName { get; set; }
 
     public bool IsActive => Status.Equals("Active", StringComparison.OrdinalIgnoreCase) && UserStatus.Equals("Active", StringComparison.OrdinalIgnoreCase);
     public string DisplayPhoneNumber => string.IsNullOrWhiteSpace(PhoneNumber) ? "-" : PhoneNumber;

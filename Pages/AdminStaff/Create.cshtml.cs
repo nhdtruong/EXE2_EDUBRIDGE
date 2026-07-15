@@ -4,6 +4,7 @@ using EduBridge.Services.Staffs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 
 namespace EduBridge.Pages.AdminStaff;
 
@@ -11,10 +12,12 @@ namespace EduBridge.Pages.AdminStaff;
 public class CreateModel : PageModel
 {
     private readonly IStaffManagementService _service;
+    private readonly EduBridge.Data.AppDbContext _context;
 
-    public CreateModel(IStaffManagementService service)
+    public CreateModel(IStaffManagementService service, EduBridge.Data.AppDbContext context)
     {
         _service = service;
+        _context = context;
     }
 
     [BindProperty]
@@ -23,8 +26,26 @@ public class CreateModel : PageModel
     [BindProperty]
     public IFormFile? AvatarFile { get; set; }
 
-    public void OnGet()
+    public List<EduBridge.Models.Branch> Branches { get; set; } = new();
+    public bool IsSpecificBranch { get; set; }
+    public int CurrentBranchId { get; set; }
+
+    public async Task OnGetAsync(CancellationToken cancellationToken)
     {
+        var currentBranchIdStr = HttpContext.Request.Cookies["CurrentBranchId"];
+        int.TryParse(currentBranchIdStr, out var currentBranchId);
+        CurrentBranchId = currentBranchId;
+        IsSpecificBranch = CurrentBranchId > 0;
+
+        var ownerUserId = GetCurrentUserId();
+        if (ownerUserId != null)
+        {
+            var centerId = await _context.CenterUsers.Where(cu => cu.UserId == ownerUserId.Value && cu.Status == "Active").Select(cu => cu.CenterId).FirstOrDefaultAsync(cancellationToken);
+            if (centerId > 0)
+            {
+                Branches = await _context.Branches.Where(b => b.CenterId == centerId && b.Status != "DELETED").ToListAsync(cancellationToken);
+            }
+        }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
@@ -33,6 +54,13 @@ public class CreateModel : PageModel
 
         var ownerUserId = GetCurrentUserId();
         if (ownerUserId == null) return RedirectToPage("/Login");
+
+        var currentBranchIdStr = HttpContext.Request.Cookies["CurrentBranchId"];
+        int.TryParse(currentBranchIdStr, out var currentBranchId);
+        if (currentBranchId > 0)
+        {
+            Input.BranchIds = new List<int> { currentBranchId };
+        }
 
         var result = await _service.CreateAsync(ownerUserId.Value, Input, cancellationToken);
 

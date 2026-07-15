@@ -519,20 +519,20 @@
                         @for (var index = 0; index < Model.Classes.Count; index++)
                         {
                             var cls = Model.Classes[index];
-                            <tr class="group hover:bg-slate-100 transition-colors">
-                                <td class="py-3 px-2 text-center font-medium text-gray-700 border-r border-gray-200">@(Model.FirstClassItemNumber + index)</td>
-                                <td class="py-3 px-2 text-center font-medium text-gray-900 border-r border-gray-200">@cls.ClassId</td>
-                                <td class="py-3 px-2 break-words font-semibold text-blue-700 border-r border-gray-200 group-hover:bg-slate-200 group-hover:text-blue-800">@cls.ClassCode</td>
-                                <td class="py-3 px-2 break-words font-semibold text-gray-900 border-r border-gray-200">@cls.ClassName</td>
-                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.CourseName</td>
-                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.TeacherName</td>
-                                <td class="py-3 px-2 text-gray-600 border-r border-gray-200">
+                            <tr class="group @(cls.IsDeleted ? "bg-red-50 text-red-800 line-through hover:bg-red-100 opacity-70" : "hover:bg-slate-100") transition-colors">
+                                <td class="py-3 px-2 text-center font-medium border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-700")">@(Model.FirstClassItemNumber + index)</td>
+                                <td class="py-3 px-2 text-center font-medium border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-900")">@cls.ClassId</td>
+                                <td class="py-3 px-2 break-words font-semibold border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-blue-700 group-hover:bg-slate-200 group-hover:text-blue-800")">@cls.ClassCode</td>
+                                <td class="py-3 px-2 break-words font-semibold border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-900")">@cls.ClassName</td>
+                                <td class="py-3 px-2 break-words border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-600")">@cls.CourseName</td>
+                                <td class="py-3 px-2 break-words border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-600")">@cls.TeacherName</td>
+                                <td class="py-3 px-2 border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-600")">
                                     <div class="flex items-center justify-center">
-                                        <svg class="w-3.5 h-3.5 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                                        <svg class="w-3.5 h-3.5 mr-1 @(cls.IsDeleted ? "text-red-600" : "text-gray-400")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
                                         @cls.TotalStudents
                                     </div>
                                 </td>
-                                <td class="py-3 px-2 text-gray-600 border-r border-gray-200">
+                                <td class="py-3 px-2 border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-600")">
                                     <div class="space-y-1">
                                         @foreach (var schedule in cls.ScheduleLines)
                                         {
@@ -540,28 +540,46 @@
                                         }
                                     </div>
                                 </td>
-                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.StudyPeriod</td>
-                                <td class="py-3 px-2 break-words text-gray-600 border-r border-gray-200">@cls.DisplayRoom</td>
+                                <td class="py-3 px-2 break-words border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-600")">
+                                    <div>@cls.StudyPeriod</div>
+                                    @if (!string.IsNullOrEmpty(cls.UpcomingText))
+                                    {
+                                        <div class="mt-1 text-[10px] font-semibold text-amber-600 leading-tight">@cls.UpcomingText</div>
+                                    }
+                                </td>
+                                <td class="py-3 px-2 break-words border-r border-gray-200 @(cls.IsDeleted ? "text-red-800" : "text-gray-600")">@cls.DisplayRoom</td>
                                 <td class="py-3 px-2 text-center border-r border-gray-200">
-                                    <span class="inline-flex max-w-full justify-center rounded-full px-2 py-1 text-[11px] font-semibold leading-snug @cls.StatusBadgeClass">
-                                        @cls.StatusText
-                                    </span>
+                                    @if (cls.IsDeleted)
+                                    {
+                                        <span class="inline-flex max-w-full justify-center rounded-full px-2 py-1 text-[11px] font-semibold leading-snug bg-red-100 text-red-800">
+                                            Đã xóa
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="inline-flex max-w-full justify-center rounded-full px-2 py-1 text-[11px] font-semibold leading-snug @cls.StatusBadgeClass">
+                                            @cls.StatusText
+                                        </span>
+                                    }
                                 </td>
                                 <td class="py-3 px-2 text-center">
-                                    <div class="flex flex-nowrap items-center justify-center gap-1.5 whitespace-nowrap">
-                                        <a asp-page="/AdminClasses/Edit" asp-route-classId="@cls.ClassId" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
-                                        </a>
-                                        @if (cls.Status != "Closed")
-                                        {
-                                            <button type="button" onclick="openCloseClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-500 bg-amber-50 text-amber-600 transition-colors hover:bg-amber-100" title="Đóng lớp">
-                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    @if (!cls.IsDeleted)
+                                    {
+                                        <div class="flex flex-nowrap items-center justify-center gap-1.5 whitespace-nowrap">
+                                            <a asp-page="/AdminClasses/Edit" asp-route-classId="@cls.ClassId" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-blue-500 bg-blue-50 text-blue-600 transition-colors hover:bg-blue-100" title="Xem/Sửa">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"></path><circle cx="12" cy="12" r="3" stroke-width="2"></circle></svg>
+                                            </a>
+                                            @if (cls.Status != "Closed")
+                                            {
+                                                <button type="button" onclick="openCloseClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-amber-500 bg-amber-50 text-amber-600 transition-colors hover:bg-amber-100" title="Đóng lớp">
+                                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                                </button>
+                                            }
+                                            <button type="button" onclick="openDeleteClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
+                                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
-                                        }
-                                        <button type="button" onclick="openDeleteClassConfirm(this)" data-class-id="@cls.ClassId" data-class-code="@cls.ClassCode" class="inline-flex h-8 w-8 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa">
-                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
-                                    </div>
+                                        </div>
+                                    }
                                 </td>
                             </tr>
                         }

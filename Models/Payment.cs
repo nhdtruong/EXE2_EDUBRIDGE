@@ -17,9 +17,9 @@ public partial class Payment
 
     public string? Note { get; set; }
 
-    public int? CenterId { get; set; }
+    public int CenterId { get; set; }
 
-    public int? ReceivedByUserId { get; set; }
+    public int ReceivedByUserId { get; set; }
 
     public string Status { get; set; } = null!;
 
@@ -27,11 +27,11 @@ public partial class Payment
 
     public DateTime CreatedAt { get; set; }
 
-    public virtual Center? Center { get; set; }
+    public virtual Center Center { get; set; } = null!;
 
     public virtual Invoice Invoice { get; set; } = null!;
 
     public virtual ICollection<Receipt> Receipts { get; set; } = new List<Receipt>();
 
-    public virtual User? ReceivedByUser { get; set; }
+    public virtual User ReceivedByUser { get; set; } = null!;
 }
