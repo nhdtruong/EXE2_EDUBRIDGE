@@ -1,0 +1,137 @@
+@page
+@model EduBridge.Pages.AdminParents.EditModel
+@{ ViewData["Title"]="Cập nhật phụ huynh"; Layout="_AdminLayout"; ViewData["ActivePage"]="AdminParents"; }
+<form method="post" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200">
+    <input asp-for="ParentUserId" type="hidden">
+    <div class="border-b pb-3"><h1 class="text-lg font-bold">Cập nhật phụ huynh</h1></div>
+    <div asp-validation-summary="All" class="mb-2 text-sm font-semibold text-red-600"></div>
+    <partial name="_ParentForm" for="Input" />
+    <section class="border border-gray-200">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+            <h2 class="text-sm font-bold">Học sinh đang quản lý</h2>
+            <div class="flex gap-2">
+                <div>
+                    <input type="hidden" name="studentId" value="0" data-filter-value="student" />
+                    <div class="relative min-w-72" data-search-dropdown>
+                        <button type="button" data-dropdown-toggle class="flex h-10 w-full items-center justify-between rounded border border-gray-300 bg-white px-3 text-left text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                            <span class="truncate" data-dropdown-label>Chọn học sinh để đổi phụ huynh chính</span>
+                            <svg class="ml-2 h-4 w-4 flex-shrink-0 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-[450px] overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                            <div class="sticky top-0 z-10 bg-white p-2 border-b border-gray-100 relative">
+                                <input type="text" data-dropdown-search placeholder="Tìm theo tên hoặc mã học sinh..." class="h-10 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <svg class="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            </div>
+                            <button type="button" data-dropdown-option data-value="0" data-label="Chọn học sinh để đổi phụ huynh chính" class="block w-full px-4 py-2.5 text-left text-sm hover:bg-blue-50 font-medium">-- Chọn học sinh để đổi phụ huynh chính --</button>
+                            @foreach (var student in Model.LinkableStudents)
+                            {
+                                <button type="button" data-dropdown-option data-value="@student.StudentId" data-label="@student.StudentCode - @student.FullName" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50 border-t border-gray-50">
+                                    <div class="font-semibold text-gray-900">@student.StudentCode - @student.FullName</div>
+                                    <div class="mt-0.5 text-xs text-gray-500">Đang thuộc quản lý của: @student.CurrentParentName</div>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <button asp-page-handler="LinkStudent" formnovalidate class="rounded bg-blue-600 px-4 text-sm font-semibold text-white">Liên kết</button>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-100 text-gray-800">
+                    <tr>
+                        <th class="border-r border-slate-200 px-4 py-3 text-center">STT</th>
+                        <th class="border-r border-slate-200 px-4 py-3 text-center">ID</th>
+                        <th class="border-r border-slate-200 px-4 py-3 text-left">Mã học sinh</th>
+                        <th class="border-r border-slate-200 px-4 py-3 text-left">Họ tên</th>
+                        <th class="border-r border-slate-200 px-4 py-3 text-center">Ngày sinh</th>
+                        <th class="border-r border-slate-200 px-4 py-3 text-center">Giới tính</th>
+                        <th class="px-4 py-3 text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @if (Model.Children.Count == 0)
+                    {
+                        <tr><td colspan="7" class="px-5 py-8 text-center text-gray-500">Phụ huynh chưa được liên kết với học sinh nào.</td></tr>
+                    }
+                    @for (var index = 0; index < Model.Children.Count; index++)
+                    {
+                        var child = Model.Children[index];
+                        <tr class="hover:bg-blue-50/50">
+                            <td class="border-r border-gray-200 px-4 py-3 text-center">@(index + 1)</td>
+                            <td class="border-r border-gray-200 px-4 py-3 text-center">@child.StudentId</td>
+                            <td class="border-r border-gray-200 px-4 py-3 font-semibold text-blue-600">@child.StudentCode</td>
+                            <td class="border-r border-gray-200 px-4 py-3 font-semibold text-gray-900">@child.FullName</td>
+                            <td class="border-r border-gray-200 px-4 py-3 text-center">@(child.DateOfBirth?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="border-r border-gray-200 px-4 py-3 text-center">@(child.Gender ?? "-")</td>
+                            <td class="px-4 py-3 text-center">@child.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <div class="flex justify-end gap-3"><a asp-page="/AdminParents" class="rounded border px-5 py-2.5 font-semibold">Hủy</a><button class="rounded bg-blue-600 px-5 py-2.5 font-semibold text-white">Lưu thay đổi</button></div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/teacher-profile-form.js" asp-append-version="true"></script>
+    <script src="~/js/parent-form.js" asp-append-version="true"></script>
+    <script>
+        document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+            const container = dropdown.parentElement;
+            const hiddenInput = container.querySelector('[data-filter-value]');
+            const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+            const panel = dropdown.querySelector('[data-dropdown-panel]');
+            const label = dropdown.querySelector('[data-dropdown-label]');
+            const searchInput = dropdown.querySelector('[data-dropdown-search]');
+            const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+            function close() {
+                panel.classList.add('hidden');
+            }
+
+            function open() {
+                document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                panel.classList.remove('hidden');
+                searchInput.value = '';
+                filterOptions('');
+                searchInput.focus();
+            }
+
+            function filterOptions(keyword) {
+                const normalizedKeyword = keyword.trim().toLowerCase();
+
+                options.forEach(option => {
+                    const text = option.textContent.trim().toLowerCase();
+                    const labelText = (option.dataset.label || '').toLowerCase();
+                    const visible = !normalizedKeyword ||
+                        text.includes(normalizedKeyword) ||
+                        labelText.includes(normalizedKeyword);
+
+                    option.classList.toggle('hidden', !visible);
+                });
+            }
+
+            toggle.addEventListener('click', event => {
+                event.stopPropagation();
+                if (panel.classList.contains('hidden')) { open(); } else { close(); }
+            });
+
+            searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+            searchInput.addEventListener('click', event => event.stopPropagation());
+
+            options.forEach(option => {
+                option.addEventListener('click', () => {
+                    hiddenInput.value = option.dataset.value || '0';
+                    label.textContent = option.dataset.label || option.textContent.trim();
+                    close();
+                });
+            });
+
+            document.addEventListener('click', event => {
+                if (!dropdown.contains(event.target)) { close(); }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,377 @@
+@page
+@model EduBridge.Pages.AdminClasses.EditModel
+@{
+    ViewData["Title"] = "Cập nhật lớp học";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminClasses";
+}
+
+<div class="mb-5 flex gap-8 border-b border-gray-200">
+    <a asp-page="/AdminClasses/Edit" asp-route-classId="@Model.Input.ClassId" asp-route-tab="general"
+       class="border-b-2 px-1 py-3 text-sm font-semibold @(Model.IsStudentsTab ? "border-transparent text-gray-500" : "border-blue-600 text-blue-600")">
+        Thông tin chung
+    </a>
+    <a asp-page="/AdminClasses/Edit" asp-route-classId="@Model.Input.ClassId" asp-route-tab="students"
+       class="border-b-2 px-1 py-3 text-sm font-semibold @(Model.IsStudentsTab ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500")">
+        Danh sách học sinh
+    </a>
+</div>
+
+@if (!Model.IsStudentsTab)
+{
+<form method="post" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200">
+    <input asp-for="Input.ClassId" type="hidden" />
+    <input asp-for="Input.CenterId" type="hidden" />
+    <input asp-for="Input.RowVersion" type="hidden" />
+
+    <div class="border-b border-gray-200 pb-3">
+        <h1 class="text-lg font-bold text-gray-900">Chi tiết lớp học</h1>
+    </div>
+    <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+
+    <section class="border border-gray-200">
+        <div class="border-b border-gray-200 px-4 py-3"><h2 class="text-sm font-bold text-gray-800">Thông tin lớp học</h2></div>
+        <div class="grid gap-5 p-5 lg:grid-cols-2">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Mã lớp</label>
+                <input value="@Model.ClassCode" readonly class="mt-1 h-11 w-full border border-gray-300 bg-gray-100 px-3 text-sm text-gray-600" />
+            </div>
+            <div>
+                <label asp-for="Input.ClassName" class="block text-sm font-semibold text-gray-700">Tên lớp (*)</label>
+                <input asp-for="Input.ClassName" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm" />
+                <span asp-validation-for="Input.ClassName" class="text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.CourseId" class="block text-sm font-semibold text-gray-700">Môn học (*)</label>
+                <div class="relative mt-1 w-full" data-search-dropdown>
+                    @{
+                        var selectedCourse = Model.Options.Courses.FirstOrDefault(c => c.CourseId == Model.Input.CourseId);
+                        var selectedCourseText = selectedCourse != null ? $"{selectedCourse.CourseCode} - {selectedCourse.CourseName}" : "Chọn môn học";
+                    }
+                    <input type="hidden" asp-for="Input.CourseId" id="classCourse" data-filter-value="course" data-total-sessions="@(selectedCourse?.TotalSessions)" />
+                    <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between rounded border border-gray-300 bg-white px-3 text-left text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <span data-dropdown-label class="truncate block w-full pr-2">@selectedCourseText</span>
+                        <svg class="h-4 w-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                        <div class="relative p-2 sticky top-0 bg-white z-10 border-b border-gray-100">
+                            <input type="text" data-dropdown-search class="h-10 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm...">
+                            <svg class="absolute right-4 top-4 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <button type="button" data-dropdown-option data-value="0" data-label="Chọn môn học" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Chọn môn học</button>
+                        @foreach (var course in Model.Options.Courses)
+                        {
+                            <button type="button" data-dropdown-option data-value="@course.CourseId" data-label="@course.CourseCode - @course.CourseName" data-total-sessions="@course.TotalSessions" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">@course.CourseCode - @course.CourseName</button>
+                        }
+                    </div>
+                </div>
+                <span asp-validation-for="Input.CourseId" class="text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.TotalSessions" class="block text-sm font-semibold text-gray-700">Tổng số buổi (*)</label>
+                <input asp-for="Input.TotalSessions" id="classTotalSessions" type="number" min="1" max="1000" class="mt-1 h-11 w-full rounded border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                <span asp-validation-for="Input.TotalSessions" class="text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.TeacherId" class="block text-sm font-semibold text-gray-700">Giáo viên (*)</label>
+                <div class="relative mt-1 w-full" data-search-dropdown>
+                    @{
+                        var selectedTeacher = Model.Options.Teachers.FirstOrDefault(t => t.TeacherId == Model.Input.TeacherId);
+                        var selectedTeacherText = selectedTeacher != null ? $"{selectedTeacher.TeacherCode} - {selectedTeacher.TeacherName}" : "Chọn giáo viên";
+                    }
+                    <input type="hidden" asp-for="Input.TeacherId" data-filter-value="teacher" />
+                    <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between rounded border border-gray-300 bg-white px-3 text-left text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <span data-dropdown-label class="truncate block w-full pr-2">@selectedTeacherText</span>
+                        <svg class="h-4 w-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                        <div class="relative p-2 sticky top-0 bg-white z-10 border-b border-gray-100">
+                            <input type="text" data-dropdown-search class="h-10 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm...">
+                            <svg class="absolute right-4 top-4 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <button type="button" data-dropdown-option data-value="0" data-label="Chọn giáo viên" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Chọn giáo viên</button>
+                        @foreach (var teacher in Model.Options.Teachers)
+                        {
+                            <button type="button" data-dropdown-option data-value="@teacher.TeacherId" data-label="@teacher.TeacherCode - @teacher.TeacherName" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">@teacher.TeacherCode - @teacher.TeacherName</button>
+                        }
+                    </div>
+                </div>
+                <span asp-validation-for="Input.TeacherId" class="text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.RoomId" class="block text-sm font-semibold text-gray-700">Phòng học (*)</label>
+                <div class="relative mt-1 w-full" data-search-dropdown>
+                    @{
+                        var selectedRoom = Model.Options.Rooms.FirstOrDefault(r => r.RoomId == Model.Input.RoomId);
+                        var selectedRoomText = selectedRoom != null ? selectedRoom.RoomName : "Chọn phòng học";
+                    }
+                    <input type="hidden" asp-for="Input.RoomId" data-filter-value="room" />
+                    <button type="button" data-dropdown-toggle class="flex h-11 w-full items-center justify-between rounded border border-gray-300 bg-white px-3 text-left text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
+                        <span data-dropdown-label class="truncate block w-full pr-2">@selectedRoomText</span>
+                        <svg class="h-4 w-4 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div data-dropdown-panel class="absolute left-0 top-[calc(100%+4px)] z-40 hidden max-h-72 w-full overflow-y-auto rounded border border-gray-300 bg-white shadow-lg">
+                        <div class="relative p-2 sticky top-0 bg-white z-10 border-b border-gray-100">
+                            <input type="text" data-dropdown-search class="h-10 w-full rounded border border-blue-400 px-3 pr-9 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Tìm kiếm...">
+                            <svg class="absolute right-4 top-4 h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <button type="button" data-dropdown-option data-value="0" data-label="Chọn phòng học" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">Chọn phòng học</button>
+                        @foreach (var room in Model.Options.Rooms)
+                        {
+                            <button type="button" data-dropdown-option data-value="@room.RoomId" data-label="@room.RoomName" class="block w-full px-4 py-2 text-left text-sm hover:bg-blue-50">@room.RoomName</button>
+                        }
+                    </div>
+                </div>
+                <span asp-validation-for="Input.RoomId" class="text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.StartDate" class="block text-sm font-semibold text-gray-700">Ngày khai giảng (*)</label>
+                <div class="relative mt-1">
+                    <input name="Input.StartDate" id="Input_StartDate" type="hidden" data-date-hidden="class-edit-start" value="@Model.Input.StartDate?.ToString("yyyy-MM-dd")" />
+                    <input type="text" data-date-display="class-edit-start" value="@Model.Input.StartDate?.ToString("dd/MM/yyyy")" autocomplete="off" class="block h-11 w-full rounded border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="dd/mm/yyyy" />
+                    <button type="button" data-date-toggle="class-edit-start" class="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-r bg-sky-600 text-white hover:bg-sky-700 transition-colors"><svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V6a1 1 0 011-1z"></path></svg></button>
+                </div>
+                <span asp-validation-for="Input.StartDate" class="text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Ngày kết thúc dự kiến</label>
+                <input id="classEndDatePreview" readonly class="mt-1 h-11 w-full border border-gray-300 bg-gray-100 px-3 text-sm text-gray-600" />
+            </div>
+        </div>
+    </section>
+
+    <section class="border border-gray-200">
+        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Lịch học</h2>
+            <button id="addScheduleButton" type="button" class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white">Thêm lịch</button>
+        </div>
+        <div class="overflow-x-auto p-5">
+            <div class="min-w-[760px] border border-gray-200">
+                <div class="grid grid-cols-[1fr_1.4fr_1fr_1fr_64px] bg-gray-50 text-sm font-semibold text-gray-700">
+                    <div class="px-3 py-3">Thứ (*)</div><div class="px-3 py-3">Ca học gợi ý</div><div class="px-3 py-3">Giờ bắt đầu (*)</div><div class="px-3 py-3">Giờ kết thúc (*)</div><div></div>
+                </div>
+                <div id="scheduleRows" class="divide-y divide-gray-200">
+                    @for (var index = 0; index < Model.Input.Schedules.Count; index++)
+                    {
+                        <div class="schedule-row grid grid-cols-[1fr_1.4fr_1fr_1fr_64px] items-start gap-3 px-3 py-3">
+                            <select name="Input.Schedules[@index].DayOfWeek" class="schedule-day h-11 w-full border border-gray-300 px-3 text-sm">
+                                @for (byte day = 1; day <= 7; day++) { <option value="@day" selected="@(Model.Input.Schedules[index].DayOfWeek == day)">@DayLabel(day)</option> }
+                            </select>
+                            <select name="Input.Schedules[@index].StudyShiftId" class="schedule-shift h-11 w-full border border-gray-300 px-3 text-sm">
+                                <option value="">Tự chọn giờ</option>
+                                @foreach (var shift in Model.Options.StudyShifts) { <option value="@shift.StudyShiftId" data-start="@shift.StartTime.ToString("HH:mm")" data-end="@shift.EndTime.ToString("HH:mm")">@shift.ShiftCode - @shift.ShiftName (@shift.StartTime.ToString("HH:mm")-@shift.EndTime.ToString("HH:mm"))</option> }
+                            </select>
+                            <input name="Input.Schedules[@index].StartTime" type="time" value="@Model.Input.Schedules[index].StartTime?.ToString("HH:mm")" class="schedule-start h-11 w-full border border-gray-300 px-3 text-sm" />
+                            <input name="Input.Schedules[@index].EndTime" type="time" value="@Model.Input.Schedules[index].EndTime?.ToString("HH:mm")" class="schedule-end h-11 w-full border border-gray-300 px-3 text-sm" />
+                            <button type="button" class="remove-schedule mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa lịch">
+                                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+            <span asp-validation-for="Input.Schedules" class="text-xs font-medium text-red-600"></span>
+        </div>
+    </section>
+    <div class="flex justify-end gap-3">
+        <a asp-page="/AdminClasses" class="rounded border border-gray-300 px-5 py-2.5 text-sm font-semibold">Hủy</a>
+        <button type="submit" class="rounded bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white">Lưu thay đổi</button>
+    </div>
+</form>
+}
+else
+{
+    <section class="bg-white shadow-sm ring-1 ring-gray-200">
+        <form class="hidden">@Html.AntiForgeryToken()</form>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+            <div>
+                <h1 class="text-lg font-bold text-gray-900">Học sinh trong lớp @Model.ClassCode</h1>
+                <p class="mt-1 text-sm text-gray-500">Quản lý học sinh đang học hoặc đang bảo lưu trong lớp.</p>
+            </div>
+            <button type="button" id="openEnrollStudentsModal" class="inline-flex h-10 items-center bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">
+                <span class="mr-2 text-lg">+</span> Thêm học sinh
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-slate-50 text-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left">STT</th>
+                        <th class="px-4 py-3 text-left">Mã học sinh</th>
+                        <th class="px-4 py-3 text-left">Học sinh</th>
+                        <th class="px-4 py-3 text-left">Ngày tham gia</th>
+                        <th class="px-4 py-3 text-left">Trạng thái</th>
+                        <th class="px-4 py-3 text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="enrolledStudentsBody" class="divide-y divide-gray-200">
+                    @if (Model.EnrolledStudents.Count == 0)
+                    {
+                        <tr><td colspan="6" class="px-4 py-10 text-center text-gray-500">Chưa có học sinh trong lớp.</td></tr>
+                    }
+                    else
+                    {
+                        @for (var index = 0; index < Model.EnrolledStudents.Count; index++)
+                        {
+                            var student = Model.EnrolledStudents[index];
+                            <tr>
+                                <td class="px-4 py-4">@(index + 1)</td>
+                                <td class="px-4 py-4 font-semibold text-blue-700">@student.StudentCode</td>
+                                <td class="px-4 py-4 font-semibold text-gray-900">@student.FullName</td>
+                                <td class="px-4 py-4">@student.EnrollDate.ToString("dd/MM/yyyy")</td>
+                                <td class="px-4 py-4">
+                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold @(student.Status == "Đang học" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700")">@student.Status</span>
+                                </td>
+                                <td class="px-4 py-4 text-center">
+                                    <button type="button" data-remove-student="@student.StudentId" data-student-name="@student.FullName" class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Gỡ khỏi lớp">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div id="enrollStudentsModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-2xl bg-white shadow-xl">
+            <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+                <h2 class="text-lg font-bold text-gray-900">Thêm học sinh vào lớp</h2>
+                <button type="button" data-close-enroll-modal class="text-2xl text-gray-400 hover:text-gray-700">&times;</button>
+            </div>
+            <div class="space-y-4 p-5">
+                <input id="availableStudentSearch" type="search" class="h-11 w-full border border-gray-300 px-3 text-sm" placeholder="Tìm theo mã hoặc tên học sinh" />
+                <div id="availableStudentsList" class="max-h-80 divide-y divide-gray-200 overflow-y-auto border border-gray-200">
+                    <div class="p-6 text-center text-sm text-gray-500">Nhập mã hoặc tên để tìm học sinh.</div>
+                </div>
+                <div id="enrollStudentsError" class="hidden text-sm font-semibold text-red-600"></div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-200 px-5 py-4">
+                <button type="button" data-close-enroll-modal class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Hủy</button>
+                <button type="button" id="saveEnrolledStudents" class="bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">Thêm học sinh đã chọn</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="removeStudentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 p-4">
+        <div class="w-full max-w-md rounded-xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+                <h2 class="text-lg font-bold text-gray-900">Đưa học sinh ra khỏi lớp</h2>
+                <button type="button" data-close-remove-modal class="text-2xl text-gray-400 hover:text-gray-700">&times;</button>
+            </div>
+            <div class="space-y-3 px-5 py-5">
+                <p class="text-sm text-gray-700">
+                    Bạn có chắc muốn đưa <strong id="removeStudentName" class="text-gray-900"></strong> ra khỏi lớp?
+                </p>
+                <p class="text-sm text-gray-500">Bản ghi tham gia sẽ chuyển sang trạng thái “Đã nghỉ”. Lịch sử học tập và điểm danh vẫn được giữ lại.</p>
+                <div id="removeStudentError" class="hidden text-sm font-semibold text-red-600"></div>
+            </div>
+            <div class="flex justify-end gap-3 border-t border-gray-100 px-5 py-4">
+                <button type="button" data-close-remove-modal class="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Hủy</button>
+                <button type="button" id="confirmRemoveStudent" class="rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700">Đưa ra khỏi lớp</button>
+            </div>
+        </div>
+    </div>
+}
+
+<template id="scheduleRowTemplate">
+    <div class="schedule-row grid grid-cols-[1fr_1.4fr_1fr_1fr_64px] items-start gap-3 px-3 py-3">
+        <select data-field="DayOfWeek" class="schedule-day h-11 w-full border border-gray-300 px-3 text-sm"><option value="1">Thứ 2</option><option value="2">Thứ 3</option><option value="3">Thứ 4</option><option value="4">Thứ 5</option><option value="5">Thứ 6</option><option value="6">Thứ 7</option><option value="7">Chủ nhật</option></select>
+        <select data-field="StudyShiftId" class="schedule-shift h-11 w-full border border-gray-300 px-3 text-sm"><option value="">Tự chọn giờ</option>@foreach (var shift in Model.Options.StudyShifts) { <option value="@shift.StudyShiftId" data-start="@shift.StartTime.ToString("HH:mm")" data-end="@shift.EndTime.ToString("HH:mm")">@shift.ShiftCode - @shift.ShiftName</option> }</select>
+        <input data-field="StartTime" type="time" class="schedule-start h-11 w-full border border-gray-300 px-3 text-sm" />
+        <input data-field="EndTime" type="time" class="schedule-end h-11 w-full border border-gray-300 px-3 text-sm" />
+        <button type="button" class="remove-schedule mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-500 bg-red-50 text-red-500 transition-colors hover:bg-red-100" title="Xóa lịch">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </button>
+    </div>
+</template>
+
+@functions {
+    private static string DayLabel(byte day) => day switch { 1 => "Thứ 2", 2 => "Thứ 3", 3 => "Thứ 4", 4 => "Thứ 5", 5 => "Thứ 6", 6 => "Thứ 7", 7 => "Chủ nhật", _ => "" };
+}
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    @if (Model.IsStudentsTab)
+    {
+        <script>
+            window.classEnrollmentConfig = {
+                classId: @Model.Input.ClassId
+            };
+        </script>
+        <script src="~/js/class-enrollment.js" asp-append-version="true"></script>
+    }
+    else
+    {
+        <script src="~/js/class-create.js" asp-append-version="true"></script>
+        <script>
+            document.querySelectorAll('[data-search-dropdown]').forEach(dropdown => {
+                const container = dropdown.parentElement;
+                const hiddenInput = container.querySelector('[data-filter-value]') || dropdown.querySelector('[data-filter-value]');
+                const toggle = dropdown.querySelector('[data-dropdown-toggle]');
+                const panel = dropdown.querySelector('[data-dropdown-panel]');
+                const label = dropdown.querySelector('[data-dropdown-label]');
+                const searchInput = dropdown.querySelector('[data-dropdown-search]');
+                const options = Array.from(dropdown.querySelectorAll('[data-dropdown-option]'));
+
+                function close() {
+                    panel.classList.add('hidden');
+                }
+
+                function open() {
+                    document.querySelectorAll('[data-dropdown-panel]').forEach(item => item.classList.add('hidden'));
+                    panel.classList.remove('hidden');
+                    searchInput.value = '';
+                    filterOptions('');
+                    searchInput.focus();
+                }
+
+                function filterOptions(keyword) {
+                    const normalizedKeyword = keyword.trim().toLowerCase();
+
+                    options.forEach(option => {
+                        const text = option.textContent.trim().toLowerCase();
+                        const labelText = (option.dataset.label || '').toLowerCase();
+                        const visible = !normalizedKeyword ||
+                            text.includes(normalizedKeyword) ||
+                            labelText.includes(normalizedKeyword);
+
+                        option.classList.toggle('hidden', !visible);
+                    });
+                }
+
+                toggle.addEventListener('click', event => {
+                    event.stopPropagation();
+
+                    if (panel.classList.contains('hidden')) {
+                        open();
+                    } else {
+                        close();
+                    }
+                });
+
+                searchInput.addEventListener('input', () => filterOptions(searchInput.value));
+                searchInput.addEventListener('click', event => event.stopPropagation());
+
+                options.forEach(option => {
+                    option.addEventListener('click', () => {
+                        hiddenInput.value = option.dataset.value || '';
+                        label.textContent = option.dataset.label || option.textContent.trim();
+                        if (option.dataset.totalSessions !== undefined) {
+                            hiddenInput.dataset.totalSessions = option.dataset.totalSessions;
+                        }
+                        close();
+                        hiddenInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                });
+
+                document.addEventListener('click', event => {
+                    if (!dropdown.contains(event.target)) {
+                        close();
+                    }
+                });
+            });
+        </script>
+    }
+}

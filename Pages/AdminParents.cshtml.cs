@@ -1,0 +1,161 @@
+using System.Security.Claims;
+using EduBridge.Contracts.Parents;
+using EduBridge.Services.Parents;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace EduBridge.Pages;
+
+[Authorize(Policy = "AdminOnly")]
+public sealed class AdminParentsModel : PageModel
+{
+    private readonly IParentManagementService _service;
+    public AdminParentsModel(IParentManagementService service) => _service = service;
+
+    [BindProperty(SupportsGet = true)] public string? NameFilter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? EmailFilter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? PhoneFilter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? StatusFilter { get; set; }
+    [BindProperty(SupportsGet = true)] public string? ChildrenFilter { get; set; }
+    [BindProperty(SupportsGet = true)] public int PageNumber { get; set; } = 1;
+    [BindProperty(SupportsGet = true)] public int PageSize { get; set; } = 20;
+    public ParentPagedResponse Result { get; private set; } = new([], 1, 20, 0, 1);
+    public string? ResetPasswordResult { get; private set; }
+
+    public async Task<IActionResult> OnGetAsync(CancellationToken cancellationToken)
+    {
+        ResetPasswordResult = TempData["ResetPasswordResult"] as string;
+        var result = await _service.GetParentsAsync(GetUserId(), new ParentQuery
+        {
+            Name = NameFilter, Email = EmailFilter, PhoneNumber = PhoneFilter, Status = StatusFilter,
+            HasChildren = ChildrenFilter == "yes" ? true : ChildrenFilter == "no" ? false : null,
+            Page = PageNumber, PageSize = PageSize
+        }, cancellationToken);
+        if (!result.IsSuccess || result.Value == null) ModelState.AddModelError(string.Empty, result.Message);
+        else Result = result.Value;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostToggleStatusAsync(int parentUserId, string currentStatus, CancellationToken cancellationToken)
+    {
+        var next = currentStatus == "Active" ? "Inactive" : "Active";
+        var result = await _service.SetStatusAsync(GetUserId(), parentUserId, next, cancellationToken);
+        TempData["ToastTitle"] = result.IsSuccess ? "Thành công" : "Thất bại";
+        TempData["ToastType"] = result.IsSuccess ? "success" : "error";
+        TempData["ToastMessage"] = result.Message;
+        return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+    }
+
+    public async Task<IActionResult> OnPostResetPasswordAsync(int parentUserId, CancellationToken cancellationToken)
+    {
+        var result = await _service.ResetPasswordAsync(GetUserId(), parentUserId, cancellationToken);
+        if (result.IsSuccess) TempData["ResetPasswordResult"] = result.Value!.TemporaryPassword;
+        else
+        {
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastType"] = "error";
+            TempData["ToastMessage"] = result.Message;
+        }
+        return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+    }
+
+    public async Task<IActionResult> OnPostDeleteAsync(int parentUserId, CancellationToken cancellationToken)
+    {
+        var result = await _service.DeleteParentAsync(GetUserId(), parentUserId, cancellationToken);
+        TempData["ToastTitle"] = result.IsSuccess ? "Thành công" : "Thất bại";
+        TempData["ToastType"] = result.IsSuccess ? "success" : "error";
+        TempData["ToastMessage"] = result.Message;
+        return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+    }
+
+    public async Task<IActionResult> OnPostImportExcelAsync(IFormFile importFile, CancellationToken cancellationToken)
+    {
+        if (importFile == null || importFile.Length == 0)
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Lỗi";
+            TempData["ToastMessage"] = "Vui lòng chọn file Excel.";
+            return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+        }
+
+        var result = await _service.ImportParentsAsync(GetUserId(), importFile, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            TempData["ToastType"] = "success";
+            TempData["ToastTitle"] = "Import thành công";
+            var data = result.Value!;
+            var msg = $"Xử lý thành công: {data.SuccessCount}. Lỗi: {data.ErrorCount}.";
+            TempData["ToastMessage"] = msg;
+        }
+        else
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Import thất bại";
+            TempData["ToastMessage"] = result.Message;
+        }
+
+        return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+    }
+
+    public IActionResult OnGetDownloadTemplate()
+    {
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "docs", "import", "Parent_Import_Template.xlsx");
+        if (!System.IO.File.Exists(filePath))
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Thất bại";
+            TempData["ToastMessage"] = "Không tìm thấy file mẫu trên server.";
+            return RedirectToPage("/AdminParents", new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+        }
+
+        byte[] content;
+        using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        {
+            using (var ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                content = ms.ToArray();
+            }
+        }
+        return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Parent_Import_Template.xlsx");
+    }
+
+    public async Task<IActionResult> OnGetExportAsync(CancellationToken cancellationToken)
+    {
+        var ownerUserId = GetUserId();
+        if (ownerUserId == 0) return RedirectToPage("/Login");
+
+        var query = new ParentQuery
+        {
+            Name = NameFilter,
+            Email = EmailFilter,
+            PhoneNumber = PhoneFilter,
+            Status = StatusFilter,
+            HasChildren = ChildrenFilter == "yes" ? true : ChildrenFilter == "no" ? false : null,
+            Page = 0,
+            PageSize = 0
+        };
+
+        var result = await _service.ExportParentsAsync(ownerUserId, query, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            TempData["ToastType"] = "error";
+            TempData["ToastTitle"] = "Lỗi";
+            TempData["ToastMessage"] = result.Message;
+            return RedirectToPage(new { NameFilter, EmailFilter, PhoneFilter, StatusFilter, ChildrenFilter, PageNumber, PageSize });
+        }
+
+        var fileName = $"Parents_Export_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+        return File(result.Value!, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    public async Task<IActionResult> OnGetHistoryAsync([FromServices] EduBridge.Services.ImportExportHistories.IImportExportHistoryService historyService, int page = 1, int pageSize = 10, CancellationToken cancellationToken = default)
+    {
+        var result = await historyService.GetHistoriesAsync(GetUserId(), new EduBridge.Contracts.ImportExportHistories.ImportExportHistoryQuery { Page = page, PageSize = pageSize, EntityName = "Parents" }, cancellationToken);
+        return new JsonResult(result);
+    }
+
+    private int GetUserId() => int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : 0;
+}

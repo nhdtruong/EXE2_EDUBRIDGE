@@ -1,0 +1,19 @@
+bin/
+obj/
+.vs/
+
+*.user
+*.suo
+
+appsettings.Development.json
+
+node_modules/
+
+App_Data/DataProtection-Keys/
+artifacts/
+*.log
+Test-Migrations.ps1
+
+edubridge_database/seed/
+# Ignore uploaded files
+wwwroot/uploads/

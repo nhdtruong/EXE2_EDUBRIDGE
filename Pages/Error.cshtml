@@ -1,26 +1,46 @@
-﻿@page
+@page
 @model ErrorModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Lỗi hệ thống";
+    Layout = "_Layout";
+    ViewData["ActivePage"] = null;
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<div class="flex items-center justify-center min-h-[60vh]">
+    <div class="text-center max-w-lg">
+        <div class="flex items-center justify-center mb-6">
+            <div class="flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+                <svg class="h-10 w-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+            </div>
+        </div>
 
-@if (Model.ShowRequestId)
-{
-    <p>
-        <strong>Request ID:</strong> <code>@Model.RequestId</code>
-    </p>
-}
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Đã xảy ra lỗi</h1>
+        <p class="text-gray-500 text-sm mb-6">
+            Xin lỗi, hệ thống đã gặp sự cố trong quá trình xử lý yêu cầu của bạn.
+        </p>
 
-<h3>Development Mode</h3>
-<p>
-    Swapping to the <strong>Development</strong> environment displays detailed information about the error that occurred.
-</p>
-<p>
-    <strong>The Development environment shouldn't be enabled for deployed applications.</strong>
-    It can result in displaying sensitive information from exceptions to end users.
-    For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
-    and restarting the app.
-</p>
+        @if (Model.ShowRequestId)
+        {
+            <div class="inline-block bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 mb-3 text-left w-full">
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold">Mã lỗi (Request ID):</span>
+                    <code class="ml-1 text-xs font-mono text-red-600 break-all">@Model.RequestId</code>
+                </p>
+                @if (!string.IsNullOrEmpty(Model.ExceptionMessage))
+                {
+                    <div class="mt-2 pt-2 border-t border-gray-200">
+                        <p class="text-sm font-semibold text-red-600">Chi tiết lỗi:</p>
+                        <p class="text-xs text-gray-800 break-all mt-1">@Model.ExceptionMessage</p>
+                        <pre class="text-[10px] text-gray-500 overflow-x-auto mt-2 bg-gray-100 p-2 rounded">@Model.StackTrace</pre>
+                    </div>
+                }
+            </div>
+            <p class="text-xs text-gray-400">
+                Vui lòng cung cấp mã lỗi này cho bộ phận hỗ trợ kỹ thuật để được trợ giúp.
+            </p>
+        }
+    </div>
+</div>

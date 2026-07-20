@@ -1,0 +1,13 @@
+bin/
+obj/
+.git/
+.github/
+.vs/
+artifacts/
+backend-*.log
+init-db.log
+docker-compose.yml
+node_modules/
+*.user
+*.suo
+*.tmp

@@ -1,0 +1,162 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using EduBridge.Data;
+using EduBridge.Models;
+using EduBridge.Models.DTOs.TeacherNotification;
+using EduBridge.Hubs;
+
+namespace EduBridge.Services.Notifications
+{
+    public class NotificationService : INotificationService
+    {
+        private readonly AppDbContext _context;
+        private readonly IHubContext<ChatHub> _hubContext;
+
+        public NotificationService(AppDbContext context, IHubContext<ChatHub> hubContext)
+        {
+            _context = context;
+            _hubContext = hubContext;
+        }
+
+        public async Task<List<TeacherClassDto>> GetTeacherClassesAsync(int teacherUserId, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers
+                .FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return new List<TeacherClassDto>();
+
+            var classes = await _context.Classes
+                .Where(c => c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted)
+                .Select(c => new TeacherClassDto
+                {
+                    ClassId = c.ClassId,
+                    ClassName = c.ClassName
+                })
+                .ToListAsync(cancellationToken);
+
+            return classes;
+        }
+
+        public async Task<bool> BroadcastNotificationAsync(int teacherUserId, BroadcastNotificationRequest request, CancellationToken cancellationToken = default)
+        {
+            var teacher = await _context.Teachers
+                .FirstOrDefaultAsync(t => t.UserId == teacherUserId, cancellationToken);
+            if (teacher == null) return false;
+
+            // Xác thực xem lớp học có thuộc quyền quản lý của Giáo viên hay không
+            var isTeacherClass = await _context.Classes
+                .AnyAsync(c => c.ClassId == request.ClassId && c.TeacherId == teacher.TeacherId && c.Status == "Active" && !c.IsDeleted, cancellationToken);
+            if (!isTeacherClass) return false;
+
+            // Lấy danh sách phụ huynh của các học sinh thuộc lớp học này
+            var parentUserIds = await _context.Enrollments
+                .Include(e => e.Student)
+                .Where(e => e.ClassId == request.ClassId && e.Status == "Đang học" && !e.Student.IsDeleted)
+                .Select(e => e.Student.ParentUserId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            if (!parentUserIds.Any()) return true; // Lớp không có học sinh/phụ huynh nào thì vẫn xem như gửi xong
+
+            var notifications = new List<Notification>();
+            var now = EduBridge.Helpers.TimeHelper.GetVietnamNow();
+
+            foreach (var parentId in parentUserIds)
+            {
+                if (!parentId.HasValue) continue;
+                var notification = new Notification
+                {
+                    UserId = parentId.Value,
+                    Title = request.Title.Trim(),
+                    Content = request.Content.Trim(),
+                    IsRead = false,
+                    CreatedAt = now
+                };
+                notifications.Add(notification);
+            }
+
+            _context.Notifications.AddRange(notifications);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Gửi realtime qua SignalR Hub tới từng phụ huynh đang hoạt động
+            foreach (var notif in notifications)
+            {
+                var payload = new
+                {
+                    notificationId = notif.NotificationId,
+                    title = notif.Title,
+                    content = notif.Content,
+                    isRead = notif.IsRead,
+                    createdAt = notif.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                };
+
+                // Nhóm của user trong ChatHub là: user-{userId}
+                await _hubContext.Clients.Group($"user-{notif.UserId}")
+                    .SendAsync("ReceiveNotification", payload);
+            }
+
+            return true;
+        }
+
+        public async Task<List<EduBridge.Models.DTOs.Shared.NotificationDto>> GetMyNotificationsAsync(int userId, int limit = 20, CancellationToken cancellationToken = default)
+        {
+            var query = _context.Notifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(limit);
+
+            var list = await query.Select(n => new EduBridge.Models.DTOs.Shared.NotificationDto
+            {
+                NotificationId = n.NotificationId,
+                Title = n.Title,
+                Content = n.Content,
+                IsRead = n.IsRead,
+                CreatedAt = n.CreatedAt
+            }).ToListAsync(cancellationToken);
+
+            return list;
+        }
+
+        public async Task<int> GetUnreadCountAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .CountAsync(cancellationToken);
+        }
+
+        public async Task<bool> MarkAsReadAsync(int notificationId, int userId, CancellationToken cancellationToken = default)
+        {
+            var notif = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId, cancellationToken);
+                
+            if (notif == null) return false;
+            if (notif.IsRead) return true;
+
+            notif.IsRead = true;
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        public async Task<bool> MarkAllAsReadAsync(int userId, CancellationToken cancellationToken = default)
+        {
+            var unread = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync(cancellationToken);
+
+            if (!unread.Any()) return true;
+
+            foreach (var n in unread)
+            {
+                n.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+    }
+}

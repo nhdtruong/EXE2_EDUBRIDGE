@@ -1,0 +1,59 @@
+/* Source: Pages/Admin*.cshtml action icon buttons using inline SVG */
+.ds-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
+.ds-icon-btn {
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+/* Source: Pages/AdminTeachers.cshtml - view/edit action */
+.ds-icon-btn-view {
+    border: 1px solid #3b82f6;
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.ds-icon-btn-view:hover {
+    background: #dbeafe;
+}
+
+/* Source: Pages/AdminTeachers.cshtml - delete action */
+.ds-icon-btn-delete {
+    border: 1px solid var(--ds-danger);
+    background: var(--ds-danger-soft);
+    color: var(--ds-danger);
+}
+
+.ds-icon-btn-delete:hover {
+    background: #fee2e2;
+}
+
+/* Source: Pages/AdminTeachers.cshtml - reset password action */
+.ds-icon-btn-reset {
+    border: 1px solid #3b82f6;
+    color: #2563eb;
+}
+
+.ds-icon-btn-reset:hover {
+    background: #eff6ff;
+}
+
+.ds-icon-btn:disabled,
+.ds-icon-btn.ds-disabled {
+    border-color: var(--ds-border-strong);
+    background: #f3f4f6;
+    color: var(--ds-text-subtle);
+    cursor: not-allowed;
+}
+

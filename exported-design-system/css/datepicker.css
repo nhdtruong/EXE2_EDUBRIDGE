@@ -1,0 +1,176 @@
+/* Source: wwwroot/js/site.js generated picker + Pages/AdminTeachers/Create.cshtml date fields */
+.ds-datepicker {
+    position: relative;
+    width: 100%;
+}
+
+.ds-datepicker-field {
+    display: flex;
+    width: 100%;
+    height: 40px;
+    overflow: hidden;
+    border: 1px solid var(--ds-border-strong);
+    border-radius: var(--ds-radius-sm);
+    background: #ffffff;
+}
+
+.ds-datepicker-field:focus-within {
+    border-color: var(--ds-primary);
+    box-shadow: 0 0 0 1px var(--ds-primary);
+}
+
+.ds-datepicker-input {
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    padding: 0 14px;
+    color: var(--ds-text);
+    font-family: var(--ds-font-family);
+    font-size: 13px;
+    outline: none;
+}
+
+.ds-datepicker-input::placeholder {
+    color: var(--ds-text-subtle);
+}
+
+.ds-datepicker-button {
+    display: inline-flex;
+    width: 44px;
+    flex: 0 0 44px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: #0284c7;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.ds-datepicker-panel {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 90;
+    width: 360px;
+    max-width: calc(100vw - 32px);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-sm);
+    background: #ffffff;
+    color: #4b5563;
+    box-shadow: var(--ds-shadow-md);
+}
+
+.ds-datepicker-panel[hidden] {
+    display: none;
+}
+
+.ds-datepicker-header {
+    display: flex;
+    height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--ds-border);
+    padding: 0 12px;
+}
+
+.ds-datepicker-nav,
+.ds-datepicker-title,
+.ds-datepicker-footer-button,
+.ds-datepicker-cell {
+    border: 0;
+    background: transparent;
+    font-family: var(--ds-font-family);
+    cursor: pointer;
+}
+
+.ds-datepicker-nav {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--ds-radius-sm);
+    color: #6b7280;
+    font-size: 24px;
+}
+
+.ds-datepicker-nav:hover,
+.ds-datepicker-title:hover,
+.ds-datepicker-cell:hover {
+    background: #f1f5f9;
+}
+
+.ds-datepicker-title {
+    border-radius: var(--ds-radius-sm);
+    padding: 4px 8px;
+    color: #374151;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.ds-datepicker-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    padding: 12px 12px 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.ds-datepicker-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px 0;
+    padding: 6px 12px 12px;
+}
+
+.ds-datepicker-cell {
+    display: flex;
+    width: 32px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    border-radius: 999px;
+    color: #374151;
+    font-size: 13px;
+}
+
+.ds-datepicker-cell-muted {
+    color: #9ca3af;
+}
+
+.ds-datepicker-cell-selected {
+    background: #cbd5e1;
+    color: #111827;
+}
+
+.ds-datepicker-months,
+.ds-datepicker-years {
+    display: grid;
+    gap: 12px;
+    padding: 20px 44px;
+    text-align: center;
+}
+
+.ds-datepicker-months {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.ds-datepicker-years {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.ds-datepicker-footer {
+    display: flex;
+    height: 48px;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--ds-border);
+    padding: 0 16px;
+}
+
+.ds-datepicker-footer-button {
+    color: #0369a1;
+    font-size: 13px;
+    font-weight: 700;
+}
+

@@ -1,4 +1,5 @@
 @page
+@model EduBridge.Pages.AdminDashboardModel
 @{
     ViewData["Title"] = "Dashboard Quản trị viên";
     Layout = "_AdminLayout";
@@ -22,8 +23,8 @@
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 </div>
             </div>
-            <div class="text-3xl font-bold text-gray-900">342</div>
-            <p class="text-xs text-green-500 font-medium mt-2">+12% so với tháng trước</p>
+            <div class="text-3xl font-bold text-gray-900">@Model.Dashboard.TotalStudents</div>
+            <p class="text-xs text-green-500 font-medium mt-2">@Model.Dashboard.StudentChangeText</p>
         </div>
 
         <!-- Card 2 -->
@@ -34,8 +35,8 @@
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v16M14 21h2M8 21h2M3 21h18M9 7h6M9 11h6M9 15h6"></path></svg>
                 </div>
             </div>
-            <div class="text-3xl font-bold text-gray-900">18</div>
-            <p class="text-xs text-green-500 font-medium mt-2">+2 so với tháng trước</p>
+            <div class="text-3xl font-bold text-gray-900">@Model.Dashboard.ActiveClasses</div>
+            <p class="text-xs text-green-500 font-medium mt-2">@Model.Dashboard.ClassChangeText</p>
         </div>
 
         <!-- Card 3 -->
@@ -46,8 +47,8 @@
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
             </div>
-            <div class="text-3xl font-bold text-gray-900">485M VNĐ</div>
-            <p class="text-xs text-green-500 font-medium mt-2">+8% so với tháng trước</p>
+            <div class="text-3xl font-bold text-gray-900">@Model.Dashboard.MonthlyRevenue.ToString("N0") VNĐ</div>
+            <p class="text-xs text-green-500 font-medium mt-2">@Model.Dashboard.RevenueChangeText</p>
         </div>
 
         <!-- Card 4 -->
@@ -58,8 +59,8 @@
                     <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
                 </div>
             </div>
-            <div class="text-3xl font-bold text-gray-900">94.5%</div>
-            <p class="text-xs text-green-500 font-medium mt-2">+2.1% so với tháng trước</p>
+            <div class="text-3xl font-bold text-gray-900">@Model.Dashboard.WeeklyAttendanceRate%</div>
+            <p class="text-xs text-green-500 font-medium mt-2">@Model.Dashboard.AttendanceChangeText</p>
         </div>
     </div>
 
@@ -87,45 +88,43 @@
         <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
             <h3 class="text-sm font-bold text-gray-900 mb-6">Lớp học mới nhất</h3>
             <div class="space-y-4">
-                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
-                    <div>
-                        <div class="font-bold text-gray-900 text-sm">Toán 10A</div>
-                        <div class="text-xs text-gray-400 mt-1">GV: Nguyễn Văn A</div>
-                    </div>
-                    <div class="text-sm font-bold text-gray-700">25 học sinh</div>
-                </div>
-                <div class="flex items-center justify-between border-b border-gray-100 pb-4">
-                    <div>
-                        <div class="font-bold text-gray-900 text-sm">Lý 11B</div>
-                        <div class="text-xs text-gray-400 mt-1">GV: Trần Thị B</div>
-                    </div>
-                    <div class="text-sm font-bold text-gray-700">22 học sinh</div>
-                </div>
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="font-bold text-gray-900 text-sm">Hóa 12C</div>
-                        <div class="text-xs text-gray-400 mt-1">GV: Lê Văn C</div>
-                    </div>
-                    <div class="text-sm font-bold text-gray-700">20 học sinh</div>
-                </div>
+                @if (Model.Dashboard.LatestClasses.Count == 0)
+                {
+                    <div class="text-sm text-gray-500">Chưa có lớp học.</div>
+                }
+                else
+                {
+                    @foreach (var cls in Model.Dashboard.LatestClasses)
+                    {
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                            <div>
+                                <div class="font-bold text-gray-900 text-sm">@cls.ClassName</div>
+                                <div class="text-xs text-gray-400 mt-1">GV: @cls.TeacherName</div>
+                            </div>
+                            <div class="text-sm font-bold text-gray-700">@cls.TotalStudents học sinh</div>
+                        </div>
+                    }
+                }
             </div>
         </div>
 
         <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-6">
             <h3 class="text-sm font-bold text-gray-900 mb-6">Thông báo quan trọng</h3>
             <div class="space-y-4">
-                <div class="border-b border-gray-100 pb-4">
-                    <div class="font-bold text-red-500 text-sm">Học phí chưa đóng</div>
-                    <div class="text-xs text-gray-400 mt-1">15 học sinh chưa đóng học phí tháng 3</div>
-                </div>
-                <div class="border-b border-gray-100 pb-4">
-                    <div class="font-bold text-orange-500 text-sm">Báo cáo tháng</div>
-                    <div class="text-xs text-gray-400 mt-1">Cần xem xét báo cáo học tập tháng 2</div>
-                </div>
-                <div>
-                    <div class="font-bold text-blue-500 text-sm">Lịch thi</div>
-                    <div class="text-xs text-gray-400 mt-1">Kỳ thi giữa kỳ bắt đầu từ ngày 01/04</div>
-                </div>
+                @if (Model.Dashboard.ImportantNotifications.Count == 0)
+                {
+                    <div class="text-sm text-gray-500">Chưa có thông báo quan trọng.</div>
+                }
+                else
+                {
+                    @foreach (var notification in Model.Dashboard.ImportantNotifications)
+                    {
+                        <div class="border-b border-gray-100 pb-4">
+                            <div class="font-bold @notification.LevelCssClass text-sm">@notification.Title</div>
+                            <div class="text-xs text-gray-400 mt-1">@notification.Content</div>
+                        </div>
+                    }
+                }
             </div>
         </div>
     </div>
@@ -135,6 +134,32 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            const revenueLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.RevenueChartLabels));
+            const revenueValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.RevenueChartValues));
+            const attendanceLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.AttendanceChartLabels));
+            const presentValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.PresentChartValues));
+            const absentValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Dashboard.AbsentChartValues));
+            const maxRevenue = Math.max(...revenueValues, 0);
+            const suggestedRevenueMax = maxRevenue > 0 ? maxRevenue * 1.2 : 1000000;
+            const maxAttendance = Math.max(...presentValues, ...absentValues, 0);
+            const suggestedAttendanceMax = maxAttendance > 0 ? Math.max(2, Math.ceil(maxAttendance * 1.25)) : 2;
+
+            function formatVndShort(value) {
+                if (value >= 1000000000) {
+                    return (value / 1000000000).toFixed(1).replace('.0', '') + 'B';
+                }
+
+                if (value >= 1000000) {
+                    return (value / 1000000).toFixed(1).replace('.0', '') + 'M';
+                }
+
+                if (value >= 1000) {
+                    return (value / 1000).toFixed(0) + 'K';
+                }
+
+                return value;
+            }
+
             // Chart.js defaults
             Chart.defaults.font.family = "'Inter', sans-serif";
             Chart.defaults.color = '#6b7280';
@@ -145,10 +170,10 @@
             new Chart(ctxRev, {
                 type: 'line',
                 data: {
-                    labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
+                    labels: revenueLabels,
                     datasets: [{
                         label: 'Doanh thu',
-                        data: [380, 420, 390, 450, 430, 485],
+                        data: revenueValues,
                         borderColor: '#8b5cf6',
                         backgroundColor: '#8b5cf6',
                         tension: 0.4,
@@ -164,13 +189,24 @@
                     responsive: true, 
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return new Intl.NumberFormat('vi-VN').format(context.parsed.y) + ' VNĐ';
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 600,
-                            ticks: { stepSize: 150 },
+                            suggestedMax: suggestedRevenueMax,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatVndShort(value);
+                                }
+                            },
                             border: { dash: [4, 4] }
                         },
                         x: {
@@ -185,18 +221,18 @@
             new Chart(ctxAtt, {
                 type: 'bar',
                 data: {
-                    labels: ['T2', 'T3', 'T4', 'T5', 'T6'],
+                    labels: attendanceLabels,
                     datasets: [
                         { 
                             label: 'Có mặt', 
-                            data: [330, 325, 340, 335, 320], 
+                            data: presentValues, 
                             backgroundColor: '#10b981',
                             barThickness: 32,
                             borderRadius: { topLeft: 4, topRight: 4 }
                         },
                         { 
                             label: 'Vắng mặt', 
-                            data: [22, 27, 12, 17, 32], 
+                            data: absentValues, 
                             backgroundColor: '#ef4444',
                             barThickness: 32,
                             borderRadius: { topLeft: 4, topRight: 4 }
@@ -220,8 +256,11 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            max: 340,
-                            ticks: { stepSize: 85 },
+                            suggestedMax: suggestedAttendanceMax,
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1
+                            },
                             border: { dash: [4, 4] }
                         },
                         x: {

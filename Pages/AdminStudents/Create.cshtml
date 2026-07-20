@@ -1,0 +1,342 @@
+@page
+@model EduBridge.Pages.AdminStudents.CreateModel
+@{
+    ViewData["Title"] = "Thêm học sinh";
+    Layout = "_AdminLayout";
+    ViewData["ActivePage"] = "AdminStudents";
+}
+
+<form method="post" enctype="multipart/form-data" class="space-y-6 bg-white p-6 shadow-sm ring-1 ring-gray-200">
+    <div class="border-b border-gray-200 pb-3">
+        <h1 class="text-lg font-bold text-gray-900">Thêm mới học sinh</h1>
+    </div>
+
+    <div asp-validation-summary="ModelOnly" class="text-sm font-semibold text-red-600"></div>
+
+    <section class="border border-gray-200">
+        <div class="border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Thông tin cá nhân</h2>
+        </div>
+
+        <div class="grid gap-8 p-5 lg:grid-cols-[220px_1fr]">
+            <div class="flex flex-col items-center">
+                <label class="mb-4 text-base font-bold text-gray-900">Ảnh đại diện</label>
+                <div class="flex h-36 w-44 items-center justify-center overflow-hidden border border-dashed border-gray-300 bg-white">
+                    <img id="avatarPreview" alt="Ảnh đại diện" class="hidden h-full w-full object-contain" />
+                    <svg id="avatarPlaceholder" class="h-24 w-28 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 96 72">
+                        <rect x="10" y="14" width="70" height="44" rx="8" stroke-width="6"></rect>
+                        <path d="M16 52l18-18 16 16 20-22 10 10" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+                        <circle cx="34" cy="28" r="7" fill="currentColor" stroke="none"></circle>
+                        <path d="M20 10h58c6 0 10 4 10 10v34" stroke-width="6" stroke-linecap="round"></path>
+                    </svg>
+                </div>
+                <input asp-for="Input.AvatarFile" type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" id="avatarFileInput" onchange="previewAvatar(this)" />
+                <div class="mt-4 flex gap-2">
+                    <button type="button" onclick="clearAvatar()" class="inline-flex h-9 w-9 items-center justify-center rounded bg-sky-600 text-white hover:bg-sky-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"></path></svg>
+                    </button>
+                    <button type="button" onclick="document.getElementById('avatarFileInput').click()" class="h-9 rounded bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700">Chọn</button>
+                </div>
+                <span asp-validation-for="Input.AvatarFile" class="mt-2 text-xs font-medium text-red-600"></span>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+                <div>
+                    <label asp-for="Input.StudentCode" class="block text-sm font-semibold text-gray-700">Mã học sinh (*)</label>
+                    <input asp-for="Input.StudentCode" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập mã học sinh (*)" />
+                    <span asp-validation-for="Input.StudentCode" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div></div>
+
+                <div>
+                    <label asp-for="Input.FullName" class="block text-sm font-semibold text-gray-700">Tên học sinh (*)</label>
+                    <input asp-for="Input.FullName" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tên học sinh (*)" />
+                    <span asp-validation-for="Input.FullName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.DateOfBirth" class="block text-sm font-semibold text-gray-700">Ngày sinh (*)</label>
+                    <div class="relative mt-1">
+                        <input name="Input.DateOfBirth" id="Input_DateOfBirth" type="hidden" data-date-hidden="student-dob" value="@Model.Input.DateOfBirth?.ToString("yyyy-MM-dd")" />
+                        <input type="text" data-date-display="student-dob" value="@Model.Input.DateOfBirth?.ToString("dd/MM/yyyy")" autocomplete="off" class="h-11 w-full border border-gray-300 px-3 pr-12 text-sm focus:border-blue-500 focus:outline-none" placeholder="dd/mm/yyyy" />
+                        <button type="button" data-date-toggle="student-dob" class="absolute right-0 top-0 flex h-11 w-11 items-center justify-center bg-sky-600 text-white">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.DateOfBirth" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700">Giới tính</label>
+                    <div class="mt-3 flex items-center gap-16">
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input asp-for="Input.Gender" type="radio" value="Nam" class="h-4 w-4 text-blue-600" />
+                            Nam
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                            <input asp-for="Input.Gender" type="radio" value="Nữ" class="h-4 w-4 text-blue-600" />
+                            Nữ
+                        </label>
+                    </div>
+                    <span asp-validation-for="Input.Gender" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.Ethnicity" class="block text-sm font-semibold text-gray-700">Dân tộc</label>
+                    <input asp-for="Input.Ethnicity" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập dân tộc" />
+                    <span asp-validation-for="Input.Ethnicity" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.Religion" class="block text-sm font-semibold text-gray-700">Tôn giáo</label>
+                    <input asp-for="Input.Religion" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tôn giáo" />
+                    <span asp-validation-for="Input.Religion" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.IdentityNumber" class="block text-sm font-semibold text-gray-700">Số CMND/CCCD</label>
+                    <input asp-for="Input.IdentityNumber" inputmode="numeric" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập số cmnd/cccd" />
+                    <span asp-validation-for="Input.IdentityNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.IdentityIssuedDate" class="block text-sm font-semibold text-gray-700">Ngày cấp</label>
+                    <div class="relative mt-1">
+                        <input name="Input.IdentityIssuedDate" id="Input_IdentityIssuedDate" type="hidden" data-date-hidden="student-issued" value="@Model.Input.IdentityIssuedDate?.ToString("yyyy-MM-dd")" />
+                        <input type="text" data-date-display="student-issued" value="@Model.Input.IdentityIssuedDate?.ToString("dd/MM/yyyy")" autocomplete="off" class="h-11 w-full border border-gray-300 px-3 pr-12 text-sm focus:border-blue-500 focus:outline-none" placeholder="dd/mm/yyyy" />
+                        <button type="button" data-date-toggle="student-issued" class="absolute right-0 top-0 flex h-11 w-11 items-center justify-center bg-sky-600 text-white">
+                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Input.IdentityIssuedDate" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.IdentityIssuedPlace" class="block text-sm font-semibold text-gray-700">Nơi cấp</label>
+                    <input asp-for="Input.IdentityIssuedPlace" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập nơi cấp" />
+                    <span asp-validation-for="Input.IdentityIssuedPlace" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="border border-gray-200">
+        <div class="border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Thông tin liên lạc</h2>
+        </div>
+
+        <div class="grid gap-5 p-5 lg:grid-cols-2">
+            <div>
+                <label asp-for="Input.CurrentAddress" class="block text-sm font-semibold text-gray-700">Địa chỉ hiện tại</label>
+                <input asp-for="Input.CurrentAddress" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập địa chỉ hiện tại" />
+                <span asp-validation-for="Input.CurrentAddress" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.PermanentAddress" class="block text-sm font-semibold text-gray-700">Địa chỉ thường trú</label>
+                <input asp-for="Input.PermanentAddress" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập địa chỉ thường trú" />
+                <span asp-validation-for="Input.PermanentAddress" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.Hometown" class="block text-sm font-semibold text-gray-700">Nguyên quán</label>
+                <input asp-for="Input.Hometown" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập nguyên quán" />
+                <span asp-validation-for="Input.Hometown" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.PlaceOfBirth" class="block text-sm font-semibold text-gray-700">Nơi sinh</label>
+                <input asp-for="Input.PlaceOfBirth" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập nơi sinh" />
+                <span asp-validation-for="Input.PlaceOfBirth" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.StudentPhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại</label>
+                <input asp-for="Input.StudentPhoneNumber" inputmode="numeric" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập số điện thoại" />
+                <span asp-validation-for="Input.StudentPhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+            <div>
+                <label asp-for="Input.StudentEmail" class="block text-sm font-semibold text-gray-700">Email cá nhân</label>
+                <input asp-for="Input.StudentEmail" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập email cá nhân" />
+                <span asp-validation-for="Input.StudentEmail" class="mt-1 block text-xs font-medium text-red-600"></span>
+            </div>
+        </div>
+    </section>
+
+    <section class="border border-gray-200">
+        <div class="border-b border-gray-200 px-4 py-3">
+            <h2 class="text-sm font-bold text-gray-800">Thông tin phụ huynh</h2>
+        </div>
+
+        <div class="space-y-5 p-5">
+            <input asp-for="Input.ParentUserId" type="hidden" id="selectedParentUserId" />
+
+            <div class="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+                <div>
+                    <label for="parentLookupKeyword" class="block text-sm font-semibold text-gray-700">Kiểm tra tài khoản phụ huynh</label>
+                    <input id="parentLookupKeyword" type="text" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập SĐT hoặc email phụ huynh để kiểm tra" />
+                </div>
+                <button type="button" id="checkParentButton" class="mt-6 h-11 rounded bg-sky-600 px-5 text-sm font-semibold text-white hover:bg-sky-700">
+                    Kiểm tra
+                </button>
+                <button type="button" id="createParentButton" class="mt-6 h-11 rounded border border-gray-300 px-5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                    Tạo mới
+                </button>
+            </div>
+
+            <div id="selectedParentSummary" class="hidden rounded border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"></div>
+            <div id="parentLookupMessage" class="hidden rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"></div>
+            <div id="parentLookupResults" class="hidden space-y-2"></div>
+            <span asp-validation-for="Input.ParentUserId" class="block text-xs font-medium text-red-600"></span>
+
+            <div id="parentCreateFields" class="grid gap-5 lg:grid-cols-3">
+                <div>
+                <label asp-for="Input.ParentFullName" class="block text-sm font-semibold text-gray-700">Tên phụ huynh (*)</label>
+                <input asp-for="Input.ParentFullName" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập tên phụ huynh (*)" />
+                <span asp-validation-for="Input.ParentFullName" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.ParentPhoneNumber" class="block text-sm font-semibold text-gray-700">Số điện thoại phụ huynh (*)</label>
+                    <input asp-for="Input.ParentPhoneNumber" inputmode="numeric" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập số điện thoại phụ huynh (*)" />
+                    <span asp-validation-for="Input.ParentPhoneNumber" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+
+                <div>
+                    <label asp-for="Input.ParentEmail" class="block text-sm font-semibold text-gray-700">Email phụ huynh</label>
+                    <input asp-for="Input.ParentEmail" class="mt-1 h-11 w-full border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none" placeholder="Nhập email phụ huynh" />
+                    <span asp-validation-for="Input.ParentEmail" class="mt-1 block text-xs font-medium text-red-600"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="flex justify-end gap-3">
+        <a asp-page="/AdminStudents" class="rounded border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Hủy</a>
+        <button type="submit" class="rounded bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">Lưu học sinh</button>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/teacher-profile-form.js" asp-append-version="true"></script>
+    <script>
+        (() => {
+            const checkButton = document.getElementById('checkParentButton');
+            const createButton = document.getElementById('createParentButton');
+            const keywordInput = document.getElementById('parentLookupKeyword');
+            const selectedInput = document.getElementById('selectedParentUserId');
+            const results = document.getElementById('parentLookupResults');
+            const message = document.getElementById('parentLookupMessage');
+            const summary = document.getElementById('selectedParentSummary');
+            const fields = document.getElementById('parentCreateFields');
+            const fullNameInput = document.getElementById('Input_ParentFullName');
+            const phoneInput = document.getElementById('Input_ParentPhoneNumber');
+            const emailInput = document.getElementById('Input_ParentEmail');
+
+            function showMessage(text) {
+                message.textContent = text;
+                message.classList.remove('hidden');
+            }
+
+            function hideMessage() {
+                message.textContent = '';
+                message.classList.add('hidden');
+            }
+
+            function clearResults() {
+                results.innerHTML = '';
+                results.classList.add('hidden');
+            }
+
+            function useCreateMode() {
+                selectedInput.value = '';
+                summary.classList.add('hidden');
+                fields.classList.remove('hidden');
+                fullNameInput.removeAttribute('readonly');
+                phoneInput.removeAttribute('readonly');
+                emailInput.removeAttribute('readonly');
+            }
+
+            function selectParent(parent) {
+                selectedInput.value = parent.userId;
+                fullNameInput.value = parent.fullName || '';
+                phoneInput.value = parent.phoneNumber || '';
+                emailInput.value = parent.email || '';
+                fullNameInput.setAttribute('readonly', 'readonly');
+                phoneInput.setAttribute('readonly', 'readonly');
+                emailInput.setAttribute('readonly', 'readonly');
+                fields.classList.remove('hidden');
+                summary.textContent = `Đã chọn phụ huynh: ${parent.fullName || '-'} | ${parent.phoneNumber || '-'} | ${parent.email || '-'}`;
+                summary.classList.remove('hidden');
+                hideMessage();
+                clearResults();
+            }
+
+            function renderResults(parents) {
+                clearResults();
+                results.classList.remove('hidden');
+                results.innerHTML = parents.map(parent => `
+                    <button type="button" data-parent-id="${parent.userId}" class="block w-full border border-gray-200 bg-white px-4 py-3 text-left text-sm hover:bg-blue-50">
+                        <span class="block font-semibold text-gray-900">${parent.fullName || '-'}</span>
+                        <span class="mt-1 block text-gray-600">${parent.phoneNumber || '-'} | ${parent.email || '-'}</span>
+                    </button>
+                `).join('');
+
+                results.querySelectorAll('[data-parent-id]').forEach(button => {
+                    button.addEventListener('click', () => {
+                        const parent = parents.find(item => String(item.userId) === button.dataset.parentId);
+                        if (parent) {
+                            selectParent(parent);
+                        }
+                    });
+                });
+            }
+
+            checkButton.addEventListener('click', async () => {
+                const keyword = keywordInput.value.trim();
+                useCreateMode();
+                clearResults();
+                hideMessage();
+
+                if (keyword.length < 3) {
+                    showMessage('Vui lòng nhập ít nhất 3 ký tự SĐT hoặc email.');
+                    return;
+                }
+
+                checkButton.disabled = true;
+                checkButton.textContent = 'Đang kiểm tra...';
+
+                try {
+                    const response = await fetch(`/AdminStudents/Create?handler=SearchParents&keyword=${encodeURIComponent(keyword)}`, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        showMessage(data.message || 'Không thể kiểm tra phụ huynh.');
+                        return;
+                    }
+
+                    if (!data.found) {
+                        showMessage('Chưa có tài khoản phụ huynh phù hợp. Vui lòng nhập thông tin để tạo mới.');
+                        phoneInput.value = /^\d+$/.test(keyword.replace(/\D/g, '')) ? keyword : phoneInput.value;
+                        emailInput.value = keyword.includes('@@') ? keyword : emailInput.value;
+                        return;
+                    }
+
+                    renderResults(data.parents);
+                } catch {
+                    showMessage('Không thể kiểm tra phụ huynh. Vui lòng thử lại.');
+                } finally {
+                    checkButton.disabled = false;
+                    checkButton.textContent = 'Kiểm tra';
+                }
+            });
+
+            createButton.addEventListener('click', () => {
+                useCreateMode();
+                clearResults();
+                hideMessage();
+                fullNameInput.focus();
+            });
+        })();
+    </script>
+}

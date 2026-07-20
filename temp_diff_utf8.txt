@@ -1,0 +1,230 @@
+diff --git a/Pages/Messages.cshtml b/Pages/Messages.cshtml
+index 4732de1..cb1797b 100644
+--- a/Pages/Messages.cshtml
++++ b/Pages/Messages.cshtml
+@@ -14,78 +14,82 @@
+ }
+ 
+ <!-- Header -->
+-<div class="messages-header-section">
++<div class="mb-6 rounded-2xl bg-gradient-to-br from-white to-blue-50 p-6 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)] border border-slate-200/80 flex justify-between items-center">
+     <div>
+-        <h1 class="messages-main-title">Tin nhắn</h1>
+-        <p class="messages-subtitle">@(User.IsInRole("PARENT") ? "Trao đổi với giáo viên" : "Trao đổi với phụ huynh")</p>
++        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">Tin nhắn</h1>
++        <p class="mt-2 text-base text-gray-500">@(User.IsInRole("PARENT") ? "Trao đổi với giáo viên" : "Trao đổi với phụ huynh")</p>
+     </div>
+     @if (!User.IsInRole("PARENT"))
+     {
+-        <button class="btn-notification" id="btnBroadcastMessage">
+-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
++        <button id="btnBroadcastMessage" class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all" data-bs-toggle="modal" data-bs-target="#broadcastModal">
++            <svg class="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+             Gửi thông báo chung
+         </button>
+     }
+ </div>
+ 
+ <!-- Main Layout -->
+-<div class="messages-container">
++<div class="flex flex-col md:flex-row gap-6 h-[calc(100vh-200px)] min-h-[500px]">
+     <!-- Left Sidebar: Conversations -->
+-    <div class="messages-sidebar">
+-        <div class="messages-sidebar-header">
+-            <h3 class="messages-sidebar-title">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
+-            <div class="search-wrapper">
+-                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+-                <input type="text" id="conversationSearchInput" placeholder="@(User.IsInRole("PARENT") ? "Tìm kiếm giáo viên..." : "Tìm kiếm phụ huynh...")" class="search-input-field" />
++    <div class="w-full md:w-80 lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
++        <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
++            <h3 class="text-lg font-bold text-gray-900 mb-3">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
++            <div class="relative">
++                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
++                    <svg class="h-5 w-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
++                </div>
++                <input type="text" id="conversationSearchInput" placeholder="@(User.IsInRole("PARENT") ? "Tìm kiếm giáo viên..." : "Tìm kiếm phụ huynh...")" class="block w-full rounded-xl border-0 py-2 pl-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" />
+             </div>
+         </div>
+ 
+-        <div class="messages-list" id="conversationsContainer">
+-            <div class="text-center py-4 text-muted">Đang tải cuộc hội thoại...</div>
++        <div class="flex-1 overflow-y-auto p-2 space-y-1" id="conversationsContainer">
++            <div class="text-center py-8 text-gray-500">
++                <svg class="mx-auto h-8 w-8 text-gray-300 mb-2 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
++                Đang tải...
++            </div>
+         </div>
+     </div>
+ 
+     <!-- Right: Chat -->
+-    <div class="messages-chat" id="chatAreaContainer" style="display: none;">
++    <div class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="chatAreaContainer" style="display: none;">
+         <!-- Header -->
+-        <div class="messages-chat-header">
+-            <div class="chat-user-info">
+-                <div class="chat-avatar" id="activeChatAvatar">
+-                    P
+-                </div>
+-                <div>
+-                    <h3 class="chat-username" id="activeChatUsername">Họ tên</h3>
+-                    <p class="chat-userinfo" id="activeChatStudentInfo">Thông tin lớp học</p>
+-                </div>
++        <div class="px-6 py-4 border-b border-gray-200 bg-white flex items-center shadow-sm z-10">
++            <div class="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm" id="activeChatAvatar">
++                P
++            </div>
++            <div class="ml-4">
++                <h3 class="text-lg font-bold text-gray-900" id="activeChatUsername">Họ tên</h3>
++                <p class="text-sm text-gray-500" id="activeChatStudentInfo">Thông tin lớp học</p>
+             </div>
+         </div>
+ 
+         <!-- Messages Area -->
+-        <div class="messages-area" id="messagesBodyContainer">
++        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/50 flex flex-col gap-4" id="messagesBodyContainer">
+             <!-- Messages bubbles will load here -->
+         </div>
+ 
+         <!-- Input Area -->
+-        <div class="messages-input-area">
+-            <div class="input-wrapper">
++        <div class="px-4 py-3 bg-white border-t border-gray-200">
++            <div class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+                 <input type="file" id="chatFileInput" style="display: none;" />
+-                <button class="btn-attach" id="btnAttachFile" title="Đính kèm tài liệu/hình ảnh" type="button">
+-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
++                <button class="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition-all" id="btnAttachFile" title="Đính kèm tài liệu/hình ảnh" type="button">
++                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                 </button>
+-                <input type="text" id="chatMessageInputField" placeholder="Nhập tin nhắn..." class="input-message" autocomplete="off" />
+-                <button class="btn-send" id="btnSendChatMessage">
+-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+-                    Gửi
++                <input type="text" id="chatMessageInputField" placeholder="Nhập tin nhắn..." class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-gray-900 placeholder:text-gray-400 py-2.5 px-2" autocomplete="off" />
++                <button class="inline-flex items-center justify-center rounded-xl bg-blue-600 p-2.5 text-white shadow-sm hover:bg-blue-500 transition-all" id="btnSendChatMessage">
++                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                 </button>
+             </div>
+         </div>
+     </div>
+ 
+     <!-- Empty Chat State -->
+-    <div class="messages-chat" id="chatAreaEmptyState" style="display: flex; align-items: center; justify-content: center; background-color: #ffffff;">
+-        <div class="text-center text-muted py-5">
+-            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="mb-3 text-gray-300" style="opacity: 0.5;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+-            <h4 class="fw-semibold text-dark mb-1">Chưa chọn cuộc hội thoại</h4>
++    <div class="flex-1 flex items-center justify-center bg-white rounded-2xl shadow-sm border border-gray-200" id="chatAreaEmptyState">
++        <div class="text-center text-gray-500 max-w-sm px-6 py-8">
++            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 text-blue-500 mb-4">
++                <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
++            </div>
++            <h4 class="text-xl font-bold text-gray-900 mb-2">Chưa chọn cuộc hội thoại</h4>
+             <p class="text-sm text-gray-500">@(User.IsInRole("PARENT") ? "Vui lòng chọn một giáo viên từ danh sách bên trái để bắt đầu nhắn tin." : "Vui lòng chọn một phụ huynh từ danh sách bên trái để bắt đầu nhắn tin.")</p>
+         </div>
+     </div>
+@@ -94,30 +98,30 @@
+ <!-- Modal Gửi Thông Báo Chung -->
+ <div class="modal fade" id="broadcastModal" tabindex="-1" aria-labelledby="broadcastModalLabel" aria-hidden="true">
+     <div class="modal-dialog modal-dialog-centered">
+-        <div class="modal-content" style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+-            <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; border-top-left-radius: 12px; border-top-right-radius: 12px;">
+-                <h5 class="modal-title fw-bold text-dark" id="broadcastModalLabel">Gửi thông báo chung cho lớp học</h5>
++        <div class="modal-content rounded-2xl border-0 shadow-2xl">
++            <div class="modal-header border-b border-gray-200 px-6 py-4">
++                <h5 class="modal-title text-lg font-bold text-gray-900" id="broadcastModalLabel">Gửi thông báo chung cho lớp học</h5>
+                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+             </div>
+-            <div class="modal-body" style="padding: 24px;">
+-                <div class="mb-3">
+-                    <label for="broadcastClassSelect" class="form-label fw-semibold text-gray-700">Chọn lớp học giảng dạy</label>
+-                    <select class="form-select" id="broadcastClassSelect" required style="border-radius: 8px; padding: 10px;">
++            <div class="modal-body px-6 py-4">
++                <div class="mb-4">
++                    <label for="broadcastClassSelect" class="block text-sm font-semibold text-gray-700 mb-1">Chọn lớp học giảng dạy</label>
++                    <select class="block w-full rounded-xl border-gray-300 py-2.5 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" id="broadcastClassSelect" required>
+                         <option value="">-- Chọn lớp học --</option>
+                     </select>
+                 </div>
+-                <div class="mb-3">
+-                    <label for="broadcastTitle" class="form-label fw-semibold text-gray-700">Tiêu đề thông báo</label>
+-                    <input type="text" class="form-control" id="broadcastTitle" placeholder="Nhập tiêu đề thông báo ngắn gọn..." required style="border-radius: 8px; padding: 10px;">
++                <div class="mb-4">
++                    <label for="broadcastTitle" class="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề thông báo</label>
++                    <input type="text" class="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" id="broadcastTitle" placeholder="Nhập tiêu đề thông báo ngắn gọn..." required>
+                 </div>
+-                <div class="mb-3">
+-                    <label for="broadcastContent" class="form-label fw-semibold text-gray-700">Nội dung thông báo</label>
+-                    <textarea class="form-control" id="broadcastContent" rows="4" placeholder="Nhập nội dung thông báo chi tiết..." required style="border-radius: 8px; padding: 10px;"></textarea>
++                <div class="mb-2">
++                    <label for="broadcastContent" class="block text-sm font-semibold text-gray-700 mb-1">Nội dung thông báo</label>
++                    <textarea class="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" id="broadcastContent" rows="4" placeholder="Nhập nội dung thông báo chi tiết..." required></textarea>
+                 </div>
+             </div>
+-            <div class="modal-footer" style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+-                <button type="button" class="btn btn-save" id="btnSubmitBroadcast">Gửi</button>
++            <div class="modal-footer border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
++                <button type="button" class="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" data-bs-dismiss="modal">Hủy</button>
++                <button type="button" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500" id="btnSubmitBroadcast">Gửi thông báo</button>
+             </div>
+         </div>
+     </div>
+@@ -508,7 +512,7 @@
+                 .catch(err => {
+                     console.error(err);
+                     document.getElementById("messagesBodyContainer").innerHTML = 
+-                        `<div class="text-center py-4 text-danger">Không thể tải lịch sử tin nhắn.</div>`;
++                        `<div class="text-center py-8 text-red-500">Lỗi khi tải lịch sử tin nhắn.</div>`;
+                 });
+         }
+ 
+@@ -518,7 +522,7 @@
+             container.innerHTML = "";
+ 
+             if (messagesList.length === 0) {
+-                container.innerHTML = `<div class="text-center py-4 text-muted" style="opacity: 0.6;">Chưa có cuộc trò chuyện. Hãy gửi tin nhắn đầu tiên!</div>`;
++                container.innerHTML = `<div class="flex-1 flex flex-col items-center justify-center text-center text-gray-400"><svg class="w-12 h-12 mb-3 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Chưa có tin nhắn nào. Hãy gửi lời chào!</p></div>`;
+                 return;
+             }
+ 
+@@ -550,7 +554,9 @@
+                 // Nếu ta là Giáo viên, outgoing message (từ ta gửi đi) là của Teacher, incoming là Parent
+                 bubbleClass = m.isOutgoing ? "message-teacher" : "message-parent";
+             }
+-            bubbleWrapper.className = `message-bubble-wrapper ${bubbleClass}`;
++            
++            let isOut = m.isOutgoing;
++            bubbleWrapper.className = `flex w-full mb-4 ${isOut ? 'justify-end' : 'justify-start'}`;
+             
+             // Format time từ dd/MM/yyyy HH:mm chỉ lấy HH:mm
+             const timeParts = m.sentAtString.split(" ");
+@@ -611,16 +617,25 @@
+                     `;
+                 }
+             } else {
+-                contentHtml = `<p class="message-content">${escapeHtml(m.content)}</p>`;
++                contentHtml = `<p class="m-0">${escapeHtml(m.content)}</p>`;
++            }
++
++            let bubbleBg = isOut ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-900';
++            let bubbleBorder = isOut ? '' : 'border border-gray-200';
++            
++            if (isFileBubble) {
++                bubbleBg = 'bg-white text-gray-900';
++                bubbleBorder = 'border border-gray-200';
+             }
+ 
+             bubbleWrapper.innerHTML = `
+-                <div class="message-bubble" style="${isFileBubble ? "background-color: #ffffff; border: 1px solid #e2e8f0; color: #1e293b; padding: 10px;" : ""}">
++                <div class="max-w-[75%] rounded-2xl px-4 py-2 shadow-sm ${bubbleBg} ${bubbleBorder}">
+                     ${contentHtml}
+-                    <p class="message-time">${timeOnly}</p>
++                    <div class="text-[10px] mt-1 text-right ${isOut && !isFileBubble ? 'text-blue-100' : 'text-gray-400'}">${timeOnly}</div>
+                 </div>
+             `;
+ 
++
+             container.appendChild(bubbleWrapper);
+         }
+ 
+

@@ -1,108 +1,822 @@
 @page
+@model EduBridge.Pages.MessagesModel
 @{
     ViewData["Title"] = "Tin nhắn";
-    Layout = "_TeacherLayout";
-    ViewData["ActivePage"] = "Messages";
-
-    var mockConversations = new[] {
-        new { Id = 1, Name = "Nguyễn Văn Hùng", Student = "Nguyễn Văn Minh", LastMsg = "Xin chào cô, con em học bài này hơi khó. Có thể giải thích thêm không ạ?", Time = "14:30", Unread = 2 },
-        new { Id = 2, Name = "Trần Văn Toàn", Student = "Trần Thị Lan", LastMsg = "Cảm ơn cô đã quan tâm đến con em.", Time = "10:15", Unread = 0 },
-        new { Id = 3, Name = "Lê Thị Mai", Student = "Lê Hoàng Nam", LastMsg = "Con em có thể học bù vào thứ 7 được không ạ?", Time = "16:45", Unread = 1 }
-    };
-
-    var mockMessages = new[] {
-        new { Sender = "parent", Content = "Xin chào cô, con em học bài này hơi khó. Có thể giải thích thêm không ạ?", Time = "14:30" },
-        new { Sender = "teacher", Content = "Chào phụ huynh. Cô sẽ gửi thêm tài liệu và video bài giảng cho em ạ. Phụ huynh có thể cho em xem lại.", Time = "14:35" },
-        new { Sender = "parent", Content = "Cảm ơn cô nhiều ạ!", Time = "14:40" }
-    };
+    if (User.IsInRole("PARENT"))
+    {
+        Layout = "_Layout";
+    }
+    else
+    {
+        Layout = "_TeacherLayout";
+        ViewData["ActivePage"] = "Messages";
+    }
 }
 
 <!-- Header -->
-<div class="messages-header-section">
+<div class="mb-6 rounded-2xl bg-gradient-to-br from-white to-blue-50 p-6 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.02)] border border-slate-200/80 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
     <div>
-        <h1 class="messages-main-title">Tin nhắn</h1>
-        <p class="messages-subtitle">Trao đổi với phụ huynh</p>
+        <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent">Tin nhắn</h1>
+        <p class="mt-2 text-base text-gray-500">@(User.IsInRole("PARENT") ? "Trao đổi với giáo viên" : "Trao đổi với phụ huynh")</p>
     </div>
-    <button class="btn-notification">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-        Gửi thông báo chung
-    </button>
+    @if (!User.IsInRole("PARENT"))
+    {
+        <button id="btnBroadcastMessage" class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 transition-all" data-bs-toggle="modal" data-bs-target="#broadcastModal">
+            <svg class="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            Gửi thông báo chung
+        </button>
+    }
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
+    <div class="bg-[#f8f9fa] rounded-xl border-b border-gray-200 p-5">
+        <h3 class="text-base font-bold text-gray-800 mb-4">Bộ lọc tìm kiếm</h3>
+        
+        <div class="flex flex-col lg:flex-row gap-3 items-start">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 w-full">
+                <!-- Class Custom Dropdown -->
+                <div class="relative custom-dropdown" id="classDropdownContainer">
+                    <button type="button" class="flex items-center justify-between w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white hover:bg-gray-50 transition-colors text-gray-700" onclick="toggleClassDropdown()">
+                        <span id="classFilterLabel" class="truncate pr-2">-- Tất cả các lớp --</span>
+                        <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="classFilterMenu" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg">
+                        <div class="p-2 border-b border-gray-100">
+                            <input type="text" id="classFilterSearch" class="w-full h-9 px-3 text-sm border border-gray-200 rounded focus:outline-none focus:border-blue-500" placeholder="Tìm lớp học..." onclick="event.stopPropagation()">
+                        </div>
+                        <ul id="classFilterList" class="max-h-48 overflow-y-auto py-1">
+                            <li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item" onclick="selectClassFilter('', '-- Tất cả các lớp --')">-- Tất cả các lớp --</li>
+                        </ul>
+                    </div>
+                    <input type="hidden" id="filterClassSelect" value="">
+                </div>
+                <div>
+                    <input type="text" id="filterNameInput" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="@(User.IsInRole("PARENT") ? "Tìm kiếm giáo viên..." : "Tìm kiếm phụ huynh...")">
+                </div>
+                <div>
+                    <input type="text" id="filterStudentInput" class="w-full h-10 px-3 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 text-gray-700" placeholder="Tìm kiếm học sinh...">
+                </div>
+            </div>
+            
+            <div class="flex gap-2 w-full lg:w-auto shrink-0">
+                <button type="button" id="btnResetFilter" class="px-4 py-2 h-10 bg-white border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium transition-colors w-full sm:w-auto">
+                    Làm mới
+                </button>
+                <button type="button" id="btnSearchFilter" class="px-4 py-2 h-10 bg-blue-600 border border-transparent rounded text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 font-medium transition-colors shadow-sm w-full sm:w-auto">
+                    Tìm kiếm
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- Main Layout -->
-<div class="messages-container">
+<div class="flex flex-col md:flex-row gap-6 h-[calc(100vh-200px)] min-h-[500px]">
     <!-- Left Sidebar: Conversations -->
-    <div class="messages-sidebar">
-        <div class="messages-sidebar-header">
-            <h3 class="messages-sidebar-title">Cuộc hội thoại</h3>
-            <div class="search-wrapper">
-                <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="text" placeholder="Tìm kiếm..." class="search-input-field" />
-            </div>
+    <div class="w-full md:w-80 lg:w-96 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
+        <div class="px-5 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-bold text-gray-900">@(User.IsInRole("PARENT") ? "Danh sách giáo viên" : "Cuộc hội thoại")</h3>
         </div>
 
-        <div class="messages-list">
-            @foreach(var conv in mockConversations)
-            {
-                var isActive = conv.Id == 1;
-                <div class="message-item @(isActive ? "message-item-active" : "")">
-                    <div class="message-avatar">@conv.Name.Substring(0, 1)</div>
-                    <div class="message-item-content">
-                        <div class="message-item-header">
-                            <h4 class="message-item-name">@conv.Name</h4>
-                            @if(conv.Unread > 0)
-                            {
-                                <span class="unread-badge">@conv.Unread</span>
-                            }
-                        </div>
-                        <p class="message-item-student">PH: @conv.Student</p>
-                        <p class="message-item-preview">@conv.LastMsg</p>
-                        <p class="message-item-time">@conv.Time</p>
-                    </div>
-                </div>
-            }
+        <div class="flex-1 overflow-y-auto p-3" id="conversationsContainer">
+            <div class="text-center py-8 text-gray-500">
+                <svg class="mx-auto h-8 w-8 text-gray-300 mb-2 animate-spin" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Đang tải...
+            </div>
         </div>
     </div>
 
     <!-- Right: Chat -->
-    <div class="messages-chat">
+    <div class="flex-1 flex flex-col bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden" id="chatAreaContainer" style="display: none;">
         <!-- Header -->
-        <div class="messages-chat-header">
-            <div class="chat-user-info">
-                <div class="chat-avatar">N</div>
-                <div>
-                    <h3 class="chat-username">Nguyễn Văn Hùng</h3>
-                    <p class="chat-userinfo">Phụ huynh: Nguyễn Văn Minh</p>
-                </div>
+        <div class="px-6 py-4 border-b border-gray-200 bg-white flex items-center shadow-sm z-10">
+            <div class="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm" id="activeChatAvatar">
+                P
+            </div>
+            <div class="ml-4">
+                <h3 class="text-lg font-bold text-gray-900" id="activeChatUsername">Họ tên</h3>
+                <p class="text-sm text-gray-500" id="activeChatStudentInfo">Thông tin lớp học</p>
             </div>
         </div>
 
         <!-- Messages Area -->
-        <div class="messages-area">
-            @foreach(var msg in mockMessages)
-            {
-                var isTeacher = msg.Sender == "teacher";
-                <div class="message-bubble-wrapper @(isTeacher ? "message-teacher" : "message-parent")">
-                    <div class="message-bubble">
-                        <p class="message-content">@msg.Content</p>
-                        <p class="message-time">@msg.Time</p>
-                    </div>
-                </div>
-            }
+        <div class="flex-1 overflow-y-auto p-6 bg-gray-50/50 flex flex-col gap-4" id="messagesBodyContainer">
+            <!-- Messages bubbles will load here -->
         </div>
 
         <!-- Input Area -->
-        <div class="messages-input-area">
-            <div class="input-wrapper">
-                <button class="btn-attach">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        <div class="px-4 py-3 bg-white border-t border-gray-200">
+            <div class="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+                <input type="file" id="chatFileInput" style="display: none;" />
+                <button class="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-white rounded-xl transition-all" id="btnAttachFile" title="Đính kèm tài liệu/hình ảnh" type="button">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 </button>
-                <input type="text" placeholder="Nhập tin nhắn..." class="input-message" />
-                <button class="btn-send">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                    Gửi
+                <input type="text" id="chatMessageInputField" placeholder="Nhập tin nhắn..." class="flex-1 bg-transparent border-0 focus:ring-0 text-sm text-gray-900 placeholder:text-gray-400 py-2.5 px-2" autocomplete="off" />
+                <button class="inline-flex items-center justify-center rounded-xl bg-blue-600 p-2.5 text-white shadow-sm hover:bg-blue-500 transition-all" id="btnSendChatMessage">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
                 </button>
             </div>
         </div>
     </div>
+
+    <!-- Empty Chat State -->
+    <div class="flex-1 flex items-center justify-center bg-white rounded-2xl shadow-sm border border-gray-200" id="chatAreaEmptyState">
+        <div class="text-center text-gray-500 max-w-sm px-6 py-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-blue-50 text-blue-500 mb-4">
+                <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <h4 class="text-xl font-bold text-gray-900 mb-2">Chưa chọn cuộc hội thoại</h4>
+            <p class="text-sm text-gray-500">@(User.IsInRole("PARENT") ? "Vui lòng chọn một giáo viên từ danh sách bên trái để bắt đầu nhắn tin." : "Vui lòng chọn một phụ huynh từ danh sách bên trái để bắt đầu nhắn tin.")</p>
+        </div>
+    </div>
 </div>
+
+<!-- Modal Gửi Thông Báo Chung -->
+<div id="broadcastModal" class="relative z-50 hidden" aria-labelledby="broadcastModalLabel" role="dialog" aria-modal="true">
+    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+    <div class="fixed inset-0 z-10 w-screen overflow-y-auto">
+        <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                <div class="border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+                    <h5 class="text-lg font-bold text-gray-900" id="broadcastModalLabel">Gửi thông báo chung cho lớp học</h5>
+                    <button type="button" class="text-gray-400 hover:text-gray-500" onclick="closeBroadcastModal()">
+                        <span class="sr-only">Close</span>
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="mb-4">
+                        <label for="broadcastClassSelect" class="block text-sm font-semibold text-gray-700 mb-1">Chọn lớp học giảng dạy</label>
+                        <select class="block w-full rounded-xl border-gray-300 py-2.5 px-3 text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" id="broadcastClassSelect" required>
+                            <option value="">-- Chọn lớp học --</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="broadcastTitle" class="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề thông báo</label>
+                        <input type="text" class="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" id="broadcastTitle" placeholder="Nhập tiêu đề thông báo ngắn gọn..." required>
+                    </div>
+                    <div class="mb-2">
+                        <label for="broadcastContent" class="block text-sm font-semibold text-gray-700 mb-1">Nội dung thông báo</label>
+                        <textarea class="block w-full rounded-xl border-0 py-2.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm" id="broadcastContent" rows="4" placeholder="Nhập nội dung thông báo chi tiết..." required></textarea>
+                    </div>
+                </div>
+                <div class="border-t border-gray-200 px-6 py-4 flex justify-end gap-3 bg-gray-50">
+                    <button type="button" class="rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" onclick="closeBroadcastModal()">Hủy</button>
+                    <button type="button" class="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-500" id="btnSubmitBroadcast">Gửi thông báo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Nhúng thư viện SignalR Client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+
+    <style>
+        /* Add any custom styles here if needed */
+    </style>
+
+    <script>
+        function closeBroadcastModal() {
+            const modal = document.getElementById('broadcastModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        const currentUserId = @Model.CurrentUserId;
+        const isParent = @(User.IsInRole("PARENT") ? "true" : "false");
+        let selectedParentUserId = null;
+        let conversationsData = [];
+        let connection = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Tải danh sách cuộc hội thoại ban đầu
+            loadConversations();
+
+            // 2. Thiết lập kết nối SignalR realtime chat
+            setupSignalR();
+
+            // 3. Sự kiện bấm gửi tin nhắn
+            document.getElementById("btnSendChatMessage").addEventListener("click", function () {
+                sendMessage();
+            });
+
+            // Gửi tin nhắn bằng phím Enter
+            document.getElementById("chatMessageInputField").addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    sendMessage();
+                }
+            });
+
+            // 4. Lọc danh sách hội thoại
+            function applyFilters() {
+                const nameQuery = document.getElementById("filterNameInput").value.trim().toLowerCase();
+                const studentQuery = document.getElementById("filterStudentInput").value.trim().toLowerCase();
+                const classQuery = document.getElementById("filterClassSelect").value;
+
+                const filtered = conversationsData.filter(c => {
+                    const matchName = !nameQuery || (c.parentName && c.parentName.toLowerCase().includes(nameQuery));
+                    const matchStudent = !studentQuery || (c.studentNames && c.studentNames.toLowerCase().includes(studentQuery));
+                    const matchClass = !classQuery || (c.classNames && c.classNames.includes(classQuery));
+                    
+                    return matchName && matchStudent && matchClass;
+                });
+                renderConversations(filtered);
+            }
+
+            // Lọc khi nhấn nút Tìm kiếm
+            document.getElementById("btnSearchFilter").addEventListener("click", applyFilters);
+
+            // Nút Làm mới
+            document.getElementById("btnResetFilter").addEventListener("click", function () {
+                document.getElementById("filterNameInput").value = "";
+                document.getElementById("filterStudentInput").value = "";
+                selectClassFilter('', '-- Tất cả các lớp --');
+                document.getElementById("classFilterSearch").value = "";
+                document.querySelectorAll("#classFilterList .class-filter-item").forEach(item => item.style.display = "block");
+                applyFilters();
+            });
+
+            // Dropdown functions
+            window.toggleClassDropdown = function() {
+                const menu = document.getElementById("classFilterMenu");
+                menu.classList.toggle("hidden");
+            };
+
+            window.selectClassFilter = function(val, text) {
+                document.getElementById("filterClassSelect").value = val;
+                document.getElementById("classFilterLabel").textContent = text;
+                document.getElementById("classFilterMenu").classList.add("hidden");
+            };
+
+            // Close dropdowns on outside click
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#classDropdownContainer')) {
+                    document.getElementById('classFilterMenu')?.classList.add('hidden');
+                }
+            });
+
+            // Class Filter Search
+            document.getElementById("classFilterSearch").addEventListener("input", function(e) {
+                const query = e.target.value.toLowerCase();
+                const items = document.querySelectorAll("#classFilterList .class-filter-item");
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(query)) {
+                        item.style.display = "block";
+                    } else {
+                        item.style.display = "none";
+                    }
+                });
+            });
+
+            // 5. Mở Modal gửi thông báo chung (chỉ dành cho giáo viên)
+            const btnBroadcast = document.getElementById("btnBroadcastMessage");
+            if (btnBroadcast) {
+                btnBroadcast.addEventListener("click", function () {
+                    // Tải danh sách lớp học của giáo viên
+                    const classSelect = document.getElementById("broadcastClassSelect");
+                    classSelect.innerHTML = `<option value="">-- Đang tải danh sách lớp --</option>`;
+                    
+                    fetch('/api/v1/teacher/notifications/classes')
+                        .then(res => res.json())
+                        .then(res => {
+                            if (res.success) {
+                                classSelect.innerHTML = `<option value="">-- Chọn lớp học --</option>`;
+                                res.data.forEach(c => {
+                                    const opt = document.createElement("option");
+                                    opt.value = c.classId;
+                                    opt.textContent = c.className;
+                                    classSelect.appendChild(opt);
+                                });
+                            } else {
+                                showToast(res.message, false);
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            showToast("Không thể tải danh sách lớp học", false);
+                        });
+
+                    const modal = document.getElementById('broadcastModal');
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // 6. Gửi thông báo chung (chỉ dành cho giáo viên)
+            const btnSubmitBroadcast = document.getElementById("btnSubmitBroadcast");
+            if (btnSubmitBroadcast) {
+                btnSubmitBroadcast.addEventListener("click", function () {
+                    const classId = document.getElementById("broadcastClassSelect").value;
+                    const title = document.getElementById("broadcastTitle").value.trim();
+                    const content = document.getElementById("broadcastContent").value.trim();
+
+                    if (!classId) {
+                        showToast("Vui lòng chọn lớp học", false);
+                        return;
+                    }
+                    if (!title) {
+                        showToast("Vui lòng nhập tiêu đề thông báo", false);
+                        return;
+                    }
+                    if (!content) {
+                        showToast("Vui lòng nhập nội dung thông báo", false);
+                        return;
+                    }
+
+                    const btn = this;
+                    btn.disabled = true;
+                    btn.textContent = "Đang gửi...";
+
+                    fetch('/api/v1/teacher/notifications/broadcast', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ classId: parseInt(classId), title: title, content: content })
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        btn.disabled = false;
+                        btn.textContent = "Gửi thông báo";
+                        if (res.success) {
+                            showToast("Đã gửi thông báo chung thành công đến toàn bộ phụ huynh của lớp!", true);
+                            // Đóng modal
+                            const modalEl = document.getElementById('broadcastModal');
+                            if (modalEl) {
+                                modalEl.classList.add('hidden');
+                            }
+                            // Reset form
+                            document.getElementById("broadcastClassSelect").value = "";
+                            document.getElementById("broadcastTitle").value = "";
+                            document.getElementById("broadcastContent").value = "";
+                        } else {
+                            showToast(res.message, false);
+                        }
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.textContent = "Gửi thông báo";
+                        console.error(err);
+                        showToast("Lỗi gửi thông báo chung", false);
+                    });
+                });
+            }
+
+            // 7. Click nút đính kèm file
+            document.getElementById("btnAttachFile").addEventListener("click", function () {
+                document.getElementById("chatFileInput").click();
+            });
+
+            // 8. Tự động upload file khi thay đổi input file
+            document.getElementById("chatFileInput").addEventListener("change", function () {
+                const file = this.files[0];
+                if (!file) return;
+
+                if (!selectedParentUserId) {
+                    showToast("Vui lòng chọn cuộc hội thoại trước khi gửi file.", false);
+                    this.value = "";
+                    return;
+                }
+
+                // Client-side validation: Giới hạn 10MB
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast("File vượt quá kích thước giới hạn (10MB).", false);
+                    this.value = "";
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const btn = document.getElementById("btnAttachFile");
+                const originalSvg = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width: 14px; height: 14px;"></span>`;
+
+                const uploadUrl = isParent ? '/api/v1/parent/chat/upload' : '/api/v1/teacher/chat/upload';
+
+                fetch(uploadUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(res => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalSvg;
+                    // Reset input file
+                    document.getElementById("chatFileInput").value = "";
+
+                    const isSuccess = res.success || res.Success;
+                    const messageText = res.message || res.Message;
+
+                    if (isSuccess) {
+                        const dataObj = res.data || res.Data;
+                        if (!dataObj) {
+                            showToast("Dữ liệu phản hồi từ server trống.", false);
+                            return;
+                        }
+                        const fileUrl = dataObj.fileUrl || dataObj.FileUrl;
+                        const fileName = dataObj.fileName || dataObj.FileName;
+                        
+                        // Gửi qua SignalR
+                        if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                            connection.invoke("SendMessage", selectedParentUserId, "[FILE]" + fileName + "|" + fileUrl)
+                                .catch(err => {
+                                    console.error("Lỗi SignalR SendMessage:", err);
+                                    showToast("Không thể gửi tin nhắn chứa file qua SignalR. Chi tiết: " + err.message, false);
+                                });
+                        } else {
+                            showToast("Mất kết nối realtime. Hãy thử lại.", false);
+                        }
+                    } else {
+                        showToast(messageText || "Lỗi tải lên file", false);
+                    }
+                })
+                .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalSvg;
+                    document.getElementById("chatFileInput").value = "";
+                    console.error(err);
+                    showToast("Lỗi tải lên file", false);
+                });
+            });
+        });
+
+        // Thiết lập kết nối SignalR
+        function setupSignalR() {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("ReceiveMessage", function (payload) {
+                // payload: { messageId, senderUserId, receiverUserId, content, sentAt (string), isRead }
+                const senderId = payload.senderUserId;
+                const receiverId = payload.receiverUserId;
+
+                // Xác định đối tượng chat liên quan (không phải là chính mình)
+                const contactId = (senderId === currentUserId) ? receiverId : senderId;
+
+                // Nếu tin nhắn thuộc về cuộc trò chuyện đang mở
+                if (selectedParentUserId && selectedParentUserId === contactId) {
+                    appendMessageBubble({
+                        messageId: payload.messageId,
+                        senderUserId: senderId,
+                        receiverUserId: receiverId,
+                        content: payload.content,
+                        sentAtString: payload.sentAt,
+                        isRead: payload.isRead,
+                        isOutgoing: (senderId === currentUserId)
+                    });
+
+                    // Cuộn xuống
+                    const messagesContainer = document.getElementById("messagesBodyContainer");
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+                    // Nếu là tin nhắn gửi đến, tự động đánh dấu đã đọc
+                    if (senderId === selectedParentUserId) {
+                        markConversationAsRead(selectedParentUserId);
+                    }
+                }
+
+                // Cập nhật lại Sidebar để làm mới tin nhắn cuối cùng và số lượng tin chưa đọc
+                loadConversations(selectedParentUserId);
+            });
+
+            connection.start()
+                .then(() => console.log("Đã kết nối SignalR ChatHub thành công."))
+                .catch(err => {
+                    console.error("Lỗi kết nối SignalR:", err);
+                    showToast("Mất kết nối thời gian thực. Đang thử kết nối lại...", false);
+                });
+        }
+
+        // Tải danh sách cuộc hội thoại
+        function loadConversations(activeUserId = null) {
+            const conversationsUrl = isParent ? '/api/v1/parent/chat/conversations' : '/api/v1/teacher/chat/conversations';
+            fetch(conversationsUrl)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        conversationsData = res.data;
+
+                        // Cập nhật dropdown chọn Lớp
+                        const classList = document.getElementById("classFilterList");
+                        const classes = new Set();
+                        conversationsData.forEach(c => {
+                            if (c.classNames) {
+                                c.classNames.split(',').forEach(cls => classes.add(cls.trim()));
+                            }
+                        });
+                        
+                        classList.innerHTML = '<li class="px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item" onclick="selectClassFilter(\'\', \'-- Tất cả các lớp --\')">-- Tất cả các lớp --</li>';
+                        
+                        Array.from(classes).sort().forEach(cls => {
+                            const li = document.createElement("li");
+                            li.className = "px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 cursor-pointer class-filter-item";
+                            li.textContent = cls;
+                            li.onclick = () => selectClassFilter(cls, cls);
+                            classList.appendChild(li);
+                        });
+
+                        renderConversations(conversationsData, activeUserId);
+                    } else {
+                        showToast(res.message, false);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById("conversationsContainer").innerHTML = 
+                        `<div class="text-center py-4 text-danger">Lỗi tải danh sách cuộc hội thoại.</div>`;
+                });
+        }
+
+        // Render sidebar cuộc hội thoại
+        function renderConversations(list, activeUserId = null) {
+            const container = document.getElementById("conversationsContainer");
+            container.innerHTML = "";
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="text-center py-4 text-gray-500">Không tìm thấy cuộc hội thoại nào.</div>`;
+                return;
+            }
+
+            list.forEach(c => {
+                const contactId = isParent ? c.teacherUserId : c.parentUserId;
+                const contactName = isParent ? c.teacherName : c.parentName;
+                const studentNamesText = isParent ? "" : (c.studentNames || "");
+                const classNamesText = c.classNames || "";
+
+                const isActive = activeUserId !== null && contactId === activeUserId;
+                const avatarChar = contactName ? contactName.trim().charAt(0).toUpperCase() : "U";
+                
+                // Format preview text
+                let rawLastMsg = c.lastMessage || "Chưa có tin nhắn";
+                if (c.lastMessage && c.lastMessageSenderId === currentUserId) {
+                    if (rawLastMsg.startsWith("[FILE]")) {
+                        rawLastMsg = "Bạn đã gửi 1 file đính kèm";
+                    } else if (rawLastMsg.startsWith("[IMAGE]")) {
+                        rawLastMsg = "Bạn đã gửi 1 hình ảnh";
+                    } else {
+                        rawLastMsg = "Bạn: " + rawLastMsg;
+                    }
+                } else if (c.lastMessage) {
+                    if (rawLastMsg.startsWith("[FILE]")) {
+                        rawLastMsg = "Đã gửi 1 file đính kèm";
+                    } else if (rawLastMsg.startsWith("[IMAGE]")) {
+                        rawLastMsg = "Đã gửi 1 hình ảnh";
+                    }
+                }
+                const lastMsgPreview = rawLastMsg.length > 40 ? rawLastMsg.substring(0, 37) + "..." : rawLastMsg;
+                const timeText = c.lastMessageTime ? c.lastMessageTime.split(" ")[1] || c.lastMessageTime : "";
+
+                const item = document.createElement("div");
+                
+                const itemClass = isActive 
+                    ? "flex p-3 gap-3 bg-blue-50 border-l-4 border-blue-600 rounded-r-xl mb-2 cursor-pointer transition-colors message-item message-item-active"
+                    : "flex p-3 gap-3 bg-gray-50 rounded-xl mb-2 cursor-pointer hover:bg-gray-100 transition-colors message-item";
+
+                const avatarClass = "w-11 h-11 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg relative shrink-0";
+                    
+                item.className = itemClass;
+                item.setAttribute("data-contact-id", contactId);
+                
+                let studentLabel = isParent ? "" : `PH: ${studentNamesText}`;
+                if (classNamesText) {
+                    studentLabel += studentLabel ? ` | Lớp: ${classNamesText}` : `Lớp: ${classNamesText}`;
+                }
+
+                item.innerHTML = `
+                    <div class="${avatarClass}">
+                        ${avatarChar}
+                        ${isActive ? '<span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>' : ''}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline mb-0.5">
+                            <h4 class="text-[15px] font-bold text-gray-900 truncate">${contactName}</h4>
+                            ${c.unreadCount > 0 ? `<span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${c.unreadCount}</span>` : ''}
+                        </div>
+                        ${studentLabel ? `<p class="text-[13px] text-gray-500 mb-1 truncate">${studentLabel}</p>` : ''}
+                        <p class="text-[13px] text-gray-600 truncate">${lastMsgPreview}</p>
+                        <p class="text-[11px] text-gray-400 mt-1">${timeText}</p>
+                    </div>
+                `;
+
+                item.addEventListener("click", function () {
+                    const infoLabel = classNamesText ? `${studentNamesText} | Lớp: ${classNamesText}` : studentNamesText;
+                    openChatWithContact(contactId, contactName, isParent ? "" : infoLabel);
+                });
+
+                container.appendChild(item);
+            });
+        }
+
+        // Mở cuộc trò chuyện
+        function openChatWithContact(contactId, contactName, studentNames) {
+            selectedParentUserId = contactId;
+
+            // Chuyển hiển thị UI chat
+            document.getElementById("chatAreaEmptyState").style.display = "none";
+            document.getElementById("chatAreaContainer").style.display = "flex";
+
+            // Cập nhật Header
+            document.getElementById("activeChatUsername").textContent = contactName;
+            document.getElementById("activeChatStudentInfo").textContent = isParent ? `Giáo viên` : `Phụ huynh: ${studentNames}`;
+            document.getElementById("activeChatAvatar").innerHTML = `
+                ${contactName ? contactName.charAt(0).toUpperCase() : "U"}
+            `;
+
+            // Gọi render lại conversations để update active state (có green dot)
+            renderConversations(conversationsData, contactId);
+
+            // Tải lịch sử tin nhắn
+            document.getElementById("messagesBodyContainer").innerHTML = `<div class="text-center py-4 text-gray-500">Đang tải lịch sử tin nhắn...</div>`;
+            
+            const historyUrl = isParent ? `/api/v1/parent/chat/history?contactUserId=${contactId}` : `/api/v1/teacher/chat/history?contactUserId=${contactId}`;
+
+            fetch(historyUrl)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.success) {
+                        renderChatHistory(res.data);
+                        
+                        // Đánh dấu đã đọc trên DB
+                        markConversationAsRead(contactId);
+                    } else {
+                        showToast(res.message, false);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    document.getElementById("messagesBodyContainer").innerHTML = 
+                        `<div class="text-center py-8 text-red-500">Lỗi khi tải lịch sử tin nhắn.</div>`;
+                });
+        }
+
+        // Render lịch sử tin nhắn
+        function renderChatHistory(messagesList) {
+            const container = document.getElementById("messagesBodyContainer");
+            container.innerHTML = "";
+
+            if (messagesList.length === 0) {
+                container.innerHTML = `<div class="flex-1 flex flex-col items-center justify-center text-center text-gray-400"><svg class="w-12 h-12 mb-3 opacity-20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>Chưa có tin nhắn nào. Hãy gửi lời chào!</p></div>`;
+                return;
+            }
+
+            messagesList.forEach(m => {
+                appendMessageBubble(m);
+            });
+
+            // Cuộn xuống dưới cùng
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Append bubble chat mới vào khung chat
+        function appendMessageBubble(m) {
+            const container = document.getElementById("messagesBodyContainer");
+            
+            // Xóa thông báo trống nếu có
+            if (container.querySelector(".text-center.py-4")) {
+                container.innerHTML = "";
+            }
+
+            const bubbleWrapper = document.createElement("div");
+            
+            let isOut = m.isOutgoing;
+            bubbleWrapper.className = `flex w-full mb-4 ${isOut ? 'justify-end' : 'justify-start'}`;
+            
+            // Format time từ dd/MM/yyyy HH:mm chỉ lấy HH:mm
+            const timeParts = m.sentAtString.split(" ");
+            const timeOnly = timeParts[1] || m.sentAtString;
+
+            let contentHtml = "";
+            let isFileBubble = m.content.startsWith("[FILE]");
+
+            if (isFileBubble) {
+                const fileData = m.content.substring(6).split('|');
+                const fileName = fileData[0] || "File đính kèm";
+                const fileUrl = fileData[1] || "#";
+                
+                const lowerName = fileName.toLowerCase();
+                const isImage = lowerName.endsWith(".jpg") || lowerName.endsWith(".jpeg") || lowerName.endsWith(".png") || lowerName.endsWith(".gif") || lowerName.endsWith(".webp");
+                const isVideo = lowerName.endsWith(".mp4") || lowerName.endsWith(".webm") || lowerName.endsWith(".ogg") || lowerName.endsWith(".mov");
+
+                if (isImage) {
+                    contentHtml = `
+                        <div class="mb-2">
+                            <a href="${fileUrl}" target="_blank" title="Nhấp để xem ảnh lớn">
+                                <img src="${fileUrl}" alt="${escapeHtml(fileName)}" class="rounded-lg object-cover w-full max-w-[240px] max-h-[240px]" />
+                            </a>
+                        </div>
+                        <div class="flex items-center justify-between text-xs mb-1 ${isOut ? 'text-white' : 'text-gray-600'}">
+                            <div class="flex items-center overflow-hidden mr-2">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1 shrink-0"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                                <span class="truncate max-w-[150px]">${escapeHtml(fileName)}</span>
+                            </div>
+                            <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="hover:opacity-75" title="Tải về">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>
+                    `;
+                } else if (isVideo) {
+                    contentHtml = `
+                        <div class="mb-2">
+                            <video src="${fileUrl}" controls class="rounded-lg w-full max-w-[260px] max-h-[200px]"></video>
+                        </div>
+                        <div class="flex items-center justify-between text-xs mb-1 ${isOut ? 'text-white' : 'text-gray-600'}">
+                            <div class="flex items-center overflow-hidden mr-2">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-1 shrink-0"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                                <span class="truncate max-w-[150px]">${escapeHtml(fileName)}</span>
+                            </div>
+                            <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="hover:opacity-75" title="Tải về">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    contentHtml = `
+                        <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="flex items-center p-2 rounded-xl bg-white text-gray-900 w-[240px] sm:w-[260px] hover:bg-gray-50 transition-colors no-underline shadow-sm border border-gray-100">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mr-3 text-blue-500 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            <div class="overflow-hidden flex-1 text-left">
+                                <span class="font-bold text-[13px] truncate block text-gray-900 leading-tight">${escapeHtml(fileName)}</span>
+                                <span class="text-[11px] text-gray-500 block mt-0.5">Nhấp để tải file</span>
+                            </div>
+                            <div class="ml-2 w-8 h-8 bg-blue-600 rounded flex items-center justify-center shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                            </div>
+                        </a>
+                    `;
+                }
+            } else {
+                contentHtml = `<p class="m-0 text-[15px] leading-relaxed">${escapeHtml(m.content)}</p>`;
+            }
+
+            let bubbleBg = isOut ? 'bg-blue-600 text-white' : 'bg-white text-gray-900';
+            let bubbleBorder = isOut ? '' : 'border border-gray-200';
+
+            bubbleWrapper.innerHTML = `
+                <div class="max-w-[85%] sm:max-w-[75%] rounded-2xl px-3 py-2.5 shadow-sm ${bubbleBg} ${bubbleBorder}">
+                    ${contentHtml}
+                    <div class="text-[10px] mt-1 text-right ${isOut ? 'text-blue-100' : 'text-gray-400'}">${timeOnly}</div>
+                </div>
+            `;
+
+
+            container.appendChild(bubbleWrapper);
+        }
+
+        // Gửi tin nhắn qua SignalR Hub
+        function sendMessage() {
+            if (!selectedParentUserId) return;
+
+            const inputField = document.getElementById("chatMessageInputField");
+            const content = inputField.value.trim();
+            if (!content) return;
+
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("SendMessage", selectedParentUserId, content)
+                    .then(() => {
+                        inputField.value = "";
+                        inputField.focus();
+                    })
+                    .catch(err => {
+                        console.error("Lỗi invoke SendMessage:", err);
+                        showToast("Không thể gửi tin nhắn. Chi tiết: " + err.message, false);
+                    });
+            } else {
+                showToast("Không có kết nối thời gian thực. Đang kết nối lại...", false);
+            }
+        }
+
+        // Đánh dấu đã đọc cuộc hội thoại
+        function markConversationAsRead(contactId) {
+            const readUrl = isParent ? `/api/v1/parent/chat/read?contactUserId=${contactId}` : `/api/v1/teacher/chat/read?contactUserId=${contactId}`;
+            fetch(readUrl, {
+                method: 'POST'
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    // Cập nhật lại số chưa đọc in-memory cho sidebar
+                    const conv = conversationsData.find(c => (isParent ? c.teacherUserId : c.parentUserId) === contactId);
+                    if (conv) {
+                        conv.unreadCount = 0;
+                    }
+                }
+            })
+            .catch(err => console.error("Lỗi đánh dấu đã đọc:", err));
+        }
+
+        // Tránh lỗi XSS
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+}
