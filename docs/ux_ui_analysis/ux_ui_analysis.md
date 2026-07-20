@@ -496,6 +496,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 | 5 | Mô tả | Textarea | — |
 | 6 | Trạng thái | Toggle | — |
 
+![Mockup Quản lý Môn học](admin_courses_1784555688954.png)
+
 ---
 
 ### 6.8 Quản lý học sinh (`/AdminStudents`)
@@ -606,6 +608,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 
 **Modals:** Reset mật khẩu (xác nhận → hiển thị MK tạm), Xóa phụ huynh, Import Excel, Lịch sử Import/Export
 
+![Mockup Quản lý Phụ huynh](admin_parents_1784555697695.png)
+
 ---
 
 ### 6.11 Thêm / Sửa phụ huynh (`/AdminParents/Create`, `/AdminParents/Edit`)
@@ -666,6 +670,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 - **Thao tác**: Sửa, Xóa, Cấp lại MK
 
 **Modals:** Reset mật khẩu, Xóa nhân sự, Import Excel, Lịch sử Import/Export
+
+![Mockup Quản lý Nhân sự](admin_staff_1784555707508.png)
 
 ---
 
