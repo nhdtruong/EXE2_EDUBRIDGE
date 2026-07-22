@@ -457,6 +457,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 - Modal tìm kiếm học viên: Gọi API `/api/AvailableStudents`, chọn checkbox, POST `EnrollStudents`
 - Nút `Xóa học viên` khỏi lớp: POST `RemoveStudent`
 
+![Mockup Chỉnh sửa Lớp học](class_edit_mockup_1784737877402.jpg)
+
 ---
 
 ### 6.7 Quản lý môn học (`/AdminCourses`)
@@ -575,6 +577,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 - Hoặc nút `Tạo mới` → Form nhập: Tên PH (*), SĐT PH (*), Email PH
 
 **Nút:** `Hủy`, `Lưu học sinh`
+
+![Mockup Thêm Học sinh](student_create_mockup_1784737867985.jpg)
 
 ---
 
@@ -796,6 +800,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 ```
 
 **Nút (không in):** `In Biên Lai / Xuất PDF`, `Đóng`
+
+![Mockup In phiếu thu](receipt_print_mockup_1784737886579.jpg)
 
 ---
 
@@ -1116,6 +1122,8 @@ Danh sách bài nộp của học sinh: Nội dung nộp, Trạng thái, Điểm
 
 **Nút:** `Hủy` (→ `/`), `Lưu`
 
+![Mockup Đổi mật khẩu](change_password_mockup_1784737907254.jpg)
+
 ---
 
 ### 6.25 Quản lý trung tâm (`/SystemAdmin/Centers`)
@@ -1220,6 +1228,17 @@ Giao diện form tương tự [AdminStaff/Create](#613-thêm--sửa-nhân-sự-a
 **Phân trang:** Design System pagination + Page Size selector
 
 ![Mockup Nhật ký hệ thống](system_admin_audit_logs_mockup_1784737682647.jpg)
+
+---
+
+### 6.30 Parent Dashboard (Mobile View)
+
+**Mô tả:** Giao diện tối ưu cho thiết bị di động dành cho Phụ huynh.
+- Layout: Mobile-first card layout (`_Layout`)
+- Navigation: Bottom tab bar (Trang chủ, Bài tập, Tiến độ, Sổ điểm)
+- Nội dung: Tóm tắt thông tin của học sinh đang chọn (Lịch học hôm nay, Bài tập mới).
+
+![Mockup Parent App Dashboard](parent_app_dashboard_mockup_1784737897559.jpg)
 
 ---
 
