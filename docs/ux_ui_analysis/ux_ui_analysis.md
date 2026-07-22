@@ -830,6 +830,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 
 **Nút:** `Lưu cấu hình`
 
+![Mockup Cài đặt hệ thống](admin_settings_mockup_1784737609762.jpg)
+
 ---
 
 ### 6.17 Teacher Dashboard (`/Teacher/Dashboard`)
@@ -901,6 +903,8 @@ Giao diện tương tự `Create.cshtml`, bổ sung:
 | 3 | Bài tập về nhà | Textarea |
 | 4 | Ghi chú | Textarea |
 | 5 | Trạng thái | Select (Đang học / Tạm dừng / Hoàn thành) |
+
+![Mockup Quản lý Bài giảng](teacher_lectures_mockup_1784737618745.jpg)
 
 ---
 
@@ -994,6 +998,8 @@ Danh sách bài nộp của học sinh: Nội dung nộp, Trạng thái, Điểm
 - Mỗi card hiển thị: Tiêu đề bài tập, Badge trạng thái, Nút download PDF
 - Modal `Nộp bài tập`
 
+![Mockup Bài tập](teacher_homework_mockup_1784737628686.jpg)
+
 ---
 
 ### 6.21 Sổ điểm (`/Grades`)
@@ -1026,6 +1032,8 @@ Danh sách bài nộp của học sinh: Nội dung nộp, Trạng thái, Điểm
 | 3 | Giữa kỳ | Number (0-10) | |
 | 4 | Cuối kỳ | Number (0-10) | |
 | 5 | Nhận xét | Textarea | |
+
+![Mockup Sổ điểm](teacher_grades_mockup_1784737638231.jpg)
 
 ---
 
@@ -1085,6 +1093,8 @@ Danh sách bài nộp của học sinh: Nội dung nộp, Trạng thái, Điểm
 
 **Nút:** `Hủy` (history.back()), `Lưu`
 
+![Mockup Hồ sơ](profile_mockup_1784737657533.jpg)
+
 ---
 
 ### 6.24 Đổi mật khẩu (`/ChangePassword`)
@@ -1128,6 +1138,8 @@ Danh sách bài nộp của học sinh: Nội dung nộp, Trạng thái, Điểm
 
 - **Trạng thái**: Toggle Active/Inactive
 - **Thao tác**: `Hỗ trợ` (chuyển sang context trung tâm)
+
+![Mockup Quản lý Trung tâm](system_admin_centers_mockup_1784737664874.jpg)
 
 ---
 
@@ -1175,6 +1187,8 @@ Danh sách bài nộp của học sinh: Nội dung nộp, Trạng thái, Điểm
 
 **Phân trang:** Design System pagination + Page Size selector
 
+![Mockup Nhân sự Hệ thống](system_admin_staffs_mockup_1784737673818.jpg)
+
 ---
 
 ### 6.28 Thêm / Sửa nhân sự hệ thống (`/SystemAdmin/Staffs/Create`, `/SystemAdmin/Staffs/Edit`)
@@ -1204,6 +1218,8 @@ Giao diện form tương tự [AdminStaff/Create](#613-thêm--sửa-nhân-sự-a
 - **Hành động**: Hiển thị dạng badge màu
 
 **Phân trang:** Design System pagination + Page Size selector
+
+![Mockup Nhật ký hệ thống](system_admin_audit_logs_mockup_1784737682647.jpg)
 
 ---
 
